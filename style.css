@@ -84,7 +84,9 @@ body.mb #vnBar .sb{width:48px;height:21px}
 /* 新しいクイックメニューのときは、スマホでも正方形のまま（--qmb で決まります） */
 body.mb #vnBar.qm{right:var(--qmr,14px);top:var(--qmt,6px);bottom:auto;height:auto;gap:var(--qmg,7px)}
 body.mb #vnBar.qm .sb{width:var(--qmb,51px);height:var(--qmb,51px)}
-body.mb #vnChar{width:min(300px,38vw);height:auto;aspect-ratio:300/470;bottom:14px}
+/* 立ち絵のスマホ用の指定は、もう要りません。
+   高さ（--chh）と下の余白（--chb）を fit() が画面の高さから出すので、
+   PCでもスマホでも同じ式で、はみ出さずに収まります。 */
 body.mb #vnStamp svg{width:150px;height:150px}
 body.mb #vnStamp .lb{font-size:19px;padding:1px 14px 3px}
 body.mb #vnStamp{top:32%}
@@ -584,8 +586,14 @@ body.mb .gstr .v{font-size:11.5px}
 #vnBg{position:absolute;inset:0;z-index:0;overflow:hidden}
 #vnBg .bgl{position:absolute;inset:0}
 #vnBg svg{width:100%;height:100%;display:block}
-#vnChar{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:1;
-  width:400px;height:627px;display:flex;align-items:flex-end;justify-content:center;
+/* 立ち絵。★大きさは「高さ」で決めます（横はばは絵の形なりに決まります）。
+   高さと下の余白は fit() が --chh / --chb に px で入れます
+   （もとは assets/config.js の VN_UI の charH / charBottom）。
+   ここを width で決めてはいけません。画面の低いスマホでは、
+   横はばから決めた高さが画面をこえてしまい、**頭が上に切れます**。 */
+#vnChar{position:absolute;left:50%;bottom:var(--chb,26px);transform:translateX(-50%);z-index:1;
+  height:var(--chh,627px);width:auto;aspect-ratio:400/627;
+  display:flex;align-items:flex-end;justify-content:center;
   filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));transition:opacity .25s}
 #vnChar svg{width:100%;height:100%;display:block}
 /* ---- 絵を入れかえるときの「幽霊」----

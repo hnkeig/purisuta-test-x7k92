@@ -181,15 +181,26 @@ function fit(){
      高さは絵の形なりに決まるので、**横はばを大きくすると上へ伸びます**。
      枠がメッセージ枠の左はしに重なったぶん（--vnclr）だけ、本文と名前
      プレートを右へずらして、文字が写真の下にかくれないようにします。 */
+  /* ---- 立ち絵の大きさ -------------------------------------------------
+     ★ かならず「高さ」で決めます。横はばで決めると、画面の低いスマホでは
+       そこから出た高さが画面をこえてしまい、頭が上に切れます。
+       横はばは絵の形（400:627）なりに、CSS が自動で出します。 */
+  st.style.setProperty("--chh", Math.round(H*qv("charH",0.929))+"px");
+  st.style.setProperty("--chb", Math.round(H*qv("charBottom",0.0385))+"px");
   st.style.setProperty("--pb",  Math.round(H*qv("photoBottom",0.02))+"px");
-  const pfw=Math.round(W*(mob?qv("photoWMb",0.225):qv("photoW",0.250)));
+  let pfw=Math.round(W*(mob?qv("photoWMb",0.225):qv("photoW",0.250)));
+  /* 写真枠は横はばから高さが決まるので、画面が低いと上へ伸びすぎます。
+     高さが画面の photoMaxH をこえたら、そのぶん横はばを縮めます */
+  const pfar0=(V0.photoInImage===true)?VNPHOTO.def:(VNPHOTO.ar||VNPHOTO.def);
+  const pfmax=Math.round(H*qv("photoMaxH",0.62));
+  if(pfw/pfar0 > pfmax) pfw=Math.round(pfmax*pfar0);
   const pfx=Math.round(W*qv("photoX",0.008));
   st.style.setProperty("--pfw", pfw+"px");
   st.style.setProperty("--px",  pfx+"px");
   /* 傾けているぶん、右のはしは計算より少し外へ出る。
      ★ ここに「いま出ている顔の絵」の形をまぜないこと。子ごとに形が少しちがうと、
        話す人が変わるたびに本文と名前プレートが動いてしまいます。 */
-  const pfh=pfw/((V0.photoInImage===true)?VNPHOTO.def:(VNPHOTO.ar||VNPHOTO.def));
+  const pfh=pfw/pfar0;
   const outR=Math.round(Math.abs(Math.sin(qv("photoTilt",-3.5)*Math.PI/180))*pfh*0.5);
   st.style.setProperty("--vnclr",
     Math.max(0, (pfx+pfw+outR)-(edge+fww+wgap)+Math.round(W*qv("photoClear",0.014)))+"px");
