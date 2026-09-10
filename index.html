@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a1520">
+<title>スターメイト</title>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div id="safe"></div>
+<div id="rotate">
+  <div class="ph"></div>
+  <div class="t1">画面を横向きにしてください</div>
+  <div class="t2">このゲームは横画面用に作られています。<br>スマホを横に倒すと始められます。</div>
+</div>
+<div id="fit"><div id="stage">
+
+  <svg id="room" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice"></svg>
+
+  <div class="dateBar" id="dateBar"></div>
+  <div class="icons" id="icons"></div>
+
+  <div class="status" id="status"></div>
+
+  <div class="panel" id="planner" style="display:none">
+    <div class="ttl"><span>今週の予定</span><span class="hint" id="plHint">コマンドを押すと1週間ぶん決まります</span></div>
+    <div class="body">
+      <div class="week" id="week"></div>
+      <div class="pbar">
+        <button class="btn gy" id="repeat">先週と同じ</button>
+        <button class="btn gy" id="clearAll">クリア</button>
+        <span class="tip" id="plTip"></span>
+        <button class="btn pk" id="go">この予定で実行 ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="sunHint" style="display:none">
+    <div class="ttl"><span>☀ 日曜日</span><span class="hint">右のボタンから今日することを選ぼう</span></div>
+    <div class="body" id="sunBody"></div>
+  </div>
+
+  <div class="panel" id="msg">
+    <div class="ttl"><span id="msgTtl">　</span></div>
+    <div class="body" id="msgBody"></div>
+    <div id="choices"></div>
+  </div>
+
+  <div class="panel" id="modal">
+    <div class="ttl"><span id="modTtl">　</span></div>
+    <div class="body" id="modBody"></div>
+    <div id="modBtns" style="padding:0 14px 12px;display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+
+  <div id="vn">
+    <div id="vnBg"></div>
+    <div id="vnChar"></div>
+    <div id="vnStamp"></div>
+    <div id="board" style="display:none"></div>
+    <div id="vnChoices"></div>
+    <div id="vnFaceWin"></div>
+    <div id="vnWin">
+      <div id="vnName"></div>
+      <div id="vnBody"></div>
+      <div id="vnClose" title="メッセージウィンドウを隠す"></div>
+    </div>
+    <div id="vnBar"></div>
+  </div>
+
+  <div id="title">
+    <div id="titleBg"></div>
+    <div class="tveil"></div>
+    <!-- ロゴとメニュー。左寄せ／まんなか／右寄せは assets/config.js の UI_RULE.menuAlign -->
+    <div class="tinner">
+      <!-- assets/ui/logo.* があれば、game.js がここを画像に差しかえます -->
+      <div class="tlogo" id="tlogo">スターメイト</div>
+      <div class="tmenu">
+        <!-- assets/ui/ui_title_base_*.* があれば、game.js が中身を画像に差しかえます -->
+        <button class="tbtn" data-t="new"><span class="tg">✿</span>はじめから</button>
+        <button class="tbtn" data-t="load"><span class="tg">📖</span>つづきから</button>
+        <button class="tbtn" data-t="omake"><span class="tg">🎁</span>おまけ</button>
+        <button class="tbtn" data-t="opt"><span class="tg">⚙️</span>オプション</button>
+      </div>
+    </div>
+    <!-- 画面のいちばん下の一行。ロゴとおなじ側にそろえます -->
+    <div class="tfoot">1年目4月5日から3年目3月1日までの1061日間を過ごす、育成恋愛シミュレーション</div>
+    <!-- ブラウザに自動再生を止められているあいだだけ出る案内（game.js の sndHint） -->
+    <div id="tsnd" class="tsnd">🔇 画面をクリック（タップ）すると音が鳴ります</div>
+  </div>
+
+  <div id="setup">
+    <div class="tlogo2">はじめから</div>
+    <div class="setup">
+      <div class="srow"><span class="sl">名前</span>
+        <input type="text" id="psei" maxlength="6" placeholder="みょうじ" value="桜坂">
+        <input type="text" id="pmei" maxlength="6" placeholder="なまえ" value="優">
+        <span class="nmhint">みょうじ／なまえ</span></div>
+      <div class="srow"><span class="sl">誕生日</span>
+        <select id="bdM"></select><span style="font-size:13px">月</span>
+        <select id="bdD"></select><span style="font-size:13px">日</span>
+        <span id="zodiac" class="zod"></span></div>
+      <div class="srow"><span class="sl">血液型</span><span id="bloodSel" class="chips"></span></div>
+      <div class="srow"><span class="sl">部活</span><span id="clubSel" class="chips"></span></div>
+      <div class="srow"><span class="sl">バイト先</span><span id="jobSel" class="chips"></span></div>
+      <div class="srow"><span class="sl"></span><span id="setupInfo" class="note2"></span></div>
+    </div>
+    <div class="mbhint">月曜に1週間の予定を決め、日曜と祝日はデートに誘えます。<br>
+      くわしいあそび方は、ゲーム中の<b>❓ボタン</b>で読めます。</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn pk" id="startBtn" style="font-size:17px;padding:11px 30px">入学する</button>
+      <button class="btn gy" id="backBtn" style="font-size:15px;padding:11px 22px">もどる</button>
+    </div>
+  </div>
+
+  <div id="ending"></div>
+</div></div>
+
+<script src="assets.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/list.js"></script>
+<script src="story/names.js"></script>
+<script src="story/kanade.js"></script>
+<script src="story/rena.js"></script>
+<script src="story/hinata.js"></script>
+<script src="story/luka.js"></script>
+<script src="story/minamo.js"></script>
+<script src="story/sakuya.js"></script>
+<script src="story/titles.js"></script>
+<script src="story/events.js"></script>
+<script src="story.js"></script>
+<script src="story/eventids.js"></script>
+<script src="game.js"></script>
+
+<!-- ファイルが足りないときに、真っ白な画面ではなく理由を出す -->
+<script>
+(function(){
+  var need=[["IMG","assets.js"],["ART_CANVAS","assets/config.js"],["ART_LIST","assets/list.js"],
+            ["CHARA_NAMES","story/names.js"],["ST_kanade","story/kanade.js"],["ST_rena","story/rena.js"],["ST_hinata","story/hinata.js"],
+            ["ST_luka","story/luka.js"],["ST_minamo","story/minamo.js"],["ST_sakuya","story/sakuya.js"],
+            ["TITLES","story/titles.js"],["TXT","story/events.js"],["AFF_EV","story.js"],
+            ["EVENT_DEFS","story/eventids.js"],["S","game.js"]];
+  var miss=[];
+  for(var i=0;i<need.length;i++){
+    try{ if(eval("typeof "+need[i][0])==="undefined") miss.push(need[i][1]); }
+    catch(e){ miss.push(need[i][1]); }
+  }
+  if(!miss.length)return;
+  document.body.innerHTML=
+    '<div style="font-family:sans-serif;color:#5a4650;background:#fff6fa;padding:32px;line-height:2">'+
+    '<div style="font-size:20px;font-weight:800;color:#c2306a">ファイルが足りません</div>'+
+    '<p>つぎのファイルが同じ場所に見つかりませんでした。</p>'+
+    '<ul><li><b>'+miss.join('</b></li><li><b>')+'</b></li></ul>'+
+    '<p>zipを<b>すべて展開してから</b> index.html を開いてください。'+
+    'zipの中身を直接開くと、この画面になります。<br>'+
+    '1ファイルだけで遊びたいときは、別にお渡ししている <b>starmate.html</b> を開いてください。</p></div>';
+})();
+</script>
+</body>
+</html>

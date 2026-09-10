@@ -1,0 +1,1117 @@
+/* =========================================================================
+   スターメイト ／ style.css
+   画面のデザイン。色・大きさ・配置はすべてここ。
+   ========================================================================= */
+/* 書体。ここ1か所を変えれば、ゲーム全体の文字が変わります。
+   （外部ファイルは使わず、端末に入っている今どきのゴシック体を上から順に探します） */
+:root{
+  --ff:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",
+       "Yu Gothic Medium","Yu Gothic",YuGothic,"BIZ UDPGothic",Meiryo,
+       system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#1a1520;overflow:hidden;
+  font-family:var(--ff);
+  font-feature-settings:"palt" 1;      /* 日本語の字間を詰めて読みやすく */
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+#safe{position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;visibility:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px)}
+#fit{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1200px;height:675px;position:relative;transform-origin:center center;overflow:hidden;
+  border-radius:6px;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+#room{position:absolute;inset:0;width:100%;height:100%}
+
+
+/* ==================== スマホ（横向き）用レイアウト ==================== */
+body{touch-action:manipulation;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+@media (hover:none){
+  .ic:hover{transform:none;filter:none;animation:none}
+  button:hover:not(:disabled){transform:none;filter:none;background:var(--panel2)}
+  .slot:hover{border-color:#d9c9b0;background:#fff}
+  .gcard:hover,.clubrow:hover{border-color:#e8d9c4;background:#fff}
+}
+.ic:active{transform:scale(.94)}
+input,select,textarea{font-size:16px!important}
+
+body.mb #stage{border-radius:0;box-shadow:none}
+body.mb .dateBar{top:5px;right:5px;padding:3px 14px;border-width:3px;border-radius:10px;font-size:20px}
+body.mb .dateBar small{font-size:9.5px;margin-top:-1px}
+
+body.mb .icons{top:calc(var(--ic,58px) * 0.98);right:5px;width:auto;
+  grid-template-columns:repeat(var(--iccols,5),var(--ic,58px));gap:var(--icgap,5px)}
+body.mb .ic{width:var(--ic,58px);height:var(--ic,58px);border-radius:11px;border-width:2px;box-shadow:0 3px 0 rgba(0,0,0,.22)}
+body.mb .ic .g{font-size:calc(var(--ic,58px) * .38)}
+body.mb .ic .t{font-size:calc(var(--ic,58px) * .152);line-height:1.1}
+body.mb .ic .badge{font-size:9px;padding:0 4px}
+
+body.mb .status{left:5px;bottom:5px;width:calc(100% - var(--icw,310px) - 18px);padding:5px 10px 4px;border-width:2px;border-radius:9px}
+body.mb .pr{font-size:14px;letter-spacing:.12em;padding:0}
+body.mb .pr b{font-size:17px}
+body.mb .status .grid{gap:0 14px}
+body.mb .lvl{font-size:13px;margin-top:3px;padding-top:3px;letter-spacing:.1em}
+body.mb .lvl .stars{font-size:16px}
+
+body.mb #planner{left:5px;top:5px;width:calc(100% - var(--icw,310px) - 18px)}
+body.mb .ttl{font-size:12.5px;padding:4px 10px}
+body.mb .ttl .hint{font-size:9.5px}
+body.mb .body{padding:7px 9px}
+body.mb .week{gap:4px}
+body.mb .slot{min-height:70px;padding:3px 1px;border-radius:7px}
+body.mb .slot .dw{font-size:10px}
+body.mb .slot .dd{font-size:13px}
+body.mb .slot .cg{font-size:19px}
+body.mb .slot .cn{font-size:9px}
+body.mb .slot .evt{font-size:8.5px;padding:0 3px}
+body.mb .slot .res{font-size:18px}
+body.mb .pbar{margin-top:6px;gap:5px}
+body.mb .btn{padding:6px 11px;font-size:12.5px;border-radius:8px}
+body.mb .btn.sm{padding:4px 8px;font-size:11px}
+body.mb .pbar .tip{font-size:9.5px}
+
+body.mb #sunHint{left:5px;right:calc(var(--icw,310px) + 13px);bottom:auto;top:5px}
+body.mb #msg{left:5px;right:calc(var(--icw,310px) + 13px);bottom:auto;top:5px}
+body.mb #msg .body{font-size:12.5px;max-height:26vh;line-height:1.65}
+
+body.mb #vnWin{left:var(--vnwl,5px);right:5px;bottom:var(--vnwb,7px);padding:0;border-radius:0;border-width:0}
+body.mb #vnBody{max-height:none}
+body.mb #vnName{padding:0 1.2%}
+body.mb #vnClose{width:30px;height:27px}
+body.mb #vnChoices{gap:6px;top:14%}   /* 右上のボタンにかぶらない高さ */
+body.mb #vnChoices .btn{width:420px;height:40px;padding:0 16px}
+body.mb #vnBar{left:auto;right:5px;bottom:var(--vnbarb,190px);height:21px;gap:5px}
+body.mb #vnBar .sb{width:48px;height:21px}
+/* 新しいクイックメニューのときは、スマホでも正方形のまま（--qmb で決まります） */
+body.mb #vnBar.qm{right:var(--qmr,14px);top:var(--qmt,6px);bottom:auto;height:auto;gap:var(--qmg,7px)}
+body.mb #vnBar.qm .sb{width:var(--qmb,51px);height:var(--qmb,51px)}
+body.mb #vnChar{width:min(300px,38vw);height:auto;aspect-ratio:300/470;bottom:14px}
+body.mb #vnStamp svg{width:150px;height:150px}
+body.mb #vnStamp .lb{font-size:19px;padding:1px 14px 3px}
+body.mb #vnStamp{top:32%}
+
+body.mb #modal{width:min(94%,700px)!important;max-height:94%}
+body.mb #modBody{font-size:12.5px}
+body.mb .slotrow .sk{font-size:11px}
+body.mb .slotrow .si{font-size:11.5px;line-height:1.4}
+body.mb .slotrow .si b{font-size:11px}
+body.mb .clubrow{padding:5px 7px}
+body.mb .cbox{width:min(92%,400px);padding:14px 16px}
+body.mb .cbox .ct{font-size:15px}
+body.mb .cbox .cm{font-size:12.5px}
+body.mb .cwrap{grid-template-columns:repeat(3,1fr);gap:5px}
+body.mb .cd{font-size:9px}
+body.mb .cev{font-size:8px}
+body.mb .dbgp{width:64px}
+body.mb #toast{font-size:12.5px;padding:6px 16px;top:12px}
+
+.mbhint{display:none}
+body.mb .rules{display:none}
+body.mb .mbhint{display:block;background:rgba(255,255,255,.8);border:2px solid #f0b6c9;border-radius:10px;
+  padding:5px 12px;font-size:10.5px;line-height:1.55;color:#5a4650;max-width:100%}
+body.mb .logo{margin-top:2px}
+body.mb .logo{font-size:23px}
+body.mb .tag{font-size:11px}
+body.mb .rules{font-size:9.5px;line-height:1.55;padding:6px 10px;max-width:100%}
+body.mb .setup{padding:4px 10px;gap:2px;max-width:100%}
+body.mb .sl{width:46px;font-size:11px}
+body.mb .chip{font-size:10px;padding:2px 6px}
+body.mb .srow{gap:5px}
+body.mb select{padding:3px 6px}
+body.mb input[type=text]{padding:5px 8px;width:96px}
+body.mb .note2{font-size:9.5px;line-height:1.4}
+body.mb .zod{font-size:10px;padding:1px 7px}
+body.mb .stst{font-size:9.5px}
+body.mb #startBtn{font-size:14px!important;padding:8px 20px!important}
+body.mb #loadBtn{font-size:13px!important;padding:8px 16px!important}
+body.mb #ending{padding:10px}
+body.mb #ending .btn{font-size:13px!important;padding:8px 18px!important}
+
+/* 高さが足りない画面用 */
+body.sh .dateBar{font-size:17px;padding:2px 11px;border-width:2px}
+body.sh .dateBar small{font-size:8.5px}
+body.sh .slot{min-height:58px}
+body.sh .slot .dd{font-size:12px}
+body.sh .slot .cg{font-size:16px}
+body.sh .slot .cn{font-size:8.5px}
+body.sh .slot .dw{font-size:9px}
+body.sh .pr{font-size:12.5px}
+body.sh .pr b{font-size:15px}
+body.sh .lvl{font-size:11.5px}
+body.sh .lvl .stars{font-size:14px}
+body.sh .ttl{font-size:11.5px;padding:3px 8px}
+body.sh .body{padding:5px 7px}
+body.sh .btn{padding:5px 9px;font-size:11.5px}
+body.sh #vnStamp svg{width:120px;height:120px}
+body.sh #vnStamp .lb{font-size:16px}
+body.sh2 .dateBar{font-size:15px}
+body.sh2 .dateBar small{font-size:8px}
+body.sh2 .slot{min-height:50px}
+body.sh2 .pr{font-size:11.5px;letter-spacing:.06em}
+body.sh2 .pr b{font-size:13.5px}
+body.sh2 .status{padding:3px 8px 2px}
+body.sh2 .lvl{margin-top:1px;padding-top:1px}
+body.sh2 .ic .t{font-size:calc(var(--ic,44px) * .175)}
+
+/* 縦向きのときの案内 */
+#rotate{position:fixed;inset:0;z-index:9999;display:none;
+  background:linear-gradient(160deg,#ffd9e6,#ffeccd 45%,#d8ecff);
+  flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;
+  font-family:var(--ff);color:#8a6076}
+body.pt #rotate{display:flex}
+#rotate .ph{width:78px;height:132px;border:5px solid #e08aa8;border-radius:14px;position:relative;
+  animation:rot 2.4s ease-in-out infinite}
+#rotate .ph::after{content:"";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);
+  width:26px;height:4px;border-radius:2px;background:#e08aa8}
+@keyframes rot{0%,25%{transform:rotate(0)}55%,100%{transform:rotate(-90deg)}}
+#rotate .t1{font-size:20px;font-weight:800;color:#c2306a}
+#rotate .t2{font-size:13px;line-height:1.8}
+
+  /* ---------- 日付バー ---------- */
+.dateBar{position:absolute;top:12px;right:14px;background:#fffdf6;border:4px solid #f48fb1;
+  border-radius:14px;padding:6px 26px;box-shadow:0 4px 0 rgba(214,110,145,.55),0 8px 18px rgba(0,0,0,.25);
+  font-size:30px;font-weight:800;color:#4a3a44;letter-spacing:.06em;white-space:nowrap}
+.dateBar .sun{color:#e5486f}.dateBar .sat{color:#3f7fd0}
+.dateBar small{display:block;font-size:12px;font-weight:700;color:#c07a94;letter-spacing:.1em;text-align:center;margin-top:-2px}
+
+/* ---------- アイコングリッド ---------- */
+.icons{position:absolute;top:96px;right:14px;width:352px;
+  display:grid;grid-template-columns:repeat(4,80px);gap:10px;justify-content:end}
+.ic{width:80px;height:80px;border-radius:16px;position:relative;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  border:3px solid rgba(255,255,255,.92);color:#fff;
+  box-shadow:0 4px 0 rgba(0,0,0,.22),0 6px 14px rgba(0,0,0,.22);transition:.12s;user-select:none}
+/* カーソルが乗っているあいだ、ふわふわ上下に揺れる。
+   ゲームパッドのカーソル（.gpf）でも同じように動きます。 */
+@keyframes icBob{
+  0%,100%{transform:translateY(-2px)}
+  50%    {transform:translateY(-9px)}
+}
+.ic:hover,.ic.gpf{filter:brightness(1.08);
+  animation:icBob .68s ease-in-out infinite}
+/* 押しているあいだは揺れを止めて、沈みこませる */
+.ic:active{animation:none;transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
+.ic .g{font-size:30px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.ic .t{font-size:11px;font-weight:800;letter-spacing:.02em;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.ic.b{background:linear-gradient(180deg,#6fb4f5,#3a7fd5)}
+.ic.g2{background:linear-gradient(180deg,#8fd67c,#4fa451);padding:0}
+.ic.p{background:linear-gradient(180deg,#fb9cc4,#e5619b)}
+.ic.o{background:linear-gradient(180deg,#ffc178,#f0913f)}
+.ic.dbg{background:linear-gradient(180deg,#9aa4b8,#5f6b82)}
+.ic.jn{background:linear-gradient(180deg,#8fd67c,#4fa451)}
+.gtabs{display:flex;gap:6px;margin-bottom:8px;border-bottom:2px solid #f0d8e4;padding-bottom:6px}
+.gtab{font-size:13px;font-weight:800;color:#a08090;background:#fdf4f8;border:2px solid #f0d8e4;
+  border-radius:999px;padding:4px 14px;cursor:pointer;user-select:none}
+.gtab.on{background:linear-gradient(180deg,#fb9cc4,#e5619b);color:#fff;border-color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.ggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.gcell{display:flex;gap:6px;align-items:center;border:2px solid #e8d9c4;border-radius:9px;padding:4px;background:#fff;cursor:pointer;transition:.12s}
+.gcell:hover{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}
+.gcell.lock{cursor:default;background:#f6f2ee;border-color:#e4ddd4}
+.gcell.lock:hover{transform:none;border-color:#e4ddd4;background:#f6f2ee}
+.gface{width:44px;height:52px;border-radius:7px;overflow:hidden;flex:0 0 auto;background:#efe6ee}
+.gface svg{width:100%;height:100%;display:block}
+.glock{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#c9bfc6;font-weight:800}
+.ginfo{min-width:0}
+.gcat{font-size:8.5px;color:#c2306a;font-weight:800}
+.gt{font-size:11px;font-weight:700;color:#4a3a44;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+.gn{font-size:9.5px;color:#8a7a68}
+.pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.pcard{display:flex;gap:9px;border:2px solid #e8d9c4;border-radius:10px;padding:7px;background:#fff}
+.pcard.lock{background:#f6f2ee;border-color:#e4ddd4}
+.pface{width:56px;height:66px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:#efe6ee}
+.pface svg{width:100%;height:100%;display:block}
+.pn{font-size:13.5px;font-weight:800;color:#4a3a44}
+.pend{font-size:10px;background:linear-gradient(180deg,#ffd479,#f0a83f);color:#5a3a10;border-radius:5px;padding:1px 6px;font-weight:800}
+.pr2{font-size:10.5px;color:#8a7a68;margin-bottom:2px}
+.pd{font-size:10.5px;color:#5d5060;line-height:1.5}
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.bcell{display:flex;gap:8px;align-items:center;border:2px solid #e8d9c4;border-radius:9px;padding:7px 9px;background:#fff;cursor:pointer}
+.bcell:hover{border-color:#f48fb1;background:#fff6f9}
+.bcell.on{background:linear-gradient(180deg,#fff2f7,#ffe2ee);border-color:#f48fb1}
+.bico{font-size:16px;color:#c2306a;width:18px;text-align:center}
+.bn{font-size:13px;font-weight:800;color:#4a3a44}
+.bb{font-size:10px;color:#8a7a68}
+body.mb .ggrid{grid-template-columns:repeat(3,1fr)}
+body.mb .gt{font-size:10px}
+body.mb .pgrid{grid-template-columns:1fr}
+.clubrow{display:flex;align-items:center;gap:10px;border:2px solid #e8d9c4;border-radius:10px;
+  padding:7px 10px;margin-bottom:6px;background:#fff}
+.clubrow .cg2{font-size:26px;width:38px;text-align:center;flex:0 0 auto}
+.clubrow .ci{flex:1;font-size:13.5px;line-height:1.5}
+.ic.off{filter:grayscale(.85) brightness(.8);cursor:not-allowed;opacity:.75}
+/* 押せないボタンは、ゆれず・明るくならず・カーソルの絵にも変わらない
+   （animation は指定より強いので、ここで止めておかないと揺れつづけます） */
+.ic.off:hover{transform:none;animation:none}
+.ic.img.off:hover>.u1,.ic.img.off.gpf>.u1{opacity:0}
+/* きろくのように「いまは書けないだけで、押せる」ボタン。
+   うすくするだけで、カーソルも見た目も「押せる」ままにします */
+.ic.dim{filter:saturate(.45) brightness(.93)}
+.ic.sel{outline:5px solid #ff5d8f;outline-offset:2px}
+.ic .badge{position:absolute;top:-6px;right:-6px;background:#ff4d6d;color:#fff;font-size:11px;font-weight:800;
+  border-radius:9px;padding:1px 6px;border:2px solid #fff}
+.ic .face{width:100%;height:100%;border-radius:12px;overflow:hidden}
+.ic .face svg{width:100%;height:100%;display:block}
+
+/* ---------- 絵にさしかえたコマンドのボタン ----------
+   assets/ui/ui_cmd_<なまえ>_normal.png（と _hover.png）を置くと、
+   四角い土台と絵文字のかわりに、その絵がそのまま出ます。
+   2枚重ねて、カーソルが乗ったら下の1枚（_hover）に入れかわります。
+   大きさ・入れかた・文字を出すかは assets/config.js の CMD_ICON。 */
+.ic.img{background:none;border:0;box-shadow:none;border-radius:0;padding:0}
+.ic.img>img{position:absolute;left:0;top:0;width:100%;height:100%;
+  object-fit:var(--cmdfit,contain);display:block;pointer-events:none;
+  max-width:none;max-height:none}
+.ic.img>.u1{opacity:0;transition:opacity .12s linear}
+.ic.img:hover>.u1,.ic.img.gpf>.u1{opacity:1}
+.ic.img:active{box-shadow:none}
+/* 明るさの足しこみはしません（カーソルのときの絵が、そのまま出るように）。
+   ただし「押せないとき」の暗さは残します */
+.ic.img:not(.off):hover,.ic.img:not(.off).gpf{filter:none}
+/* CMD_ICON.bob を false にすると、ふわふわ揺れなくなります */
+body.nobob .ic:hover,body.nobob .ic.gpf{animation:none}
+/* 絵にしたボタンでは、絵文字と文字はふだん隠しておきます。
+   （絵が読めなかったときの戻り先として、中には残してあります） */
+.ic.img>.g,.ic.img>.t{display:none}
+/* 絵の下に文字も出すとき（CMD_ICON.label: true） */
+body.cmdlabel .ic.img>.t{display:block;position:absolute;left:0;right:0;bottom:1px;z-index:1}
+
+/* ---------- ステータス ---------- */
+.status{position:absolute;left:14px;bottom:14px;width:520px;background:#fdf6dd;border:3px solid #b99a63;
+  border-radius:12px;padding:10px 16px 8px;box-shadow:0 6px 18px rgba(0,0,0,.3);color:#4a4030}
+.status .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+.pr{display:flex;justify-content:space-between;align-items:baseline;font-size:19px;font-weight:800;
+  letter-spacing:.22em;padding:1px 0}
+.pr b{font-size:23px;letter-spacing:0;font-variant-numeric:tabular-nums;color:#2f7d4f}
+@keyframes blink{50%{opacity:.35}}
+.lvl{display:flex;align-items:center;gap:10px;border-top:2px dotted #c9b183;margin-top:5px;padding-top:5px;
+  font-size:18px;font-weight:800;letter-spacing:.2em}
+.lvl .stars{letter-spacing:2px;font-size:22px;color:#e8b23a}
+.lvl .stars i{color:#d8cdb4;font-style:normal}
+
+/* ---------- 汎用パネル ---------- */
+.panel{position:absolute;background:#fffdf6;border:3px solid #e08aa8;border-radius:14px;
+  box-shadow:0 10px 34px rgba(0,0,0,.4);color:#40323c}
+.ttl{background:linear-gradient(180deg,#fb9cc4,#e5619b);color:#fff;font-weight:800;font-size:16px;
+  padding:7px 14px;border-radius:9px 9px 0 0;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center}
+.ttl .hint{font-size:11.5px;font-weight:700;opacity:.95}
+.body{padding:12px 14px}
+.btn{background:linear-gradient(180deg,#ffd98a,#f0a83f);border:2px solid #fff;color:#5a3a10;font-weight:800;
+  border-radius:10px;padding:8px 16px;cursor:pointer;font-size:14px;font-family:inherit;
+  box-shadow:0 3px 0 rgba(0,0,0,.2);transition:.12s}
+.btn:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.pk{background:linear-gradient(180deg,#fb9cc4,#e5619b);color:#fff}
+.btn.gy{background:linear-gradient(180deg,#e6e2d8,#c8c2b4);color:#4a4438}
+.btn:disabled{filter:grayscale(.8);opacity:.6;cursor:not-allowed;transform:none}
+
+/* ---------- 週間予定 ---------- */
+#planner{left:14px;top:14px;width:520px}
+#sunHint{left:14px;right:376px;bottom:202px;border-color:#f0b6c9}
+.week{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.slot{background:#fff;border:2px solid #d9c9b0;border-radius:9px;padding:5px 3px;text-align:center;cursor:pointer;
+  transition:.12s;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px}
+.slot:hover{border-color:#f48fb1;background:#fff6f9}
+.slot.cur{border-color:#ff5d8f;background:#ffeef4;box-shadow:0 0 0 3px rgba(255,93,143,.25)}
+.slot .dw{font-size:12px;font-weight:800;color:#8a7a68}
+.slot .dw.sa{color:#3f7fd0}
+.slot .dd{font-size:16px;font-weight:800;color:#54463c;line-height:1}
+.slot .cg{font-size:24px;line-height:1.1;margin-top:2px}
+.slot .cn{font-size:10.5px;font-weight:800;color:#6b5b4c}
+.slot.rest{background:#fff4f7;border-color:#f0c2d4}
+.slot .evt.hol{background:#e5486f}
+.slot .evt{font-size:10px;font-weight:800;color:#fff;background:#e5619b;border-radius:6px;padding:1px 4px;margin-top:2px}
+.slot .res{font-size:22px;font-weight:800;line-height:1}
+.res.dbl{color:#e5486f}.res.ok{color:#2f7d4f}.res.ng{color:#8a8a8a}
+.pbar{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+.pbar .tip{font-size:11.5px;color:#8a7a68;flex:1;line-height:1.5}
+
+/* ---------- メッセージ ---------- */
+#msg{left:14px;right:376px;bottom:202px;width:auto;display:none;border-color:#c9a6d8}
+#msg .ttl{background:linear-gradient(180deg,#c69bea,#9a63ce)}
+#msg .body{min-height:90px;font-size:14.5px;line-height:1.8;max-height:212px;overflow-y:auto}
+#msg .sp{color:#d34a7c;font-weight:800}
+#msg .up{color:#2f7d4f;font-weight:800}
+#msg .dn{color:#c0392b;font-weight:800}
+#msg .ev{color:#a45ad8;font-weight:800}
+#msg p{margin:0 0 6px}
+#choices{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px}
+
+/* ---------- 中央モーダル ---------- */
+.cwrap2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cm2{border:1px solid #e8d9c4;border-radius:10px;padding:8px 10px 6px;background:#fff}
+.cmh2{font-size:15px;font-weight:800;color:#c2306a;margin-bottom:5px;text-align:center;letter-spacing:.04em}
+.cw2,.cgd2{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ch2{font-size:10.5px;text-align:center;color:#8a7a68;padding-bottom:2px;font-weight:700}
+.ch2.su{color:#e5486f}.ch2.sa{color:#3f7fd0}
+.cd2{min-height:44px;border-radius:5px;padding:2px 2px 1px;font-size:12.5px;font-weight:700;color:#5a4e42;
+  display:flex;flex-direction:column;align-items:center;line-height:1.15;background:#fdfbf7}
+.cd2 .en{font-size:7.6px;font-weight:700;line-height:1.05;text-align:center;margin-top:1px;word-break:break-all}
+.cd2 .cem{font-size:13px;line-height:1.1;margin-top:1px;position:relative;z-index:1;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.18))}
+.cd2.su{color:#e5486f}.cd2.sa{color:#3f7fd0}
+.cd2.out{color:#d5cec2;background:transparent}
+.cd2.vac{background:#e6f4e2}
+.cd2.hol{background:#ffd9e2;color:#c2306a}
+.cd2.eex{background:#cfe0f5}.cd2.eev{background:#fcd3e2}.cd2.ebd{background:#ffe6a8}.cd2.evc{background:#c9ecc0}
+.cd2.today{outline:2.5px solid #e5486f;outline-offset:-2px}
+.cd2.ev{position:relative;animation:glow 1.9s ease-in-out infinite}
+.cd2.ev::after{content:"";position:absolute;inset:-2px;border-radius:6px;pointer-events:none;
+  box-shadow:0 0 0 2px rgba(255,255,255,.85) inset;animation:halo 1.9s ease-in-out infinite}
+@keyframes glow{0%,100%{filter:brightness(1) saturate(1)}50%{filter:brightness(1.16) saturate(1.35)}}
+@keyframes halo{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.7) inset,0 0 4px rgba(229,72,111,.35)}
+  50%{box-shadow:0 0 0 2px rgba(255,255,255,.95) inset,0 0 14px 3px rgba(229,72,111,.55)}}
+.cd2 .en{position:relative;z-index:1}
+.cev2{font-size:10px;color:#6b5b4c;line-height:1.6;margin-top:6px;border-top:1px dotted #e0d0c0;padding-top:5px;
+  min-height:calc(var(--cevn,2) * 1.6em + 6px)}
+.evl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:1.6em;line-height:1.6}
+body.mb .evl{height:1.45em;line-height:1.45}
+.evl .el{line-height:1.25}
+
+/* ---- カレンダーを全画面いっぱいに広げる ---- */
+#modal.cal>#modBody{display:flex;flex-direction:column;overflow:hidden;padding:10px 14px}
+#modal.cal .cwrap2{flex:1 1 auto;min-height:0}
+#modal.cal .cm2{display:flex;flex-direction:column;min-height:0;padding:8px 12px 8px}
+#modal.cal .cgd2{flex:1 1 auto;min-height:0;grid-auto-rows:1fr}
+#modal.cal .cd2{min-height:0;font-size:17px;line-height:1.1;justify-content:flex-start;padding-top:2px}
+#modal.cal .cd2 .cem{font-size:18px;line-height:1;margin-top:1px}
+#modal.cal .cd2 .en{font-size:10px;line-height:1.05;margin-top:1px}
+#modal.cal .cmh2{font-size:22px;margin-bottom:7px}
+#modal.cal .ch2{font-size:13.5px;padding-bottom:3px}
+#modal.cal .cev2{font-size:13.5px;margin-top:8px;padding-top:6px}
+#modal.cal .clegend{font-size:13.5px;margin-bottom:8px}
+#modal.cal .lg{width:14px;height:14px}
+#modal.cal .el{font-size:12px}
+body.mb #modal.cal>#modBody{padding:5px 8px}
+body.mb #modal.cal .cm2{padding:4px 6px}
+/* せまい画面では日付と絵文字を横に並べて、1行ぶん高さを節約する */
+body.mb #modal.cal .cd2{font-size:13px;padding:0 1px;flex-direction:row;align-items:center;
+  justify-content:center;gap:3px}
+body.mb #modal.cal .cd2 .cem{font-size:12px;margin-top:0;line-height:1}
+body.mb #modal.cal .cmh2{font-size:14px;margin-bottom:3px}
+body.mb #modal.cal .ch2{font-size:10px}
+body.mb #modal.cal .cev2{font-size:10.5px;margin-top:5px;padding-top:4px}
+body.mb #modal.cal .clegend{font-size:10.5px;margin-bottom:4px}
+body.mb #modal.cal .lg{width:10px;height:10px}
+body.mb #modal.cal .el{font-size:9.5px}
+body.mb .cwrap2{gap:6px}
+body.mb .cm2{padding:5px 6px 4px}
+body.mb .cmh2{font-size:12.5px;margin-bottom:3px}
+body.mb .ch2{font-size:9px}
+body.mb .cd2{min-height:25px;font-size:10.5px;padding:1px;line-height:1.05}
+body.mb .cd2 .en{display:none}          /* せまい画面では名前を出さず、絵文字だけにする */
+body.mb .cd2 .cem{font-size:9.5px;margin-top:0;line-height:1}
+body.mb .clegend{font-size:9.5px;margin-bottom:4px;gap:4px}
+body.mb .lg{width:9px;height:9px}
+body.mb .cev2{font-size:8.5px;line-height:1.45;margin-top:4px;padding-top:3px;
+  min-height:calc(var(--cevn,2) * 1.45em + 4px)}
+.cwrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cm{border:1px solid #e8d9c4;border-radius:8px;padding:4px 6px;background:#fff}
+.cmh{font-size:12.5px;font-weight:800;color:#c2306a;margin-bottom:3px}
+.cw,.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.ch{font-size:9px;color:#8a7a68;text-align:center}
+.ch.su{color:#e5486f}.ch.sa{color:#3f7fd0}
+.cd{font-size:9.5px;text-align:center;padding:1.5px 0;border-radius:3px;color:#5a4e42;line-height:1.25}
+.cd.su{color:#e5486f}.cd.sa{color:#3f7fd0}
+.cd.out{color:#d5cec2}
+.cd.vac{background:#e6f4e2}
+.cd.today{outline:2px solid #e5486f;outline-offset:-1px;font-weight:800}
+.cd.eex{background:#cfe0f5;font-weight:800}
+.cd.eev{background:#fcd3e2;font-weight:800}
+.cd.ebd{background:#ffe6a8;font-weight:800}
+.cd.evc{background:#c9ecc0;font-weight:800}
+.cd.hol{background:#ffd9e2;font-weight:800;color:#c2306a}
+.el.ehol{background:#ffd9e2}
+.cev{font-size:8.6px;color:#6b5b4c;line-height:1.45;margin-top:3px;min-height:14px}
+.el{display:inline-block;min-width:13px;text-align:center;border-radius:3px;margin-right:3px;font-weight:800}
+.el.eex{background:#cfe0f5}.el.eev{background:#fcd3e2}.el.ebd{background:#ffe6a8}.el.evc{background:#c9ecc0}
+.clegend{font-size:11.5px;color:#5a4e42;margin-bottom:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.lg{display:inline-block;width:12px;height:12px;border-radius:3px}
+.lg.eex{background:#cfe0f5}.lg.eev{background:#fcd3e2}.lg.ebd{background:#ffe6a8}.lg.evc{background:#c9ecc0}
+/* ===== きろく画面（タイル型） =====
+   カードを格子にならべます。1枚のカードは
+   〔スロット名〕〔顔＋日付・名前・メモ・保存日時〕〔ボタン〕の3段です。 */
+.slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(226px,1fr));gap:8px}
+.slotrow{display:flex;flex-direction:column;gap:5px;border:2px solid #e8d9c4;border-radius:12px;
+  padding:8px 9px 9px;background:#fff;box-shadow:0 2px 6px rgba(120,90,70,.09);
+  transition:border-color .13s,box-shadow .13s,transform .13s}
+.slotrow:hover{border-color:#f0b8cf;box-shadow:0 5px 14px rgba(190,110,150,.2);transform:translateY(-1px)}
+.slotrow.empty{background:#fdfaf6;box-shadow:none}
+.slotrow.empty:hover{transform:none;box-shadow:none}
+.slotrow .sk{font-size:12px;font-weight:800;color:#c2306a;letter-spacing:.03em;
+  border-bottom:1px dotted #f0dce6;padding-bottom:3px}
+.slotrow .sbody{display:flex;align-items:center;gap:9px;min-height:66px}
+.slotrow .si{flex:1;min-width:0;font-size:12.5px;line-height:1.45}
+.slotrow .si b{font-size:13px;color:#5a4650}
+.slotrow .sn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slotrow .sc{color:#8a7a68}
+.slotrow .sw{font-size:10.5px;color:#a89e94;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slotrow .nodata{color:#b9ac9c;font-size:12.5px}
+.slotrow .sb{display:flex;gap:4px;flex-wrap:wrap}
+.slotrow .sb .btn.sm{padding:4px 0;font-size:11.5px;flex:1 1 0;min-width:0}
+/* カードの顔（「友達」以上の子がいるときだけ出る。大きめに見せます） */
+.slotrow .sface{flex:0 0 auto;width:62px;height:62px;border-radius:50%;overflow:hidden;
+  border:2.5px solid #f4d3e0;background:#fff6fa;display:block;line-height:0;
+  box-shadow:0 2px 7px rgba(190,110,150,.25)}
+.slotrow .sface svg,.slotrow .sface img{width:100%;height:100%;display:block;object-fit:cover}
+.slotrow .sface.ph{border-color:transparent;background:none;box-shadow:none}
+body.mb .slotgrid{grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:6px}
+body.mb .slotrow{padding:6px 7px 7px;gap:4px;border-radius:10px}
+body.mb .slotrow .sface{width:44px;height:44px;border-width:2px}
+body.mb .slotrow .sbody{min-height:50px;gap:6px}
+/* せまい画面では、日付が2行に折り返さないように詰める */
+body.mb .slotrow .si b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+body.mb .slotrow .sb .btn.sm{padding:3px 0;font-size:10.5px}
+.btn.sm{padding:5px 11px;font-size:12.5px;border-radius:8px}
+.cfgrow{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cfgrow .cl{width:110px;flex:0 0 auto;font-size:13px;font-weight:800;color:#c2306a;text-align:right}
+.cfgrow .chip{border-color:#e6c9d6}
+.vsl{flex:1;max-width:260px;accent-color:#e5619b;height:22px}
+.vnum{width:34px;text-align:right;font-size:13px;font-weight:800;color:#c2306a;font-variant-numeric:tabular-nums}
+.dbgsec{border:1px solid #e8d9c4;border-radius:9px;padding:7px 10px;margin-bottom:8px;background:#fff;font-size:12.5px}
+.dbgline{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:5px}
+.dbgp{display:flex;flex-direction:column;font-size:10.5px;color:#8a7a68;width:74px}
+.dbgp input,.dbgp select{font-family:inherit;font-size:13px;padding:3px 5px;border:1px solid #d9c9b0;border-radius:6px;width:100%;color:#40323c}
+.dbgline select{font-family:inherit;font-size:13px;padding:4px 6px;border:1px solid #d9c9b0;border-radius:6px;color:#40323c}
+.slotrow .memo{font-size:12px;font-weight:700;color:#c2306a;background:#fff2f7;border:1px solid #f4d3e0;
+  border-radius:6px;padding:1px 8px;margin:2px 0;display:inline-block;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.memoin{width:100%;font-family:inherit;font-size:14px;padding:8px 10px;border:2px solid #e08aa8;
+  border-radius:9px;margin-bottom:12px;text-align:center;background:#fff;color:#40323c}
+.slotrow.auto{background:#fff6e6;border-color:#e8c98a}
+.pager{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.pager select{font-family:inherit;font-size:13px;padding:4px 8px;border:1px solid #d9c9b0;border-radius:7px;color:#40323c}
+.btn.dg{background:linear-gradient(180deg,#ff9a9a,#e04b4b);color:#fff}
+.confirm{position:absolute;inset:0;background:rgba(20,12,24,.5);display:flex;align-items:center;justify-content:center;z-index:40}
+.cbox{background:#fffdf6;border:3px solid #e08aa8;border-radius:14px;padding:18px 22px;width:440px;max-width:88%;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);color:#40323c;text-align:center}
+.cbox .ct{font-size:17px;font-weight:800;color:#c2306a;margin-bottom:8px}
+.cbox .cm{font-size:13.5px;line-height:1.8;margin-bottom:14px}
+.cbox .cb{display:flex;gap:10px;justify-content:center}
+.savenote{font-size:11.5px;color:#8a7a68;line-height:1.7;margin-top:6px}
+#toast{position:absolute;left:50%;top:22px;transform:translateX(-50%) translateY(-16px);
+  background:rgba(40,26,44,.92);color:#fff;font-size:14px;font-weight:700;padding:9px 22px;border-radius:12px;
+  border:2px solid rgba(255,255,255,.5);opacity:0;transition:.25s;pointer-events:none;z-index:30}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#modal{left:50%;top:50%;transform:translate(-50%,-50%);width:640px;display:none;max-height:92%;z-index:20;
+  flex-direction:column;overflow:hidden}
+#modal>.ttl{flex:0 0 auto}
+#modal>#modBody{flex:1 1 auto;overflow:auto;min-height:0}
+#modal>#modBtns{flex:0 0 auto;border-top:1px solid #efe3d4;padding-top:8px!important}
+
+/* ---- 全画面モーダル（予定表・くわしく・あそび方・きろく・せってい） ---- */
+#modal.full,body.mb #modal.full{
+  left:0!important;top:0!important;right:0!important;bottom:0!important;
+  width:auto!important;max-width:none!important;max-height:none!important;
+  transform:none!important;border-radius:0;border-width:0}
+#modal.full>.ttl{border-radius:0;font-size:18px;padding:9px 18px}
+body.mb #modal.full>.ttl{font-size:14px;padding:6px 12px}
+#modal.full>#modBtns{padding:8px 18px 12px!important}
+/* 文字ごと拡大する画面（カレンダー以外） */
+#modal.zoom>#modBody{zoom:1.3}
+body.mb #modal.zoom>#modBody{zoom:1.08}
+#modal.zoom>#modBtns .btn{font-size:16px;padding:9px 20px}
+body.mb #modal.zoom>#modBtns .btn{font-size:13px}
+.gcard{display:flex;gap:12px;align-items:center;background:#fff;border:2px solid #e8d9c4;border-radius:10px;padding:8px;margin-bottom:8px;cursor:pointer}
+.gcard:hover{border-color:#f48fb1;background:#fff6f9}
+.gcard .pf{width:64px;height:76px;border-radius:8px;overflow:hidden;flex:0 0 auto}
+.gcard .pf svg{width:100%;height:100%;display:block}
+
+/* ---------- プロフィール画面（くわしく → その子をクリック） ---------- */
+/* いまの間柄の札 */
+.tierbadge{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:9px;
+  font-size:11px;font-weight:800;color:#fff;vertical-align:2px;letter-spacing:.06em}
+.tierbadge.t-normal{background:#b0a58f}
+.tierbadge.t-friend{background:#61b06e}
+.tierbadge.t-crush {background:#f0913f}
+.tierbadge.t-love  {background:#e5619b}
+/* 誕生日・星座・部活・最後に会ったの */
+.pfgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;margin-top:6px}
+.pfr,.pfr2{display:flex;gap:8px;align-items:baseline;padding:1px 0;font-size:12.5px}
+.pfr span,.pfr2 span{color:#8a7a68;flex:0 0 auto;min-width:74px}
+.pfr b,.pfr2 b{color:#4a4030;font-weight:800}
+.pfr2{margin-top:1px}
+.pfr2 b{font-weight:700}
+/* プロフィール文（好感度が上がると入れかわります） */
+.pfnote{margin-top:10px;background:#fffaf0;border:2px solid #ecdcc0;border-radius:10px;
+  padding:8px 12px;font-size:12.5px;line-height:1.95;color:#5a4c3c}
+.pfttl{margin-top:10px;font-weight:800;font-size:13px;color:#6a5a48;
+  border-bottom:1px dotted #c9b183;padding-bottom:3px;display:flex;justify-content:space-between;align-items:baseline}
+.pfttl span{font-weight:700;font-size:11px;color:#8a7a68}
+.pfport{width:168px;flex:0 0 auto;border-radius:10px;overflow:hidden}
+.pfport svg{width:100%;display:block}
+.pfmain{flex:1;min-width:280px;font-size:13.5px}
+/* 能力のゲージ */
+.gsts{display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;margin-top:7px}
+.gstr{display:grid;grid-template-columns:58px 1fr 38px;align-items:center;gap:8px}
+.gstr .k{font-size:12.5px;font-weight:800;color:#6a5a48;letter-spacing:.04em;white-space:nowrap}
+.gstr .b{height:12px;border-radius:7px;background:#ece2cc;border:1.5px solid #c9b183;
+  overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.12)}
+.gstr .b i{display:block;height:100%;border-radius:6px}
+.gstr .v{text-align:right;font-size:13px;font-weight:800;color:#4a4030}
+/* せまい画面（スマホ横）では、ぜんぶが1画面に収まるように詰める */
+body.mb .pfport{width:104px}
+body.mb .pfmain{min-width:210px;font-size:12px}
+body.mb .pfgrid{gap:0 12px}
+body.mb .pfr,body.mb .pfr2{font-size:11.5px}
+body.mb .pfr span,body.mb .pfr2 span{min-width:64px}
+body.mb .pfnote{margin-top:5px;padding:4px 9px;font-size:11.5px;line-height:1.6}
+body.mb .pfttl{margin-top:5px;font-size:12px;padding-bottom:2px}
+body.mb .gsts{grid-template-columns:repeat(3,1fr);gap:1px 12px;margin-top:4px}
+body.mb .gstr{grid-template-columns:46px 1fr 32px;gap:5px}
+body.mb .gstr .k{font-size:11.5px}
+body.mb .gstr .b{height:9px}
+body.mb .gstr .v{font-size:11.5px}
+/* ゲームパッドのカーソル。いま選ばれているものを囲む */
+.gpf{position:relative;outline:3px solid #ffd34d !important;outline-offset:2px;
+  box-shadow:0 0 0 3px rgba(255,150,60,.45), 0 0 14px rgba(255,190,80,.85) !important;
+  border-radius:8px;z-index:20}
+#vnChoices .btn.gpf,#vnBar .sb.gpf{border-radius:4px}
+
+.hearts{color:#ff5d8f;letter-spacing:.5px;white-space:nowrap}
+.hearts i{color:#d9cfc0;font-style:normal}
+
+/* ---------- タイトル / エンディング ---------- */
+/* ---------- ノベルゲーム画面 ---------- */
+#vn{position:absolute;inset:0;display:none;overflow:hidden;z-index:5}
+/* 「自室のまま話す」場面（電話・おでかけに誘うところ）。
+   背景を入れないので、うしろのコマンド画面（#room）がそのまま見えます。
+   話のじゃまになるアイコンとステータスだけ隠します。日付は出したままです。 */
+#stage.roomvn .icons,#stage.roomvn .status{display:none}
+/* 部屋をすこし暗くする膜。文字やボタンが読みやすくなります。
+   ★暗さを変えたいときは、この 0.30 の数字だけ動かしてください（0で暗くしない） */
+#vnBg .bgl.roomveil{background:rgba(24,14,26,.30)}
+/* 背景。切りかわるときは、新しい絵を上に重ねてじわっと不透明にします
+   （長さはオプションの「背景の切りかえ」。game.js の vnBGset） */
+#vnBg{position:absolute;inset:0;z-index:0;overflow:hidden}
+#vnBg .bgl{position:absolute;inset:0}
+#vnBg svg{width:100%;height:100%;display:block}
+#vnChar{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:1;
+  width:400px;height:627px;display:flex;align-items:flex-end;justify-content:center;
+  filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));transition:opacity .25s}
+#vnChar svg{width:100%;height:100%;display:block}
+/* ---- 絵を入れかえるときの「幽霊」----
+   立ち絵や顔の絵をべつのものにさしかえるとき、古い絵をこの中に入れて
+   新しい絵の上に重ね、うすくしてから捨てます（じわっと入れかわって見えます）。
+   ★ 重ねているだけなので、中の絵の見た目の指定（CSS）はいままでどおり効きます。
+   ★ 新しい絵は、ふつうに置いたまま（ここに入れるのは古いほうだけ）。
+     そうしないと、絵の大きさや位置の計算が変わってしまいます。 */
+#vnChar .ghost,#vnFaceWin .ghost{position:absolute;left:0;top:0;
+  width:100%;height:100%;pointer-events:none;opacity:1}
+#vnFaceWin .ghost{display:flex;align-items:flex-end;justify-content:center}
+/* ---- 差しかえ用の立ち絵（base / outfit / face / front を重ねる） ---- */
+.chara{position:relative;width:100%;height:100%}
+.chara>img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;object-position:bottom center;display:block}
+/* 顔だけ切り取るとき（セーブ枠や「くわしく」のアイコン）。
+   大きさと位置は game.js の charaArt() が % で入れます */
+.chara.crop{overflow:hidden}
+.chara.crop .in{position:absolute;top:0}
+.chara.crop .in>img{position:absolute;top:0;left:0;width:100%;height:auto;
+  object-fit:fill;object-position:center}
+.chara.crop .in>img:first-child{position:relative}  /* 1枚目が高さを決める */
+/* ---- 差しかえ用の背景 ---- */
+#vnBg .bgimg{width:100%;height:100%;object-fit:cover;display:block}
+#vnStamp{position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);display:none;text-align:center;z-index:6;pointer-events:none}
+#vnStamp.show{display:block;animation:pop .42s cubic-bezier(.2,1.7,.4,1) forwards}
+#vnStamp svg{display:block;margin:0 auto;width:238px;height:238px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.45))}
+#vnStamp .lb{margin-top:4px;font-size:27px;font-weight:900;letter-spacing:.12em;display:inline-block;
+  background:rgba(32,20,38,.78);border:2px solid rgba(255,255,255,.55);border-radius:999px;padding:2px 20px 4px;
+  text-shadow:0 2px 6px rgba(0,0,0,.6)}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(2.7) rotate(-18deg);opacity:0}
+  55%{opacity:1}100%{transform:translate(-50%,-50%) scale(1) rotate(0deg);opacity:1}}
+@keyframes blink2{50%{opacity:.15}}
+/* 部屋画面のメッセージ窓（こちらは今までどおり） */
+#msg.waiting{cursor:pointer}
+#msg.waiting::after{content:"▼";position:absolute;right:16px;bottom:8px;
+  font-size:17px;color:#a24fc4;animation:blink2 1s steps(2,start) infinite}
+/* ===== メッセージウィンドウ（MessageFrame vol.28 の画像を使用） ===== */
+#vnWin{position:absolute;left:var(--vnwl,8px);right:8px;bottom:var(--vnwb,12px);aspect-ratio:var(--vnar,960/218);height:auto;z-index:3;
+  background:no-repeat center/100% 100%;background-image:var(--mf);
+  border:0;border-radius:0;box-shadow:none;padding:0;color:#2a2630;
+  filter:drop-shadow(0 6px 16px rgba(0,0,0,.35))}
+#vnWin.hide{display:none}
+#vnName{position:absolute;left:2.4%;top:5%;width:29%;height:27%;
+  display:none;align-items:center;padding:0 1.2%;
+  background:none;border:0;box-shadow:none;border-radius:0;
+  color:#fff;font-weight:800;font-size:var(--vnnfs,20px);letter-spacing:.06em;
+  text-shadow:0 2px 4px rgba(0,0,0,.45);white-space:nowrap;overflow:hidden}
+#vnName.on{display:flex}
+/* 名前のプレート（assets/ui/ui_nameplate.png があるとき）。
+   枠の左上にのせます。位置と大きさは assets/config.js の VN_UI（nameW / nameX / nameY）。
+   ※ 幅は「絵の横はば」で、高さは絵の形なりに決まります（--vnnar は game.js が入れます）*/
+/* 枠の絵だけを、すこし透かす（うしろの立ち絵が見えるように）。
+   濃さは assets/config.js の VN_UI の panelAlpha（1で透けない）。
+   文字は透かさないので、絵だけ別の層にしています。 */
+body.vnart #vnWin{background:none;filter:none}
+body.vnart #vnWin::before{content:"";position:absolute;inset:0;z-index:0;
+  background:var(--mf) no-repeat center/100% 100%;opacity:var(--vnalpha,.88);
+  filter:drop-shadow(0 6px 16px rgba(0,0,0,.28))}
+body.vnart #vnBody,body.vnart #vnName,body.vnart #vnClose,body.vnart #vnDrop{z-index:1}
+/* 閉じる（×）。assets/ui/ui_btn_close_normal.png を置くとその絵になります */
+body.vnart #vnClose{width:auto;height:var(--vnxh,26%);aspect-ratio:1;right:1.3%;top:11%}
+
+body.vnart #vnName{left:var(--vnnx,1.3%);top:auto;bottom:100%;
+  width:var(--vnnw,30.5%);height:auto;aspect-ratio:var(--vnnar,592/104);
+  transform:translateY(var(--vnny,24.5%));padding:0;
+  background:var(--vnnp,none) no-repeat center/100% 100%;
+  color:#fff;text-shadow:0 2px 5px rgba(70,50,90,.5)}
+body.vnart #vnName .t{position:absolute;left:var(--vnntx,15.5%);top:50%;
+  transform:translateY(-52%);white-space:nowrap}
+/* 本文の入れものは「ちょうど3行ぶん」の高さ（--vnbh）で、帯のまんなか（--vnbtop）。
+   高さと位置は game.js の fit() が計算します。
+   line-height を変えたら fit() の 1.45 も同じ数字に直してください。 */
+/* 写真枠がメッセージ枠の左はしに重なるとき（body.photo）は、重なったぶん
+   （--vnclr。fit() が計算します）だけ本文と名前プレートを右へずらします。
+   こうしないと、文字が写真の下にかくれます。 */
+body.photo #vnBody,body.photoin #vnBody{left:calc(var(--vnbl,4.6%) + var(--vnclr,0px))}
+body.vnart.photo #vnName,body.vnart.photoin #vnName{left:calc(var(--vnnx,1.3%) + var(--vnclr,0px))}
+#vnBody{position:absolute;left:var(--vnbl,4.6%);right:var(--vnbr,6.4%);
+  top:var(--vnbtop,36%);height:var(--vnbh,auto);bottom:auto;
+  font-size:var(--vnfs,18px);line-height:1.45;max-height:none;overflow:hidden;
+  color:#2a2630;text-shadow:none}
+#vnBody p{margin:0}
+#vnBody .sp{color:#c2306a;font-weight:800}
+#vnBody .up{color:#1f7a44;font-weight:800}
+#vnBody .dn{color:#c0392b;font-weight:800}
+#vnBody .ev{color:#b06a00;font-weight:800}
+#vnBody .sys{color:#7a7080}
+#vnBody::-webkit-scrollbar{width:6px}
+#vnBody::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:3px}
+/* 閉じる（×） */
+#vnClose{position:absolute;right:1.2%;top:14%;width:44px;height:39px;cursor:pointer;
+  background:no-repeat center/100% 100%;background-image:var(--x1)}
+#vnClose:hover{background-image:var(--x2)}
+/* 「▼」のかわりに、枠の右下でしずくが点滅 */
+#vnWin.waiting::after{content:"▼";position:absolute;right:4.6%;bottom:3%;
+  font-size:calc(var(--vnnfs,20px) * 0.6);color:#128eae;animation:blink2 1s steps(2,start) infinite;text-shadow:none}
+#vnWin.waiting{cursor:pointer}
+
+/* ===== 選択肢（画面中央に浮かせる） ===== */
+#vnChoices{position:absolute;left:0;right:0;top:26%;z-index:7;
+  display:flex;flex-direction:column;align-items:center;gap:9px;pointer-events:none}
+#vnChoices:empty{display:none}
+/* 右クリックでウィンドウを消したとき、メッセージ枠や顔と**同じ瞬間に**消えるよう、
+   ほかと同じ .hide（display:none）を使います。
+   visibility にすると、下のボタンの transition のぶんだけ遅れて消えます。 */
+#vnChoices.hide{display:none}
+#vnChoices .btn{pointer-events:auto;width:560px;max-width:88%;height:53px;
+  background:no-repeat center/100% 100%;background-image:var(--cb);
+  border:0;border-radius:0;box-shadow:none;padding:0 26px;
+  color:#2a2630;font-weight:700;font-size:var(--vncfs,17px);line-height:1.15;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.3));transition:.1s}
+#vnChoices .btn:hover{background-image:var(--cb2);transform:none;filter:drop-shadow(0 3px 9px rgba(0,0,0,.4))}
+#vnChoices .btn:active{transform:translateY(1px)}
+/* 選択肢が5つ以上のときは横に並べる（デートの行き先など） */
+#vnChoices.many2,#vnChoices.many3{
+  flex-direction:row;flex-wrap:wrap;justify-content:center;align-content:flex-start;
+  top:11%;max-height:64%;padding:0 3%;gap:8px}
+#vnChoices.many2 .btn{width:46%;max-width:520px}
+#vnChoices.many3 .btn{width:31%;max-width:360px;padding:0 12px}
+body.mb #vnChoices.many2,body.mb #vnChoices.many3{top:4%;max-height:58%;gap:5px;padding:0 2%}
+body.mb #vnChoices.many2 .btn{width:46%;height:36px}
+body.mb #vnChoices.many3 .btn{width:31%;height:34px;padding:0 6px}
+
+/* ===== 小さなボタン（SAVE / LOAD / AUTO …）＝ メッセージ枠の右上 =====
+   場所は fit() が計算した --vnbarb（メッセージ枠のすぐ上）で決まります。 */
+#vnBar{position:absolute;left:auto;right:10px;bottom:var(--vnbarb,260px);height:30px;z-index:8;
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;pointer-events:none}
+#vnBar.hide{display:none}
+#vnBar .sb{width:70px;height:30px;cursor:pointer;pointer-events:auto;flex:0 0 auto;
+  background:no-repeat center/100% 100%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+#vnBar .sb.on,#vnBar .sb:hover{background-image:var(--h)!important}
+
+/* ---------- クイックメニュー（画面の右上・新しい素材のとき）----------
+   assets/ui/ui_btn_save_normal.png などを置くと、この並びになります。
+   大きさと位置は assets/config.js の VN_UI（qmSize / qmGap / qmRight / qmTop）。 */
+#vnBar.qm{left:auto;right:var(--qmr,19px);top:var(--qmt,11px);bottom:auto;
+  height:auto;gap:var(--qmg,9px);filter:none}
+/* ボタンのうしろに敷く帯（assets/ui/ui_quickmenu_bar.png があるとき）。
+   右のはしまでのび、左はボタンより --qmbarl だけ外へ出ます。
+   置いていなければ、なにも描かれません。 */
+#vnBar.qm::before{content:"";position:absolute;z-index:-1;pointer-events:none;
+  left:calc(-1 * var(--qmbarl,60px));right:calc(-1 * var(--qmr,19px));
+  top:50%;transform:translateY(-50%);height:var(--qmbarh,57px);
+  background:var(--qmbar,none) no-repeat right center/100% 100%}
+#vnBar.qm .sb{width:var(--qmb,69px);height:var(--qmb,69px);
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.25))}
+/* まだ絵を置いていないボタン。場所だけ空けて、仮のひし形で出しておきます
+   （assets/ui/ に絵を足せば、そのまま入れかわります） */
+#vnBar.qm .sb.ph{position:relative;background:none;filter:none;
+  display:flex;align-items:center;justify-content:center}
+#vnBar.qm .sb.ph::before{content:"";position:absolute;left:50%;top:50%;
+  width:71%;height:71%;transform:translate(-50%,-50%) rotate(45deg);
+  background:rgba(255,255,255,.72);border:1.5px solid rgba(120,90,140,.5);
+  border-radius:8%;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+#vnBar.qm .sb.ph b{position:relative;font-size:calc(var(--qmb,69px)*.16);
+  font-weight:700;color:#6a5480;letter-spacing:.04em}
+#vnBar.qm .sb.ph:hover::before{background:rgba(240,225,246,.92)}
+/* ★ 絵をまだ置いていないボタン（仮のひし形）にも「入っている」見た目を付けます。
+   これが無いと、AUTO や SKIP を押しても見た目が変わらず、
+   効いているのかどうか分からなくなります。 */
+#vnBar.qm .sb.ph.on::before{background:rgba(255,150,196,.95);
+  border-color:rgba(190,70,130,.75)}
+#vnBar.qm .sb.ph.on b{color:#fff}
+
+#title{position:absolute;inset:0;z-index:12;display:none;overflow:hidden}
+#titleBg{position:absolute;inset:0}
+#titleBg svg{width:100%;height:100%;display:block}
+#titleBg .bgimg{width:100%;height:100%;object-fit:cover;display:block}
+/* タイトル背景の上にかける「うすい膜」。
+   ふだんは **かけません**（背景の絵の色を、そのまま出すため）。
+   絵が明るくて文字が読みにくいときだけ、assets/config.js の UI_RULE の
+   veil（濃さ 0〜1）と veilColor（色）で足せます。中身は game.js が入れます。 */
+.tveil{position:absolute;inset:0}
+/* ロゴとメニューの入れもの。
+   左寄せ／まんなか／右寄せと、はしからの余白・上下の位置は
+   assets/config.js の UI_RULE（menuAlign / menuX / menuY）で決まります。
+   game.js の applyTitleMenuPos() が、下の変数に入れています。
+   ％は画面（#stage）の大きさに対する割合です。 */
+.tinner{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:var(--tali,flex-start);justify-content:center;gap:8px;
+  padding:14px var(--tpadr,1.5%) 44px var(--tpadl,8.5%);
+  transform:translateY(var(--tmy,0%))}
+/* 下の一行のぶんだけ、あらかじめ場所を空けておく（ボタンと重ならないように） */
+body.mb .tinner{padding-bottom:30px}
+.tlogo{font-size:52px;font-weight:900;letter-spacing:.07em;color:#fff;
+  margin-left:var(--tlogox,0%);
+  text-shadow:3px 3px 0 #f06a9b,6px 6px 0 rgba(120,40,70,.22),0 0 26px rgba(255,255,255,.9)}
+/* ボタンどうしのすき間は margin で入れます（gap とちがって「マイナス」にできる）。
+   絵のまわりに透明な余白があるボタンでは、詰めたいことがあるためです。 */
+.tmenu{display:flex;flex-direction:column;gap:0;margin-top:var(--tmgap,30px)}
+.tmenu .tbtn+.tbtn{margin-top:9px}
+.tmenu .tbtn.img+.tbtn.img{margin-top:var(--tbgap,9px)}
+.tbtn{width:280px;font-size:18px;font-weight:800;padding:11px 0;border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,236,244,.96));
+  border:3px solid #f090b4;color:#b4285e;box-shadow:0 4px 0 rgba(200,90,130,.45),0 8px 20px rgba(0,0,0,.16);
+  cursor:pointer;font-family:inherit;transition:.13s;letter-spacing:.08em}
+.tbtn .tg{margin-right:8px;font-size:16px}
+.tbtn:hover{transform:translateY(-2px);background:linear-gradient(180deg,#fff,#ffe0ee)}
+.tbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(200,90,130,.45)}
+.tbtn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* ---- タイトルを画像に差しかえたとき（assets/ui/） ----
+   大きさは game.js の fit() が --tlogow / --tbtnw に入れています。
+   絵の縦横比はそのまま保ち、画面が低いときだけ高さで頭打ちにします。 */
+/* 絵の「よこ÷たて」（--tlogoar / --tbtnar）は、絵を読みこんだときに game.js が入れます。
+   よこはばを「決めたはば」と「高さの上限×よこたて比」の小さいほうにすることで、
+   入れものの形が絵とぴったり同じになります。
+   （これをしないと、上下にすき間ができて、中のアイコンや文字の位置がずれます） */
+.tlogo.img{font-size:0;text-shadow:none;letter-spacing:0;line-height:0;max-width:100%}
+.tlogo.img img{width:min(var(--tlogow,744px), calc(var(--tlogoh,230px) * var(--tlogoar,3.2)));
+  max-width:100%;height:auto;display:block;filter:drop-shadow(0 6px 16px rgba(0,0,0,.28))}
+.tbtn.img{width:min(var(--tbtnw,276px), calc(var(--tbtnh,78px) * var(--tbtnar,3.6)));
+  max-width:100%;padding:0;border:0;border-radius:0;
+  background:none;box-shadow:none;position:relative;line-height:0;font-size:0;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.17))}
+.tbtn.img .u0,.tbtn.img .u1{width:100%;height:auto;display:block}
+.tbtn.img .u1{position:absolute;inset:0;opacity:0;transition:opacity .13s}
+.tbtn.img:hover .u1,.tbtn.img.gpf .u1{opacity:1}
+.tbtn.img:hover{transform:translateY(-2px);background:none}
+.tbtn.img:active{transform:translateY(2px);box-shadow:none}
+/* セーブが無いときの「つづきから」。色を落として少し薄くするだけにして、
+   何のボタンかは読めるようにしておく（真っ白にすると文字が消えてしまう） */
+.tbtn.img:disabled{transform:none;filter:saturate(.25) opacity(.78) drop-shadow(0 2px 5px rgba(0,0,0,.14))}
+
+/* ---- 3枚重ねのボタン（土台＋アイコン＋文字）----------------------------
+   アイコンと文字を、土台の上のどこに置くかは
+   assets/config.js の UI_RULE（btnIconX など）で決まります。
+   ％は土台の絵の大きさに対する割合で、位置は「その部品の中心」です。
+   高さだけ指定して、よこはばは絵の形なりに伸ばします（文字の大きさがそろいます）。 */
+.tbtn.img .pi,.tbtn.img .pl,.tbtn.img .pe{position:absolute;width:auto;max-width:none;
+  display:block;pointer-events:none}
+.tbtn.img .pi{left:var(--bix,10.5%);top:50%;transform:translate(-50%,-50%);height:var(--bih,52%)}
+.tbtn.img .pl{left:var(--blx,53%);  top:var(--bly,42%);transform:translate(-50%,-50%);height:var(--blh,34%)}
+.tbtn.img .pe{left:var(--blx,53%);  top:var(--bey,76%);transform:translate(-50%,-50%);height:var(--beh,13%)}
+
+/* 画面のいちばん下の一行。ロゴとおなじ側にそろえます（applyTitleMenuPos が位置を入れます） */
+.tfoot{position:absolute;bottom:2.2%;left:var(--tfootl,8.5%);transform:translateX(var(--tfootx,0));
+  font-size:11.5px;color:#7a5068;background:rgba(255,255,255,.55);
+  border-radius:999px;padding:3px 16px;backdrop-filter:blur(2px);white-space:nowrap;max-width:96%}
+/* 自動再生をブラウザに止められているあいだだけ、タイトルの上に出る小さな案内。
+   （どこかを1回クリック／タップ／キー入力すると音が鳴りだして、これは消えます） */
+.tsnd{position:absolute;left:50%;top:9px;transform:translateX(-50%);display:none;z-index:5;
+  font-size:11px;font-weight:800;color:#7a5068;background:rgba(255,255,255,.8);
+  border:1px solid rgba(200,140,170,.5);border-radius:999px;padding:3px 13px;
+  white-space:nowrap;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.tsnd.on{display:block}
+.tlogo2{font-size:24px;font-weight:900;color:#b4285e;letter-spacing:.06em;margin-bottom:2px}
+#setup{position:absolute;inset:0;z-index:11;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;background:linear-gradient(160deg,#ffd9e6,#ffeccd 45%,#d8ecff);color:#4a3a44;text-align:center;padding:12px}
+body.mb .tlogo{font-size:30px}
+body.mb .tmenu{margin-top:var(--tmgap,14px)}
+body.mb .tbtn{width:230px;font-size:15px;padding:7px 0;border-width:2px}
+/* 画像に差しかえたときは、スマホでも --tlogow / --tbtnw の大きさを使う */
+body.mb .tlogo.img{font-size:0}
+body.mb .tlogo.img img{width:min(var(--tlogow,420px), calc(var(--tlogoh,117px) * var(--tlogoar,3.2)))}
+body.mb .tbtn.img{width:min(var(--tbtnw,186px), calc(var(--tbtnh,47px) * var(--tbtnar,3.6)));padding:0;border-width:0}
+
+body.mb .tfoot{font-size:9.5px;padding:2px 11px}
+body.mb .tsnd{font-size:9.5px;padding:2px 10px;top:5px}
+body.mb #setup{padding:6px 10px 14px;gap:5px;justify-content:flex-start;overflow-y:auto}
+body.mb .tlogo2{font-size:17px}
+/* とくにせまい画面では、はじめから画面が1画面に収まるように詰める */
+body.sh #setup{padding:3px 8px 8px;gap:2px}
+body.sh .tlogo2{font-size:14px;margin-bottom:0}
+body.sh .setup{padding:2px 8px;gap:0}
+body.sh .srow{gap:4px}
+body.sh .note2{font-size:8.5px;line-height:1.32}
+body.sh .stst{font-size:8.5px;margin-top:1px}
+body.sh .zod{font-size:9px;padding:0 6px}
+body.sh .mbhint{display:none}
+body.sh #setup .btn{font-size:12px !important;padding:6px 16px !important}
+#ending{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;background:linear-gradient(160deg,#ffd9e6,#ffeccd 45%,#d8ecff);color:#4a3a44;text-align:center;padding:12px}
+#ending{display:none;overflow:auto}
+.logo{font-size:40px;font-weight:900;letter-spacing:.06em;color:#fff;
+  text-shadow:3px 3px 0 #f06a9b,6px 6px 0 rgba(0,0,0,.12)}
+.tag{font-size:15px;font-weight:800;color:#8a6076}
+.rules{background:rgba(255,255,255,.8);border:2px solid #f0b6c9;border-radius:12px;padding:9px 16px;
+  font-size:12px;line-height:1.7;max-width:760px;text-align:left;color:#5a4650}
+.setup{background:rgba(255,255,255,.85);border:2px solid #f0b6c9;border-radius:12px;padding:8px 16px;
+  max-width:760px;width:100%;display:flex;flex-direction:column;gap:4px}
+.srow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sl{width:56px;font-size:13px;font-weight:800;color:#8a6076;flex:0 0 auto;text-align:right}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{background:#fff;border:2px solid #e6c9d6;border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer;
+  font-weight:700;color:#7a6070;transition:.12s;user-select:none}
+.chip:hover{border-color:#f48fb1}
+.chip.on{background:linear-gradient(180deg,#fb9cc4,#e5619b);border-color:#fff;color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.nmhint{font-size:10.5px;color:#a08090;letter-spacing:.04em}
+.note2{font-size:11.5px;color:#8a6076;line-height:1.6;text-align:left;flex:1;min-width:0}
+/* 誕生日のとなりに出る星座 */
+.zod{font-size:12.5px;font-weight:800;color:#c2306a;background:#fff2f7;
+  border:1.5px solid #f4d3e0;border-radius:999px;padding:1px 10px;white-space:nowrap}
+/* はじまりのステータス */
+.stst{margin-top:3px;font-size:11.5px;color:#6b5560}
+.stst b{color:#c2306a}
+.stst .hi{color:#1f7a44;font-weight:800}
+select{font-family:inherit;font-size:14px;padding:5px 8px;border:2px solid #e08aa8;border-radius:8px;background:#fff;color:#4a3a44}
+input[type=text]{font-family:inherit;font-size:16px;padding:9px 12px;border:2px solid #e08aa8;border-radius:10px;
+  width:120px;text-align:center;background:#fff;color:#4a3a44}
+
+
+/* ===== タイトル画面のあいだは、ゲーム画面の下じきを隠す ===== */
+body.ttlscr #room,body.ttlscr #icons,body.ttlscr #dateBar,body.ttlscr #status{display:none!important}
+
+/* ===== 日付の帯：つぎのイベント ===== */
+.dateBar .nx{color:#ffe6a0;font-weight:800}
+.dateBar .nx i{font-style:normal;color:#ffd0dd;font-weight:700}
+
+/* ===== テストの成績表（掲示板） ===== */
+#board{position:absolute;left:50%;top:1.6%;transform:translateX(-50%);z-index:7;
+  width:min(94%,860px);max-height:60%;overflow:hidden;pointer-events:none;
+  background:linear-gradient(180deg,#fffdf4,#fff6e4);
+  border:2px solid #d8c39a;border-radius:10px;
+  box-shadow:0 10px 26px rgba(0,0,0,.42), inset 0 0 0 3px rgba(255,255,255,.7);
+  padding:calc(var(--vnfs,22px) * .34) calc(var(--vnfs,22px) * .5);
+  font-family:var(--ff);color:#5a4432;
+  animation:bdIn .28s ease-out}
+@keyframes bdIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}
+                to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#board .bdT{text-align:center;font-weight:900;letter-spacing:.08em;
+  font-size:calc(var(--vnfs,22px) * .66 * var(--bdz,1));color:#a8603c;
+  border-bottom:2px dashed #ddc9a4;padding-bottom:.2em;margin-bottom:.25em}
+#board .bdTbl{width:100%;border-collapse:collapse;
+  font-size:calc(var(--vnfs,22px) * .55 * var(--bdz,1));line-height:1.34}
+#board .bdTbl th{background:#f0e2c6;color:#7a5a38;font-weight:800;
+  padding:.08em .3em;border:1px solid #e0cfae;white-space:nowrap}
+#board .bdTbl td{padding:.06em .3em;border:1px solid #e8dcc2;text-align:center;
+  font-weight:700;font-variant-numeric:tabular-nums}
+#board .bdTbl td.nm,#board .bdTbl th.nm{text-align:left;white-space:nowrap}
+#board .bdTbl td.rk{color:#b4703c;white-space:nowrap}
+#board .bdTbl td.rk small{font-size:.75em;font-weight:700;margin-left:.05em}
+#board .bdTbl td.to,#board .bdTbl th.to{background:#faf1dd;color:#8a5a30}
+#board .bdTbl td.hi{color:#c23b6a}
+#board .bdTbl td.lo{color:#5f86c0}
+#board .bdTbl tr.me td{background:#fff0d0;color:#8a3c58}
+#board .bdTbl tr.me td.nm{font-weight:900}
+#board .bdN{text-align:center;margin-top:.25em;color:#7a6046;
+  font-size:calc(var(--vnfs,22px) * .5 * var(--bdz,1))}
+#board .bdN b{color:#c23b6a;font-size:1.12em}
+
+
+/* ===== 校内評価の肩書 ===== */
+.lvl .ttlnm{flex:1 1 auto;min-width:0;color:#9a4a2c;font-weight:900;letter-spacing:.06em;
+  font-size:.98em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.lvl .lv1{flex:0 0 auto}
+.lvl .stars{flex:0 0 auto;font-size:17px}
+body.mb .lvl .stars{font-size:13px}
+body.mb .lvl .ttlnm{font-size:.95em}
+
+/* ===== おまけ：称号の一覧 ===== */
+.ttgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.ttc{display:flex;gap:5px;align-items:center;border:2px solid #e8d9c4;border-radius:8px;
+  padding:3px 6px;background:#fff;cursor:pointer;transition:.12s;outline:none}
+.ttc:hover,.ttc:focus,.ttc.gpf{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}
+.ttc.lock{background:#f6f2ee;border-color:#e4ddd4}
+.ttc.lock .ttn{color:#a89e94}
+.ttc.now{border-color:#e8b23a;background:#fffbe9;box-shadow:0 0 0 2px rgba(232,178,58,.3)}
+.ttc .ttm{font-size:14px;flex:0 0 auto;line-height:1}
+.ttc .ttn{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:800;color:#5a4650;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.mb .ttgrid{grid-template-columns:repeat(2,1fr)}
+body.mb .ttc .ttn{font-size:11px}
+
+/* 下の帯（取りかたの説明） */
+.ttbar{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  background:#fdf4f8;border:2px solid #f0d8e4;border-radius:8px;padding:4px 9px;
+  font-size:12.5px;color:#5a4650}
+.ttbar .ttbh{color:#a08090;font-weight:700}
+.ttbar .ttbn{font-weight:900;color:#c2306a;white-space:nowrap}
+.ttbar .ttbc{font-size:10.5px;font-weight:800;color:#fff;background:#c08aa4;
+  border-radius:6px;padding:1px 6px;white-space:nowrap}
+.ttbar .ttbd{flex:1 1 auto;min-width:0;font-weight:700}
+.ttbar .ttbs{font-size:11px;font-weight:800;color:#a89e94;white-space:nowrap;
+  border:1px solid #ddd2c8;border-radius:6px;padding:0 6px}
+.ttbar .ttbs.got{color:#2f7d4f;border-color:#9ccdae;background:#eefaf2}
+body.mb .ttbar{font-size:11px;padding:3px 7px}
+body.mb .ttbar .ttbc{font-size:9px}
+body.mb .ttbar .ttbs{font-size:9.5px}
+
+/* 分類の見出し（横いっぱい） */
+.ttgrid .tth2{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;
+  font-size:12px;font-weight:900;color:#c2306a;letter-spacing:.1em;
+  border-bottom:2px solid #f0d8e4;padding:6px 2px 2px;margin-top:2px}
+.ttgrid .tth2:first-child{margin-top:0}
+.ttgrid .tth2 i{font-style:normal;font-size:10.5px;font-weight:800;color:#a08090;margin-left:auto}
+body.mb .ttgrid .tth2{font-size:10.5px;padding:4px 2px 1px}
+
+
+/* ===== ストレスの色分け（0〜39=青／40〜79=黄／80〜100=赤） ===== */
+.pr.st.s1 b{color:#2f6fd0}
+.pr.st.s2 b{color:#d9a41f}
+.pr.st.s3 b{color:#e0342f;animation:blink 1s steps(2) infinite}
+
+
+/* ===== デバッグ画面の追加ぶん ===== */
+.chip.sm{font-size:11.5px;padding:2px 8px}
+.dbgnote{font-size:11.5px;color:#8a7a68;align-self:center}
+#dbgBox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;
+  width:min(90%,700px);max-height:80%;display:none;flex-direction:column;overflow:hidden;
+  background:#fffdf6;border:3px solid #b99a63;border-radius:12px;
+  box-shadow:0 10px 34px rgba(0,0,0,.45);font-family:var(--ff);color:#4a4030}
+#dbgBox .dbgbT{background:linear-gradient(180deg,#c8ac72,#a98d52);color:#fff;font-weight:800;
+  font-size:14px;padding:5px 12px;display:flex;align-items:center;justify-content:space-between}
+#dbgBox .dbgbX{cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
+#dbgBox .dbgbB{padding:8px 14px 12px;overflow:auto;font-size:12.5px;line-height:1.5;max-height:70vh}
+
+/* 動きを減らす設定にしている人には、揺らさず静かに浮かせるだけにする */
+@media (prefers-reduced-motion: reduce){
+  .ic:hover,.ic.gpf{animation:none;transform:translateY(-3px)}
+}
+
+/* ===== 顔画像（メッセージ枠の左どなり） =====
+   枠線もふちどりも付けません。絵をそのまま置きます。
+   場所と大きさは fit() が計算した --fww / --fwh / --vnwl で決まります。
+   （顔が出ていないときも場所は空けてあるので、文字の大きさは変わりません） */
+#vnFaceWin{position:absolute;left:8px;bottom:0;
+  width:var(--fww,200px);height:var(--fwh,300px);
+  display:none;align-items:flex-end;justify-content:center;
+  z-index:4;pointer-events:none}
+#vnFaceWin.on{display:flex}
+#vnFaceWin.hide{display:none}
+#vnFaceWin img{max-width:100%;max-height:100%;width:auto;height:auto;
+  object-fit:contain;display:block;filter:drop-shadow(0 3px 8px rgba(0,0,0,.32))}
+#vnFaceWin svg{width:100%;height:100%;display:block;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,.28))}
+#vnFaceWin .chara.crop{width:100%;aspect-ratio:1}
+body.mb #vnFaceWin{left:5px;bottom:0}
+
+/* ---------- 顔を「写真の枠」に入れる（assets/ui/ui_photo_frame.png）----------
+   少し傾けて、写真を置いたように見せます。
+   角度・傾ける量・写真の見せかたは assets/config.js の VN_UI で変えられます。
+     ui_photo_mask.png … 写真の窓のかたち。枠と同じ大きさ・同じ位置で作ってください
+     （置いていなければ、VN_UI の photoTop などの数字で四角く切りぬきます） */
+/* 横はばは VN_UI の photoW（画面の横に対する割合）。高さは絵の形なりなので、
+   **横はばを大きくすると、そのぶん上へ伸びて**メッセージ枠の上に飛び出します。
+   右へはみ出したぶんは --vnclr になって、本文と名前プレートが右へよけます。 */
+body.photo #vnFaceWin{left:var(--px,12px);bottom:var(--pb,0);
+  width:var(--pfw,var(--fww,200px));height:auto;
+  align-items:flex-end;justify-content:center}
+body.photo #vnFaceWin .pf{position:relative;width:100%;
+  aspect-ratio:var(--pfar,402/505);flex:0 0 auto;
+  transform:rotate(var(--ptilt,-3.5deg));transform-origin:50% 85%;
+  filter:drop-shadow(0 6px 15px rgba(0,0,0,.28))}
+/* 顔の絵を入れる箱。枠より --phout ぶん**上へのばして**あります。
+   頭を出す層（.pfhead）も、この同じ大きさの箱に同じやりかたで絵を入れるので、
+   2つの絵はぜったいにずれません（ずれると首のところでちぎれて見えます）。
+   窓のかたち（mask）は、のばしたぶんだけ下にずらして、枠にぴったり合わせます。 */
+body.photo #vnFaceWin .pfimg{position:absolute;
+  left:0;right:0;bottom:0;top:calc(-1 * var(--phout,0px));overflow:hidden;
+  -webkit-mask-image:var(--pmask,none); mask-image:var(--pmask,none);
+  -webkit-mask-repeat:no-repeat;       mask-repeat:no-repeat;
+  -webkit-mask-position:0 var(--phout,0px); mask-position:0 var(--phout,0px);
+  -webkit-mask-size:100% var(--pfh,100%);   mask-size:100% var(--pfh,100%);
+  clip-path:var(--pclip,none)}
+/* 窓いっぱいに顔を入れる。顔の絵は3通りあるので、それぞれに合わせます。
+   ★「>」（じかの子）にしているのが大事です。ここを子孫にすると、
+     切り抜き（.chara.crop）の中の絵まで書きかえてしまい、顔が出なくなります。
+     ① 顔画像（bust/）…… 1枚の <img>
+     ② 立ち絵だけの子 …… 顔のあたりを切り抜いた <div class="chara crop">
+     ③ 絵がまだ無い子 …… SVGで描いた顔 */
+body.photo #vnFaceWin .pfimg>img{
+  width:100%;height:100%;max-width:none;max-height:none;display:block;
+  object-fit:cover;object-position:var(--pfitx,50%) var(--pfity,14%);filter:none}
+/* 立ち絵の切り抜きとSVGは、頭を出さないので**枠の高さのまま**置きます
+   （箱が上へのびたぶん --phout だけ下げる） */
+body.photo #vnFaceWin .pfimg>svg{position:absolute;left:0;right:0;
+  top:var(--phout,0px);height:var(--pfh,100%);width:100%;
+  max-width:none;max-height:none;display:block;filter:none}
+body.photo #vnFaceWin .pfimg>.chara.crop{position:absolute;left:50%;
+  top:var(--phout,0px);transform:translateX(-50%);
+  height:var(--pfh,100%);width:auto;aspect-ratio:1;max-width:none}
+body.photo #vnFaceWin .pfframe{position:absolute;inset:0;pointer-events:none;
+  background:var(--pframe,none) no-repeat center/100% 100%}
+/* 頭が写真から飛び出して見えるようにする層。
+   「絵の上のはし（--piy）」から「窓の上のふち（--phcut）」までを、
+   枠の絵の**上に**もう一度描きます。bust/ の絵は背景が透明なので、
+   白いふちや外の景色の上に、髪だけがのって見えます。
+   ★ 出したくないときは assets/config.js の VN_UI.photoHead を false に */
+body.photo #vnFaceWin .pfhead{position:absolute;
+  left:var(--phl,7%);right:var(--phr,7%);
+  top:calc(-1 * var(--phout,0px));height:var(--phcut,0px);
+  overflow:hidden;pointer-events:none}
+/* 中の絵は .pfimg の中の絵と**まったく同じ箱・同じ入れかた**。
+   帯が窓のはばぶん右へ寄っているので、そのぶんだけ左へ戻します。 */
+body.photo #vnFaceWin .pfhead>img{position:absolute;
+  left:calc(-1 * var(--phl,0px));top:0;
+  width:var(--pfw,100%);height:calc(var(--pfh,100%) + var(--phout,0px));
+  max-width:none;max-height:none;display:block;
+  object-fit:cover;object-position:var(--pfitx,50%) var(--pfity,14%);filter:none}
+/* 写真の右下にのせる、手書きふうの名前（assets/ui/ui_photo_name_<キャラid>.png）。
+   枠といっしょに傾きます。大きさと位置は VN_UI の photoName* 。
+   ★「>」（じかの子）にしているのは、#vnFaceWin img の指定に負けないためです */
+/* ---------- 写真の枠を「絵のほうに描きこむ」作り（VN_UI.photoInImage）----------
+   assets/chara/<名前>/bust/<表情>.png に、白い枠・傾き・頭のはみ出しまで
+   ぜんぶ描きこんであるとき。ゲームは切りぬきも回転もせず、そのまま置きます。
+   ★ 表情ちがいの絵は、**同じキャンバスの大きさ・同じ枠の位置**で作ってください
+     （ちがうと、表情が変わるたびに枠が動いて見えます）。 */
+/* 枠つきの絵がある子のときだけ（.solo）この置きかたにします。
+   まだ絵が無い子は、いままでどおりメッセージ枠の左どなりに顔が出ます。 */
+body.photoin #vnFaceWin.solo{left:var(--px,12px);bottom:var(--pb,0);
+  width:var(--pfw,var(--fww,200px));height:auto;
+  align-items:flex-end;justify-content:center}
+/* 傾きは**ゲーム側**でかけます（VN_UI.photoTilt）。
+   絵はまっすぐ描いておいてください。0 にすればまっすぐのまま出ます。 */
+body.photoin #vnFaceWin.solo .pf{position:relative;width:100%;flex:0 0 auto;
+  transform:rotate(var(--ptilt,0deg));transform-origin:50% 85%;
+  filter:var(--pshadow,drop-shadow(0 6px 15px rgba(0,0,0,.28)))}
+body.photoin #vnFaceWin.solo .pf>.pfsolo{display:block;
+  width:100%;height:auto;max-width:none;max-height:none;filter:none}
+body.photoin #vnFaceWin.solo .pf>.pfname{position:absolute;
+  right:var(--pnr,8.5%);bottom:var(--pnb,3.5%);
+  width:var(--pnw,42%);height:auto;max-width:none;max-height:none;
+  object-fit:contain;display:block;pointer-events:none;filter:none}
+
+body.photo #vnFaceWin .pf>.pfname{position:absolute;
+  right:var(--pnr,8.5%);bottom:var(--pnb,3.5%);
+  width:var(--pnw,42%);height:auto;max-width:none;max-height:none;
+  object-fit:contain;display:block;pointer-events:none;filter:none}
+
+/* ===== 画面の切りかえ（クロスフェード）=====
+   黒い幕ははさみません。背景の切りかえと同じで、
+   **上に重なっているほうの画面**だけを、うっすら ⇄ はっきり させます。
+   下の画面はずっと見えているので、すっと入れかわって見えます。
+   動かすのは game.js の fadeIn() / fadeOut()（opacity をじかに書きます）。
+   長さは オプションの「背景の切りかえ」（S.bgfade）と同じです。 */
