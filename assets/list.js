@@ -332,7 +332,7 @@ const ART_LIST = {
       "outfit": [],
       "full": {
         "": [
-          "normal.png"
+          "normal.webp"
         ]
       },
       "bust": {
