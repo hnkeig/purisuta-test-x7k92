@@ -59,6 +59,7 @@ const FILE = 'file://' + path.join(HERE, 'starmate.html');
     affEv:Object.keys(AFF_EV).map(k=>({k,n:AFF_EV[k].length,at:AFF_EV[k].map(e=>e.at)})),
     /* イベントID の台帳（イベント一覧.md のもと） */
     events:evAll().map(e=>({id:e.id,n:e.n,chara:e.chara||null,kind:e.kind,
+      sex:e.sex||null,
       when:e.when,where:e.where,needs:(e.needs||[]).slice(),auto:!!e.auto})),
     charaNames:(typeof CHARA_NAMES!=="undefined")?CHARA_NAMES:{},
     endThresh:{true:780, happy:680, friend:600},

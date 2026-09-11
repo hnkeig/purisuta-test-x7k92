@@ -15,6 +15,23 @@ function ttP(k){ return (S.p&&S.p[k])||0; }
 function ttTot(){ return TTKEYS.concat("rich").reduce((a,k)=>a+ttP(k),0); }
 function ttVals(){ return TTKEYS.map(ttP); }
 function ttGirls(){ return S.girls||[]; }
+/* いま登場しうる攻略対象の人数。
+   ★ ALLG（男女あわせて12人）ではありません。主人公の性別で入れかわる
+     「いまのキャスト」の人数です。ここを ALLG にすると、
+     「全員と◯◯」の称号が永久に取れなくなります。 */
+function ttCastList(){
+  /* ★ try でくるんでいます。1ファイル版（starmate.html）は、このファイルと
+     game.js がひとつの入れものに入るので、読みこみ中のこの時点では
+     castOfSex がまだ「作られる前」で、さわると落ちます。
+     そのときは null を返し、あとで linkCast() が呼び直します。 */
+  try{ if(typeof castOfSex==="function")return castOfSex(); }catch(e){}
+  return null;
+}
+function ttCast(){
+  const c=ttCastList();
+  if(c)return c.length;
+  return (typeof ALLG!=="undefined")?ALLG.length:6;
+}
 /* その子の間柄。まだ出会っていなければ null */
 function ttTier(id){ const g=ttGirls().find(x=>x.id===id); return g?affTier(g):null; }
 function ttIs(id,tier){ const t=ttTier(id); return t!==null && TTORD[t]>=TTORD[tier]; }
@@ -32,7 +49,7 @@ function ttCmd(k){ return ((S.rec&&S.rec.cmd)||{})[k]||0; }
 function ttProf(){ const o=S.prof||{}; let m=0; for(const k in o) if(o[k]>m)m=o[k]; return m; }
 function ttYear(){ const c=(typeof CAL!=="undefined")&&CAL[Math.min(S.t,LAST)]; return (c&&c.y)||1; }
 
-const TITLES=[
+const TITLES_BASE=[
 /* ===== 総合（ステータスの合計） 8 ================================== */
  {id:"g1",c:"総合",n:"新入生",        w:5,  d:"桜坂高校に入学する（だれでも最初から）",
   f:()=>true},
@@ -56,7 +73,7 @@ const TITLES=[
  {id:"s2",c:"学力",n:"秀才",          w:30, d:"学力が90以上",  f:()=>ttP("study")>=90},
  {id:"s3",c:"学力",n:"学年上位",      w:50, d:"学力が150以上", f:()=>ttP("study")>=150},
  {id:"s4",c:"学力",n:"主席候補",      w:70, d:"学力が220以上", f:()=>ttP("study")>=220},
- {id:"s5",c:"学力",n:"才媛の好敵手",  w:92, d:"学力が280以上", f:()=>ttP("study")>=280},
+ {id:"s5",c:"学力",n:"秀才の好敵手",  w:92, d:"学力が280以上", f:()=>ttP("study")>=280},
  {id:"s6",c:"学力",n:"桜坂の頭脳",    w:118,d:"学力が340以上", f:()=>ttP("study")>=340},
 
 /* ===== 運動 6 ======================================================= */
@@ -81,7 +98,7 @@ const TITLES=[
  {id:"c3",c:"魅力",n:"人気者",        w:50, d:"魅力が150以上", f:()=>ttP("charm")>=150},
  {id:"c4",c:"魅力",n:"視線を集める人",w:70, d:"魅力が220以上", f:()=>ttP("charm")>=220},
  {id:"c5",c:"魅力",n:"学園のアイドル",w:92, d:"魅力が280以上", f:()=>ttP("charm")>=280},
- {id:"c6",c:"魅力",n:"桜坂のプリンス",w:118,d:"魅力が340以上", f:()=>ttP("charm")>=340},
+ {id:"c6",c:"魅力",n:"桜坂の{主プリンス}",w:118,d:"魅力が340以上", f:()=>ttP("charm")>=340},
 
 /* ===== 気配り 6 ===================================================== */
  {id:"k1",c:"気配り",n:"お手伝い上手",w:15, d:"気配りが40以上",  f:()=>ttP("care")>=40},
@@ -133,7 +150,7 @@ const TITLES=[
  {id:"m12",c:"複合",n:"完璧超人", w:155,d:"リッチ度以外の6つが、すべて220以上／リッチ度400以上",
   f:()=>{const v=ttVals();return Math.min.apply(null,v)>=220&&ttP("rich")>=400;}},
 
-/* ===== 恋愛（女の子との関係） 18 =================================== */
+/* ===== 恋愛（攻略対象との関係） 18 =================================== */
  {id:"l1",c:"恋愛",n:"はじめての電話",w:8, d:"だれかに1回電話する",
   f:()=>ttRec("tel")>=1},
  {id:"l2",c:"恋愛",n:"はじめてのおでかけ",w:10,d:"だれかと1回おでかけする",
@@ -152,24 +169,15 @@ const TITLES=[
   f:()=>ttNum("friend")>=4},
  {id:"l9",c:"恋愛",n:"一途",          w:90, d:"「好き」が1人だけ／ほかの子とは全員「普通」のまま",
   f:()=>ttNum("love")===1&&ttNum("friend")===1},
- {id:"l10",c:"恋愛",n:"幼なじみの答え",w:86,d:"{{kanade}}と「好き」になる",
-  f:()=>ttIs("kanade","love")},
- {id:"l11",c:"恋愛",n:"才媛の心",     w:86, d:"{{rena}}と「好き」になる",
-  f:()=>ttIs("rena","love")},
- {id:"l12",c:"恋愛",n:"太陽をつかまえた",w:86,d:"{{hinata}}と「好き」になる",
-  f:()=>ttIs("hinata","love")},
- {id:"l13",c:"恋愛",n:"カリスマの素顔",w:86,d:"{{luka}}と「好き」になる",
-  f:()=>ttIs("luka","love")},
- {id:"l14",c:"恋愛",n:"詩のつづき",   w:86, d:"{{minamo}}と「好き」になる",
-  f:()=>ttIs("minamo","love")},
- {id:"l15",c:"恋愛",n:"お嬢様の本音", w:86, d:"{{sakuya}}と「好き」になる",
-  f:()=>ttIs("sakuya","love")},
- {id:"l16",c:"恋愛",n:"六人の出会い", w:56, d:"かくれている子をふくめ、登場する女の子全員と出会う",
-  f:()=>ttGirls().length>=ALLG.length},
- {id:"l17",c:"恋愛",n:"みんな友達",   w:98, d:"女の子全員と「友達」以上になる",
-  f:()=>ttNum("friend")>=ALLG.length},
- {id:"l18",c:"恋愛",n:"罪な人",       w:150,d:"女の子全員と「好き」になる",
-  f:()=>ttNum("love")>=ALLG.length},
+ /* ★ ここに「◯◯と好きになる」の6つが入ります（TTLOVE。下を見てください）。
+    主人公の性別で攻略対象がまるごと入れかわるので、
+    一覧に出すぶんだけを ttSync() が差しこみます。 */
+ {id:"l16",c:"恋愛",n:"六人の出会い", w:56, d:"かくれている子をふくめ、登場する{女の子}全員と出会う",
+  f:()=>ttGirls().length>=ttCast()},
+ {id:"l17",c:"恋愛",n:"みんな友達",   w:98, d:"{女の子}全員と「友達」以上になる",
+  f:()=>ttNum("friend")>=ttCast()},
+ {id:"l18",c:"恋愛",n:"罪な人",       w:150,d:"{女の子}全員と「好き」になる",
+  f:()=>ttNum("love")>=ttCast()},
 
 /* ===== 記録（つみかさね） 8 ========================================= */
  {id:"n1",c:"記録",n:"デート好き",    w:28, d:"おでかけを合計10回",
@@ -217,3 +225,72 @@ const TITLES=[
  {id:"h4",c:"学校生活",n:"皆勤賞",    w:94, d:"1度も風邪をひかずに3年目の3月をむかえる",
   f:()=>(S.rec&&S.rec.cold||0)===0&&ttYear()>=3&&(CAL[Math.min(S.t,LAST)]||{}).m===3}
 ];
+
+/* =========================================================================
+   「◯◯と『好き』になる」称号（攻略対象ひとりにつき1つ）
+
+   ★ 主人公の性別で攻略対象がまるごと入れかわるので、ここだけ別あつかいです。
+     一覧には **いま登場している子のぶんだけ** が出ます。
+     （男性主人公のときに「神谷 葵と好きになる」が出ても取れません）
+
+   ★ id は「取った記録」の目じるしです。**一度決めたら変えないでください。**
+     キャラを増やしたら、ここに1行足すだけです（新しい id を付けてください）。
+       who = story/<id>.js の id ／ n = 称号の名前 ／ w = 格
+   ========================================================================= */
+const TTLOVE=[
+ /* 男性主人公のときの攻略対象 */
+ {who:"kanade", id:"l10", n:"幼なじみの答え",   w:86},
+ {who:"rena",   id:"l11", n:"才媛の心",         w:86},
+ {who:"hinata", id:"l12", n:"太陽をつかまえた", w:86},
+ {who:"luka",   id:"l13", n:"カリスマの素顔",   w:86},
+ {who:"minamo", id:"l14", n:"詩のつづき",       w:86},
+ {who:"sakuya", id:"l15", n:"お嬢様の本音",     w:86},
+ /* 女性主人公のときの攻略対象 */
+ {who:"aoi",    id:"l20", n:"幼なじみの背中",   w:86},
+ {who:"ryu",    id:"l21", n:"会長の素顔",       w:86},
+ {who:"daichi", id:"l22", n:"まっすぐな返事",   w:86},
+ {who:"nagisa", id:"l23", n:"モデルの素顔",     w:86},
+ {who:"zen",    id:"l24", n:"絵のつづき",       w:86},
+ {who:"chikage",id:"l25", n:"若様の本音",       w:86}
+];
+
+/* 実際に使う称号の一覧。ttSync() が中身を入れます。
+   ★ この配列そのものは作りかえません（あちこちが TITLES を直接見ているため）。 */
+const TITLES=[];
+
+/* いまのキャストに合わせて、一覧を組み立てなおす。
+   game.js の linkCast()（＝主人公の性別が変わるたび）から呼ばれます。 */
+function ttSync(){
+  const c=ttCastList();
+  const ok=c ? new Set(c.map(g=>g.id)) : null;
+  const rows=TTLOVE.filter(r=>!ok||ok.has(r.who)).map(r=>({
+    id:r.id, c:"恋愛", n:r.n, w:r.w,
+    d:"{{"+r.who+"}}と「好き」になる",
+    f:()=>ttIs(r.who,"love")}));
+  TITLES.length=0;
+  for(const t of TITLES_BASE){
+    if(t.id==="l16") rows.forEach(x=>TITLES.push(x));   /* l9 と l16 のあいだに入れる */
+    TITLES.push(t);
+  }
+}
+ttSync();
+
+/* おまけの「称号」に並べる一覧。
+   ★ おまけは「集めたものを見る場所」なので、既定では**男女ぜんぶ**を並べます。
+     TITLES（いまのキャストぶん）だけにすると、もう片方の主人公で取った
+     「◯◯と好きになる」が、一覧から消えてしまいます（記録は残っています）。
+     いまの主人公のぶんだけにしたいときは、assets/config.js の
+     GAME_RULE.galleryAll を false に。 */
+function ttListAll(){
+  if(typeof GAME_RULE!=="undefined"&&GAME_RULE.galleryAll===false)return TITLES;
+  const rows=TTLOVE.map(r=>({
+    id:r.id, c:"恋愛", n:r.n, w:r.w,
+    d:"{{"+r.who+"}}と「好き」になる",
+    f:()=>ttIs(r.who,"love")}));
+  const out=[];
+  for(const t of TITLES_BASE){
+    if(t.id==="l16") rows.forEach(x=>out.push(x));
+    out.push(t);
+  }
+  return out;
+}

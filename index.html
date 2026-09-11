@@ -59,6 +59,8 @@
   <div id="vn">
     <div id="vnBg"></div>
     <div id="vnChar"></div>
+    <!-- イベントスチル（1枚絵）。立ち絵より上、メッセージ枠より下に出ます -->
+    <div id="vnStill"></div>
     <div id="vnStamp"></div>
     <div id="board" style="display:none"></div>
     <div id="vnChoices"></div>
@@ -99,6 +101,10 @@
         <input type="text" id="psei" maxlength="6" placeholder="みょうじ" value="桜坂">
         <input type="text" id="pmei" maxlength="6" placeholder="なまえ" value="優">
         <span class="nmhint">みょうじ／なまえ</span></div>
+      <!-- 主人公の性別。男女どちらの攻略対象もそろっているときだけ出ます
+           （assets/config.js の GAME_RULE.protagonist） -->
+      <div class="srow" id="sexRow" style="display:none"><span class="sl">主人公</span>
+        <span id="sexSel" class="chips"></span></div>
       <div class="srow"><span class="sl">誕生日</span>
         <select id="bdM"></select><span style="font-size:13px">月</span>
         <select id="bdD"></select><span style="font-size:13px">日</span>
@@ -129,10 +135,20 @@
 <script src="story/luka.js"></script>
 <script src="story/minamo.js"></script>
 <script src="story/sakuya.js"></script>
+<!-- 女性主人公版の攻略キャラ（男性6人） -->
+<script src="story/aoi.js"></script>
+<script src="story/ryu.js"></script>
+<script src="story/daichi.js"></script>
+<script src="story/nagisa.js"></script>
+<script src="story/zen.js"></script>
+<script src="story/chikage.js"></script>
 <script src="story/titles.js"></script>
 <script src="story/events.js"></script>
+<script src="story/events_f.js"></script>
+<script src="story/events_m.js"></script>
 <script src="story.js"></script>
 <script src="story/eventids.js"></script>
+<script src="story/cg.js"></script>
 <script src="game.js"></script>
 
 <!-- ファイルが足りないときに、真っ白な画面ではなく理由を出す -->
@@ -141,8 +157,10 @@
   var need=[["IMG","assets.js"],["ART_CANVAS","assets/config.js"],["ART_LIST","assets/list.js"],
             ["CHARA_NAMES","story/names.js"],["ST_kanade","story/kanade.js"],["ST_rena","story/rena.js"],["ST_hinata","story/hinata.js"],
             ["ST_luka","story/luka.js"],["ST_minamo","story/minamo.js"],["ST_sakuya","story/sakuya.js"],
+            ["ST_aoi","story/aoi.js"],["ST_ryu","story/ryu.js"],["ST_daichi","story/daichi.js"],
+            ["ST_nagisa","story/nagisa.js"],["ST_zen","story/zen.js"],["ST_chikage","story/chikage.js"],
             ["TITLES","story/titles.js"],["TXT","story/events.js"],["AFF_EV","story.js"],
-            ["EVENT_DEFS","story/eventids.js"],["S","game.js"]];
+            ["EVENT_DEFS","story/eventids.js"],["CG_TITLES","story/cg.js"],["S","game.js"]];
   var miss=[];
   for(var i=0;i<need.length;i++){
     try{ if(eval("typeof "+need[i][0])==="undefined") miss.push(need[i][1]); }

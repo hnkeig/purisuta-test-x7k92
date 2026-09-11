@@ -123,7 +123,8 @@
    "gain": null,
    "st": 0,
    "girl": null,
-   "d": "部活はしない。自由時間が多く、ストレスが溜まりにくい"
+   "d": "部活はしない。自由時間が多く、ストレスが溜まりにくい",
+   "mate": null
   },
   "base": {
    "n": "野球部",
@@ -556,10 +557,22 @@
    "d": 20,
    "id": "bday",
    "who": "sakuya",
+   "sex": "f",
    "n": "咲耶の誕生日",
    "g": "🎂",
    "c": "bd",
    "bg": "klass"
+  },
+  {
+   "m": 5,
+   "d": 12,
+   "id": "bday",
+   "who": "aoi",
+   "sex": "m",
+   "n": "葵の誕生日",
+   "g": "🎂",
+   "c": "bd",
+   "bg": "sunset"
   },
   {
    "m": 5,
@@ -572,9 +585,21 @@
   },
   {
    "m": 6,
+   "d": 2,
+   "id": "bday",
+   "who": "daichi",
+   "sex": "m",
+   "n": "大地の誕生日",
+   "g": "🎂",
+   "c": "bd",
+   "bg": "ground"
+  },
+  {
+   "m": 6,
    "d": 10,
    "id": "bday",
    "who": "kanade",
+   "sex": "f",
    "n": "かなでの誕生日",
    "g": "🎂",
    "c": "bd",
@@ -594,6 +619,7 @@
    "d": 7,
    "id": "bday",
    "who": "hinata",
+   "sex": "f",
    "n": "ひなたの誕生日",
    "g": "🎂",
    "c": "bd",
@@ -633,6 +659,7 @@
    "d": 9,
    "id": "bday",
    "who": "luka",
+   "sex": "f",
    "n": "ルカの誕生日",
    "g": "🎂",
    "c": "bd",
@@ -658,6 +685,28 @@
   },
   {
    "m": 10,
+   "d": 3,
+   "id": "bday",
+   "who": "ryu",
+   "sex": "m",
+   "n": "龍之介の誕生日",
+   "g": "🎂",
+   "c": "bd",
+   "bg": "klass"
+  },
+  {
+   "m": 10,
+   "d": 17,
+   "id": "bday",
+   "who": "chikage",
+   "sex": "m",
+   "n": "千景の誕生日",
+   "g": "🎂",
+   "c": "bd",
+   "bg": "klass"
+  },
+  {
+   "m": 10,
    "d": 25,
    "id": "culture",
    "n": "文化祭",
@@ -670,6 +719,7 @@
    "d": 2,
    "id": "bday",
    "who": "rena",
+   "sex": "f",
    "n": "玲奈の誕生日",
    "g": "🎂",
    "c": "bd",
@@ -704,6 +754,17 @@
    "g": "🚌",
    "c": "ev",
    "bg": "town"
+  },
+  {
+   "m": 12,
+   "d": 4,
+   "id": "bday",
+   "who": "zen",
+   "sex": "m",
+   "n": "全の誕生日",
+   "g": "🎂",
+   "c": "bd",
+   "bg": "artroom"
   },
   {
    "m": 12,
@@ -748,6 +809,7 @@
    "d": 15,
    "id": "bday",
    "who": "minamo",
+   "sex": "f",
    "n": "みなもの誕生日",
    "g": "🎂",
    "c": "bd",
@@ -770,6 +832,17 @@
    "g": "🍫",
    "c": "ev",
    "bg": "klass"
+  },
+  {
+   "m": 2,
+   "d": 18,
+   "id": "bday",
+   "who": "nagisa",
+   "sex": "m",
+   "n": "なぎさの誕生日",
+   "g": "🎂",
+   "c": "bd",
+   "bg": "town"
   },
   {
    "m": 3,
@@ -842,7 +915,17 @@
    "crush": 540,
    "love": 770
   },
+  "aoi": {
+   "friend": 260,
+   "crush": 540,
+   "love": 770
+  },
   "rena": {
+   "friend": 360,
+   "crush": 680,
+   "love": 870
+  },
+  "ryu": {
    "friend": 360,
    "crush": 680,
    "love": 870
@@ -852,7 +935,17 @@
    "crush": 570,
    "love": 790
   },
+  "daichi": {
+   "friend": 280,
+   "crush": 570,
+   "love": 790
+  },
   "luka": {
+   "friend": 300,
+   "crush": 600,
+   "love": 800
+  },
+  "nagisa": {
    "friend": 300,
    "crush": 600,
    "love": 800
@@ -862,7 +955,17 @@
    "crush": 650,
    "love": 840
   },
+  "zen": {
+   "friend": 340,
+   "crush": 650,
+   "love": 840
+  },
   "sakuya": {
+   "friend": 320,
+   "crush": 630,
+   "love": 820
+  },
+  "chikage": {
    "friend": 320,
    "crush": 630,
    "love": 820
@@ -876,11 +979,17 @@
  },
  "AFF_PRIORITY": [
   "kanade",
+  "aoi",
   "rena",
+  "ryu",
   "hinata",
+  "daichi",
   "luka",
+  "nagisa",
   "minamo",
-  "sakuya"
+  "zen",
+  "sakuya",
+  "chikage"
  ],
  "AFFSTARS": 10,
  "girls": [
@@ -921,6 +1030,51 @@
     "charm": 85,
     "care": 140,
     "trend": 70
+   },
+   "prof": [
+    "normal",
+    "friend",
+    "crush",
+    "love"
+   ]
+  },
+  {
+   "id": "aoi",
+   "name": "神谷 葵",
+   "role": "幼なじみ / 家庭科部",
+   "ideal": {
+    "care": 1,
+    "charm": 0.9,
+    "art": 0.6,
+    "study": 0.4,
+    "trend": 0.3,
+    "sport": 0.3,
+    "rich": 0.2
+   },
+   "like": [
+    "park",
+    "cafe",
+    "shrine",
+    "hanami",
+    "ichigo"
+   ],
+   "hate": [
+    "amuse"
+   ],
+   "req": null,
+   "aff0": 100,
+   "club": "家庭科部",
+   "bday": {
+    "m": 5,
+    "d": 12
+   },
+   "stat": {
+    "study": 85,
+    "sport": 70,
+    "art": 90,
+    "charm": 80,
+    "care": 145,
+    "trend": 55
    },
    "prof": [
     "normal",
@@ -975,6 +1129,51 @@
    ]
   },
   {
+   "id": "ryu",
+   "name": "殿城 龍之介",
+   "role": "生徒会長 / 学年1位",
+   "ideal": {
+    "study": 1,
+    "care": 0.6,
+    "charm": 0.5,
+    "art": 0.4,
+    "sport": 0.3,
+    "rich": 0.3,
+    "trend": 0.2
+   },
+   "like": [
+    "lib",
+    "movie",
+    "aqua",
+    "momiji"
+   ],
+   "hate": [
+    "sea",
+    "pool"
+   ],
+   "req": null,
+   "aff0": 100,
+   "club": "生徒会",
+   "bday": {
+    "m": 10,
+    "d": 3
+   },
+   "stat": {
+    "study": 175,
+    "sport": 95,
+    "art": 70,
+    "charm": 105,
+    "care": 80,
+    "trend": 50
+   },
+   "prof": [
+    "normal",
+    "friend",
+    "crush",
+    "love"
+   ]
+  },
+  {
    "id": "hinata",
    "name": "夏川 ひなた",
    "role": "陸上部 / 学校一の元気印",
@@ -1012,6 +1211,52 @@
     "charm": 95,
     "care": 80,
     "trend": 70
+   },
+   "prof": [
+    "normal",
+    "friend",
+    "crush",
+    "love"
+   ]
+  },
+  {
+   "id": "daichi",
+   "name": "立花 大地",
+   "role": "運動部 / 学校一の元気印",
+   "ideal": {
+    "sport": 1,
+    "charm": 0.6,
+    "trend": 0.5,
+    "care": 0.4,
+    "rich": 0.3,
+    "art": 0.2,
+    "study": 0.2
+   },
+   "like": [
+    "amuse",
+    "sea",
+    "park",
+    "pool",
+    "skate",
+    "budou"
+   ],
+   "hate": [
+    "lib"
+   ],
+   "req": null,
+   "aff0": 100,
+   "club": "陸上部",
+   "bday": {
+    "m": 6,
+    "d": 2
+   },
+   "stat": {
+    "study": 55,
+    "sport": 180,
+    "art": 50,
+    "charm": 95,
+    "care": 85,
+    "trend": 80
    },
    "prof": [
     "normal",
@@ -1070,6 +1315,55 @@
    ]
   },
   {
+   "id": "nagisa",
+   "name": "南條 なぎさ",
+   "role": "読者モデル / 隣のクラス",
+   "ideal": {
+    "trend": 1,
+    "charm": 0.9,
+    "rich": 0.5,
+    "art": 0.3,
+    "sport": 0.3,
+    "study": 0.2,
+    "care": 0.2
+   },
+   "like": [
+    "cafe",
+    "movie",
+    "sea",
+    "illum",
+    "hanabi"
+   ],
+   "hate": [
+    "lib"
+   ],
+   "req": {
+    "p": "trend",
+    "v": 90,
+    "n": "流行"
+   },
+   "aff0": 100,
+   "club": "軽音楽部",
+   "bday": {
+    "m": 2,
+    "d": 18
+   },
+   "stat": {
+    "study": 95,
+    "sport": 85,
+    "art": 110,
+    "charm": 165,
+    "care": 60,
+    "trend": 185
+   },
+   "prof": [
+    "normal",
+    "friend",
+    "crush",
+    "love"
+   ]
+  },
+  {
    "id": "minamo",
    "name": "綾瀬 みなも",
    "role": "文芸部 / 図書委員",
@@ -1110,6 +1404,55 @@
     "charm": 80,
     "care": 95,
     "trend": 55
+   },
+   "prof": [
+    "normal",
+    "friend",
+    "crush",
+    "love"
+   ]
+  },
+  {
+   "id": "zen",
+   "name": "火野 全",
+   "role": "美術部 / 図書委員",
+   "ideal": {
+    "art": 1,
+    "study": 0.7,
+    "care": 0.5,
+    "charm": 0.3,
+    "trend": 0.2,
+    "rich": 0.2,
+    "sport": 0.1
+   },
+   "like": [
+    "lib",
+    "aqua",
+    "movie",
+    "momiji"
+   ],
+   "hate": [
+    "amuse",
+    "hanabi"
+   ],
+   "req": {
+    "p": "art",
+    "v": 90,
+    "n": "芸術"
+   },
+   "aff0": 100,
+   "club": "美術部",
+   "bday": {
+    "m": 12,
+    "d": 4
+   },
+   "stat": {
+    "study": 130,
+    "sport": 45,
+    "art": 190,
+    "charm": 70,
+    "care": 95,
+    "trend": 40
    },
    "prof": [
     "normal",
@@ -1166,6 +1509,55 @@
     "crush",
     "love"
    ]
+  },
+  {
+   "id": "chikage",
+   "name": "月華寺 千景",
+   "role": "演劇部の主役 / 旧家の跡取り",
+   "ideal": {
+    "charm": 1,
+    "art": 0.6,
+    "rich": 0.6,
+    "trend": 0.5,
+    "care": 0.3,
+    "study": 0.3,
+    "sport": 0.2
+   },
+   "like": [
+    "movie",
+    "shrine",
+    "park",
+    "illum",
+    "hanami"
+   ],
+   "hate": [
+    "sea"
+   ],
+   "req": {
+    "p": "charm",
+    "v": 90,
+    "n": "魅力"
+   },
+   "aff0": 100,
+   "club": "演劇部",
+   "bday": {
+    "m": 10,
+    "d": 17
+   },
+   "stat": {
+    "study": 120,
+    "sport": 75,
+    "art": 170,
+    "charm": 185,
+    "care": 65,
+    "trend": 110
+   },
+   "prof": [
+    "normal",
+    "friend",
+    "crush",
+    "love"
+   ]
   }
  ],
  "GIRL": {
@@ -1198,6 +1590,17 @@
     3
    ]
   },
+  "aoi": {
+   "base": 70,
+   "grow": 5,
+   "w": [
+    3,
+    -3,
+    1,
+    -1,
+    4
+   ]
+  },
   "rena": {
    "base": 93,
    "grow": 2,
@@ -1207,6 +1610,17 @@
     2,
     3,
     1
+   ]
+  },
+  "ryu": {
+   "base": 92,
+   "grow": 3,
+   "w": [
+    2,
+    4,
+    3,
+    2,
+    -2
    ]
   },
   "hinata": {
@@ -1220,6 +1634,17 @@
     5
    ]
   },
+  "daichi": {
+   "base": 58,
+   "grow": 6,
+   "w": [
+    -3,
+    -2,
+    -4,
+    2,
+    3
+   ]
+  },
   "luka": {
    "base": 65,
    "grow": 5,
@@ -1229,6 +1654,17 @@
     6,
     -4,
     2
+   ]
+  },
+  "nagisa": {
+   "base": 74,
+   "grow": 4,
+   "w": [
+    3,
+    -3,
+    4,
+    -2,
+    1
    ]
   },
   "minamo": {
@@ -1242,6 +1678,17 @@
     4
    ]
   },
+  "zen": {
+   "base": 80,
+   "grow": 4,
+   "w": [
+    5,
+    -1,
+    0,
+    3,
+    -2
+   ]
+  },
   "sakuya": {
    "base": 77,
    "grow": 4,
@@ -1251,6 +1698,17 @@
     7,
     -4,
     2
+   ]
+  },
+  "chikage": {
+   "base": 84,
+   "grow": 4,
+   "w": [
+    4,
+    0,
+    2,
+    -1,
+    3
    ]
   }
  },
@@ -1377,7 +1835,7 @@
   {
    "id": "s5",
    "c": "学力",
-   "n": "才媛の好敵手",
+   "n": "秀才の好敵手",
    "w": 92,
    "d": "学力が280以上"
   },
@@ -1510,7 +1968,7 @@
   {
    "id": "c6",
    "c": "魅力",
-   "n": "桜坂のプリンス",
+   "n": "桜坂の{主プリンス}",
    "w": 118,
    "d": "魅力が340以上"
   },
@@ -1834,21 +2292,21 @@
    "c": "恋愛",
    "n": "六人の出会い",
    "w": 56,
-   "d": "かくれている子をふくめ、登場する女の子全員と出会う"
+   "d": "かくれている子をふくめ、登場する{女の子}全員と出会う"
   },
   {
    "id": "l17",
    "c": "恋愛",
    "n": "みんな友達",
    "w": 98,
-   "d": "女の子全員と「友達」以上になる"
+   "d": "{女の子}全員と「友達」以上になる"
   },
   {
    "id": "l18",
    "c": "恋愛",
    "n": "罪な人",
    "w": 150,
-   "d": "女の子全員と「好き」になる"
+   "d": "{女の子}全員と「好き」になる"
   },
   {
    "id": "n1",
@@ -2153,7 +2611,7 @@
   "crush（気になる人）",
   "love（好き）"
  ],
- "scenes": 35,
+ "scenes": 68,
  "placesRounds": 16,
  "story": [
   {
@@ -2371,6 +2829,222 @@
     "friend",
     "normal"
    ]
+  },
+  {
+   "k": "aoi",
+   "tel": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "date": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "ev": [
+    {
+     "t": "放課後の調理室",
+     "at": 350
+    },
+    {
+     "t": "帰り道の遠回り",
+     "at": 550
+    },
+    {
+     "t": "桜の木の下で",
+     "at": 750
+    }
+   ],
+   "after": [
+    "lover",
+    "love",
+    "crush",
+    "friend",
+    "normal"
+   ]
+  },
+  {
+   "k": "ryu",
+   "tel": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "date": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "ev": [
+    {
+     "t": "閉まらない生徒会室",
+     "at": 350
+    },
+    {
+     "t": "見せない顔",
+     "at": 550
+    },
+    {
+     "t": "鍵をふたつ",
+     "at": 750
+    }
+   ],
+   "after": [
+    "lover",
+    "love",
+    "crush",
+    "friend",
+    "normal"
+   ]
+  },
+  {
+   "k": "daichi",
+   "tel": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "date": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "ev": [
+    {
+     "t": "あと一本",
+     "at": 350
+    },
+    {
+     "t": "負けた日",
+     "at": 550
+    },
+    {
+     "t": "言えなかった一本",
+     "at": 750
+    }
+   ],
+   "after": [
+    "lover",
+    "love",
+    "crush",
+    "friend",
+    "normal"
+   ]
+  },
+  {
+   "k": "nagisa",
+   "tel": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "date": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "ev": [
+    {
+     "t": "表紙の顔",
+     "at": 350
+    },
+    {
+     "t": "営業用じゃない顔",
+     "at": 550
+    },
+    {
+     "t": "シャッターの下りない場所",
+     "at": 750
+    }
+   ],
+   "after": [
+    "lover",
+    "love",
+    "crush",
+    "friend",
+    "normal"
+   ]
+  },
+  {
+   "k": "zen",
+   "tel": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "date": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "ev": [
+    {
+     "t": "貸出カードの余白",
+     "at": 350
+    },
+    {
+     "t": "描きかけの一枚",
+     "at": 550
+    },
+    {
+     "t": "言葉の代わり",
+     "at": 750
+    }
+   ],
+   "after": [
+    "lover",
+    "love",
+    "crush",
+    "friend",
+    "normal"
+   ]
+  },
+  {
+   "k": "chikage",
+   "tel": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "date": [
+    3,
+    3,
+    3,
+    3
+   ],
+   "ev": [
+    {
+     "t": "台本のない台詞",
+     "at": 350
+    },
+    {
+     "t": "名前の重さ",
+     "at": 550
+    },
+    {
+     "t": "素の一人称",
+     "at": 750
+    }
+   ],
+   "after": [
+    "lover",
+    "love",
+    "crush",
+    "friend",
+    "normal"
+   ]
   }
  ],
  "affEv": [
@@ -2427,6 +3101,60 @@
     550,
     750
    ]
+  },
+  {
+   "k": "aoi",
+   "n": 3,
+   "at": [
+    350,
+    550,
+    750
+   ]
+  },
+  {
+   "k": "ryu",
+   "n": 3,
+   "at": [
+    350,
+    550,
+    750
+   ]
+  },
+  {
+   "k": "daichi",
+   "n": 3,
+   "at": [
+    350,
+    550,
+    750
+   ]
+  },
+  {
+   "k": "nagisa",
+   "n": 3,
+   "at": [
+    350,
+    550,
+    750
+   ]
+  },
+  {
+   "k": "zen",
+   "n": 3,
+   "at": [
+    350,
+    550,
+    750
+   ]
+  },
+  {
+   "k": "chikage",
+   "n": 3,
+   "at": [
+    350,
+    550,
+    750
+   ]
   }
  ],
  "events": [
@@ -2435,6 +3163,7 @@
    "n": "入学式（プロローグ）",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "ゲームを始めたとき",
    "where": "school",
    "needs": [],
@@ -2445,6 +3174,7 @@
    "n": "はじめての予定表",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "入学式のあと、最初の月曜",
    "where": "room",
    "needs": [
@@ -2457,6 +3187,7 @@
    "n": "卒業式",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "3年目3月1日（さいごの日をこえたとき）",
    "where": "sakura",
    "needs": [
@@ -2469,6 +3200,7 @@
    "n": "告白",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "卒業式のあと、好感度600以上の子がいるとき",
    "where": "sakura",
    "needs": [
@@ -2481,6 +3213,7 @@
    "n": "エピローグ",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "告白のあと",
    "where": "sunset",
    "needs": [
@@ -2493,6 +3226,7 @@
    "n": "エンディング",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "エピローグのあと",
    "where": "sakura",
    "needs": [
@@ -2505,6 +3239,7 @@
    "n": "入部する",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "「入部する」をえらんだとき（帰宅部のあいだ、いつでも）",
    "where": "ground",
    "needs": [],
@@ -2515,6 +3250,7 @@
    "n": "バイト先をえらぶ",
    "chara": null,
    "kind": "進行",
+   "sex": null,
    "when": "バイト先を決めていないときに「バイト」をえらんだとき",
    "where": "town",
    "needs": [],
@@ -2525,6 +3261,7 @@
    "n": "主人公の誕生日",
    "chara": null,
    "kind": "誕生日",
+   "sex": null,
    "when": "設定した誕生日（毎年）",
    "where": "klass",
    "needs": [],
@@ -2535,6 +3272,7 @@
    "n": "中間テスト",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "5月20日（毎年）",
    "where": "klass",
    "needs": [],
@@ -2545,6 +3283,7 @@
    "n": "練習試合",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "6月15日（毎年）／運動部のときだけ",
    "where": "ground",
    "needs": [],
@@ -2555,6 +3294,7 @@
    "n": "期末テスト",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "7月15日（毎年）",
    "where": "klass",
    "needs": [],
@@ -2565,6 +3305,7 @@
    "n": "夏休み開始",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "7月21日（毎年）",
    "where": "sea",
    "needs": [],
@@ -2575,6 +3316,7 @@
    "n": "夏祭り",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "8月10日（毎年）／好感度 200 以上の子がいるとき",
    "where": "fest",
    "needs": [],
@@ -2585,6 +3327,7 @@
    "n": "練習試合",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "9月15日（毎年）／運動部のときだけ",
    "where": "ground",
    "needs": [],
@@ -2595,6 +3338,7 @@
    "n": "体育祭",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "9月20日（毎年）",
    "where": "ground",
    "needs": [],
@@ -2605,6 +3349,7 @@
    "n": "文化祭",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "10月25日（毎年）",
    "where": "school",
    "needs": [],
@@ -2615,6 +3360,7 @@
    "n": "修学旅行 1日目",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "11月10日（2年目だけ）",
    "where": "town",
    "needs": [],
@@ -2625,6 +3371,7 @@
    "n": "修学旅行 2日目",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "11月11日（2年目だけ）",
    "where": "town",
    "needs": [],
@@ -2635,6 +3382,7 @@
    "n": "修学旅行 3日目",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "11月12日（2年目だけ）",
    "where": "town",
    "needs": [],
@@ -2645,6 +3393,7 @@
    "n": "練習試合",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "12月15日（毎年）／運動部のときだけ",
    "where": "ground",
    "needs": [],
@@ -2655,6 +3404,7 @@
    "n": "クリスマス",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "12月24日（毎年）／好感度 350 以上の子がいるとき",
    "where": "night",
    "needs": [],
@@ -2665,6 +3415,7 @@
    "n": "冬休み開始",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "12月25日（毎年）",
    "where": "night",
    "needs": [],
@@ -2675,6 +3426,7 @@
    "n": "お正月",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "1月1日（毎年）",
    "where": "shrine",
    "needs": [],
@@ -2685,6 +3437,7 @@
    "n": "学年末テスト",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "1月20日（毎年）",
    "where": "klass",
    "needs": [],
@@ -2695,6 +3448,7 @@
    "n": "バレンタイン",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "2月14日（毎年）",
    "where": "klass",
    "needs": [],
@@ -2705,6 +3459,7 @@
    "n": "ホワイトデー",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "3月14日（毎年）",
    "where": "klass",
    "needs": [],
@@ -2715,6 +3470,7 @@
    "n": "練習試合",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "3月15日（毎年）／運動部のときだけ",
    "where": "ground",
    "needs": [],
@@ -2725,6 +3481,7 @@
    "n": "春休み開始",
    "chara": null,
    "kind": "固定行事",
+   "sex": null,
    "when": "3月19日（毎年）",
    "where": "sakura",
    "needs": [],
@@ -2735,7 +3492,19 @@
    "n": "かなでの誕生日",
    "chara": "kanade",
    "kind": "誕生日",
+   "sex": "m",
    "when": "6月10日（毎年）／その子が登場していること",
+   "where": "sunset",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "bday_aoi",
+   "n": "葵の誕生日",
+   "chara": "aoi",
+   "kind": "誕生日",
+   "sex": "f",
+   "when": "5月12日（毎年）／その子が登場していること",
    "where": "sunset",
    "needs": [],
    "auto": true
@@ -2745,7 +3514,19 @@
    "n": "玲奈の誕生日",
    "chara": "rena",
    "kind": "誕生日",
+   "sex": "m",
    "when": "11月2日（毎年）／その子が登場していること",
+   "where": "klass",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "bday_ryu",
+   "n": "龍之介の誕生日",
+   "chara": "ryu",
+   "kind": "誕生日",
+   "sex": "f",
+   "when": "10月3日（毎年）／その子が登場していること",
    "where": "klass",
    "needs": [],
    "auto": true
@@ -2755,7 +3536,19 @@
    "n": "ひなたの誕生日",
    "chara": "hinata",
    "kind": "誕生日",
+   "sex": "m",
    "when": "7月7日（毎年）／その子が登場していること",
+   "where": "ground",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "bday_daichi",
+   "n": "大地の誕生日",
+   "chara": "daichi",
+   "kind": "誕生日",
+   "sex": "f",
+   "when": "6月2日（毎年）／その子が登場していること",
    "where": "ground",
    "needs": [],
    "auto": true
@@ -2765,7 +3558,19 @@
    "n": "ルカの誕生日",
    "chara": "luka",
    "kind": "誕生日",
+   "sex": "m",
    "when": "9月9日（毎年）／その子が登場していること",
+   "where": "town",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "bday_nagisa",
+   "n": "なぎさの誕生日",
+   "chara": "nagisa",
+   "kind": "誕生日",
+   "sex": "f",
+   "when": "2月18日（毎年）／その子が登場していること",
    "where": "town",
    "needs": [],
    "auto": true
@@ -2775,8 +3580,20 @@
    "n": "みなもの誕生日",
    "chara": "minamo",
    "kind": "誕生日",
+   "sex": "m",
    "when": "1月15日（毎年）／その子が登場していること",
    "where": "lib",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "bday_zen",
+   "n": "全の誕生日",
+   "chara": "zen",
+   "kind": "誕生日",
+   "sex": "f",
+   "when": "12月4日（毎年）／その子が登場していること",
+   "where": "artroom",
    "needs": [],
    "auto": true
   },
@@ -2785,7 +3602,19 @@
    "n": "咲耶の誕生日",
    "chara": "sakuya",
    "kind": "誕生日",
+   "sex": "m",
    "when": "4月20日（毎年）／その子が登場していること",
+   "where": "klass",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "bday_chikage",
+   "n": "千景の誕生日",
+   "chara": "chikage",
+   "kind": "誕生日",
+   "sex": "f",
+   "when": "10月17日（毎年）／その子が登場していること",
    "where": "klass",
    "needs": [],
    "auto": true
@@ -2795,6 +3624,7 @@
    "n": "放課後の家庭科室",
    "chara": "kanade",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 350 以上／週の終わり",
    "where": "klass",
    "needs": [],
@@ -2805,6 +3635,7 @@
    "n": "帰り道の遠回り",
    "chara": "kanade",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 550 以上／週の終わり",
    "where": "sunset",
    "needs": [
@@ -2817,6 +3648,7 @@
    "n": "桜の木の下で",
    "chara": "kanade",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 750 以上／週の終わり",
    "where": "sakura",
    "needs": [
@@ -2829,6 +3661,7 @@
    "n": "生徒会室の残り香",
    "chara": "rena",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 350 以上／週の終わり",
    "where": "klass",
    "needs": [],
@@ -2839,6 +3672,7 @@
    "n": "完璧の裏側",
    "chara": "rena",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 550 以上／週の終わり",
    "where": "klass",
    "needs": [
@@ -2851,6 +3685,7 @@
    "n": "雨の昇降口",
    "chara": "rena",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 750 以上／週の終わり",
    "where": "school",
    "needs": [
@@ -2863,6 +3698,7 @@
    "n": "グラウンド10周勝負",
    "chara": "hinata",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 350 以上／週の終わり",
    "where": "ground",
    "needs": [],
@@ -2873,6 +3709,7 @@
    "n": "記録が伸びない",
    "chara": "hinata",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 550 以上／週の終わり",
    "where": "ground",
    "needs": [
@@ -2885,6 +3722,7 @@
    "n": "夕陽のトラック",
    "chara": "hinata",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 750 以上／週の終わり",
    "where": "sunset",
    "needs": [
@@ -2897,6 +3735,7 @@
    "n": "撮影のあと",
    "chara": "luka",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 350 以上／週の終わり",
    "where": "town",
    "needs": [],
@@ -2907,6 +3746,7 @@
    "n": "コメント欄",
    "chara": "luka",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 550 以上／週の終わり",
    "where": "cafe",
    "needs": [
@@ -2919,6 +3759,7 @@
    "n": "すっぴんの日",
    "chara": "luka",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 750 以上／週の終わり",
    "where": "sunset",
    "needs": [
@@ -2931,6 +3772,7 @@
    "n": "貸出カードの名前",
    "chara": "minamo",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 350 以上／週の終わり",
    "where": "lib",
    "needs": [],
@@ -2941,6 +3783,7 @@
    "n": "誰にも見せない原稿",
    "chara": "minamo",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 550 以上／週の終わり",
    "where": "klass",
    "needs": [
@@ -2953,6 +3796,7 @@
    "n": "最後の一編",
    "chara": "minamo",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 750 以上／週の終わり",
    "where": "sakura",
    "needs": [
@@ -2965,6 +3809,7 @@
    "n": "台本の相手役",
    "chara": "sakuya",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 350 以上／週の終わり",
    "where": "klass",
    "needs": [],
@@ -2975,6 +3820,7 @@
    "n": "主役の重さ",
    "chara": "sakuya",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 550 以上／週の終わり",
    "where": "klass",
    "needs": [
@@ -2987,6 +3833,7 @@
    "n": "幕が下りたあと",
    "chara": "sakuya",
    "kind": "好感度",
+   "sex": "m",
    "when": "好感度 750 以上／週の終わり",
    "where": "night",
    "needs": [
@@ -2995,10 +3842,233 @@
    "auto": true
   },
   {
+   "id": "aff_aoi_1",
+   "n": "放課後の調理室",
+   "chara": "aoi",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 350 以上／週の終わり",
+   "where": "klass",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "aff_aoi_2",
+   "n": "帰り道の遠回り",
+   "chara": "aoi",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 550 以上／週の終わり",
+   "where": "sunset",
+   "needs": [
+    "aff_aoi_1"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_aoi_3",
+   "n": "桜の木の下で",
+   "chara": "aoi",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 750 以上／週の終わり",
+   "where": "sakura",
+   "needs": [
+    "aff_aoi_2"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_ryu_1",
+   "n": "閉まらない生徒会室",
+   "chara": "ryu",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 350 以上／週の終わり",
+   "where": "klass",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "aff_ryu_2",
+   "n": "見せない顔",
+   "chara": "ryu",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 550 以上／週の終わり",
+   "where": "sunset",
+   "needs": [
+    "aff_ryu_1"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_ryu_3",
+   "n": "鍵をふたつ",
+   "chara": "ryu",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 750 以上／週の終わり",
+   "where": "night",
+   "needs": [
+    "aff_ryu_2"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_daichi_1",
+   "n": "あと一本",
+   "chara": "daichi",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 350 以上／週の終わり",
+   "where": "ground",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "aff_daichi_2",
+   "n": "負けた日",
+   "chara": "daichi",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 550 以上／週の終わり",
+   "where": "ground",
+   "needs": [
+    "aff_daichi_1"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_daichi_3",
+   "n": "言えなかった一本",
+   "chara": "daichi",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 750 以上／週の終わり",
+   "where": "sunset",
+   "needs": [
+    "aff_daichi_2"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_nagisa_1",
+   "n": "表紙の顔",
+   "chara": "nagisa",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 350 以上／週の終わり",
+   "where": "town",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "aff_nagisa_2",
+   "n": "営業用じゃない顔",
+   "chara": "nagisa",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 550 以上／週の終わり",
+   "where": "cafe",
+   "needs": [
+    "aff_nagisa_1"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_nagisa_3",
+   "n": "シャッターの下りない場所",
+   "chara": "nagisa",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 750 以上／週の終わり",
+   "where": "illum",
+   "needs": [
+    "aff_nagisa_2"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_zen_1",
+   "n": "貸出カードの余白",
+   "chara": "zen",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 350 以上／週の終わり",
+   "where": "lib",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "aff_zen_2",
+   "n": "描きかけの一枚",
+   "chara": "zen",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 550 以上／週の終わり",
+   "where": "artroom",
+   "needs": [
+    "aff_zen_1"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_zen_3",
+   "n": "言葉の代わり",
+   "chara": "zen",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 750 以上／週の終わり",
+   "where": "momiji",
+   "needs": [
+    "aff_zen_2"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_chikage_1",
+   "n": "台本のない台詞",
+   "chara": "chikage",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 350 以上／週の終わり",
+   "where": "klass",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "aff_chikage_2",
+   "n": "名前の重さ",
+   "chara": "chikage",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 550 以上／週の終わり",
+   "where": "night",
+   "needs": [
+    "aff_chikage_1"
+   ],
+   "auto": true
+  },
+  {
+   "id": "aff_chikage_3",
+   "n": "素の一人称",
+   "chara": "chikage",
+   "kind": "好感度",
+   "sex": "f",
+   "when": "好感度 750 以上／週の終わり",
+   "where": "illum",
+   "needs": [
+    "aff_chikage_2"
+   ],
+   "auto": true
+  },
+  {
    "id": "meet_luka",
    "n": "月島 ルカと出会う",
    "chara": "luka",
    "kind": "出会い",
+   "sex": "m",
    "when": "流行が90以上になったとき",
    "where": "town",
    "needs": [],
@@ -3009,6 +4079,7 @@
    "n": "綾瀬 みなもと出会う",
    "chara": "minamo",
    "kind": "出会い",
+   "sex": "m",
    "when": "芸術が90以上になったとき",
    "where": "lib",
    "needs": [],
@@ -3019,8 +4090,42 @@
    "n": "姫野 咲耶と出会う",
    "chara": "sakuya",
    "kind": "出会い",
+   "sex": "m",
    "when": "魅力が90以上になったとき",
    "where": "ground",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "meet_nagisa",
+   "n": "南條 なぎさと出会う",
+   "chara": "nagisa",
+   "kind": "出会い",
+   "sex": "f",
+   "when": "流行が90以上になったとき",
+   "where": "town",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "meet_zen",
+   "n": "火野 全と出会う",
+   "chara": "zen",
+   "kind": "出会い",
+   "sex": "f",
+   "when": "芸術が90以上になったとき",
+   "where": "artroom",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "meet_chikage",
+   "n": "月華寺 千景と出会う",
+   "chara": "chikage",
+   "kind": "出会い",
+   "sex": "f",
+   "when": "魅力が90以上になったとき",
+   "where": "klass",
    "needs": [],
    "auto": true
   },
@@ -3029,6 +4134,7 @@
    "n": "月島 ルカと部室で会う",
    "chara": "luka",
    "kind": "部活",
+   "sex": "m",
    "when": "軽音楽部に入部したとき",
    "where": "music",
    "needs": [],
@@ -3039,6 +4145,7 @@
    "n": "綾瀬 みなもと部室で会う",
    "chara": "minamo",
    "kind": "部活",
+   "sex": "m",
    "when": "美術部に入部したとき",
    "where": "artroom",
    "needs": [],
@@ -3049,6 +4156,40 @@
    "n": "姫野 咲耶と部室で会う",
    "chara": "sakuya",
    "kind": "部活",
+   "sex": "m",
+   "when": "演劇部に入部したとき",
+   "where": "klass",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "club_nagisa",
+   "n": "南條 なぎさと部室で会う",
+   "chara": "nagisa",
+   "kind": "部活",
+   "sex": "f",
+   "when": "軽音楽部に入部したとき",
+   "where": "music",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "club_zen",
+   "n": "火野 全と部室で会う",
+   "chara": "zen",
+   "kind": "部活",
+   "sex": "f",
+   "when": "美術部に入部したとき",
+   "where": "artroom",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "club_chikage",
+   "n": "月華寺 千景と部室で会う",
+   "chara": "chikage",
+   "kind": "部活",
+   "sex": "f",
    "when": "演劇部に入部したとき",
    "where": "klass",
    "needs": [],
@@ -3059,6 +4200,7 @@
    "n": "桜井 かなでがバイト先に来る",
    "chara": "kanade",
    "kind": "バイト",
+   "sex": "m",
    "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
    "where": "（えらんだバイト先）",
    "needs": [],
@@ -3069,6 +4211,7 @@
    "n": "天堂 玲奈がバイト先に来る",
    "chara": "rena",
    "kind": "バイト",
+   "sex": "m",
    "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
    "where": "（えらんだバイト先）",
    "needs": [],
@@ -3079,6 +4222,7 @@
    "n": "夏川 ひなたがバイト先に来る",
    "chara": "hinata",
    "kind": "バイト",
+   "sex": "m",
    "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
    "where": "（えらんだバイト先）",
    "needs": [],
@@ -3089,6 +4233,7 @@
    "n": "月島 ルカがバイト先に来る",
    "chara": "luka",
    "kind": "バイト",
+   "sex": "m",
    "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
    "where": "（えらんだバイト先）",
    "needs": [],
@@ -3099,6 +4244,7 @@
    "n": "綾瀬 みなもがバイト先に来る",
    "chara": "minamo",
    "kind": "バイト",
+   "sex": "m",
    "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
    "where": "（えらんだバイト先）",
    "needs": [],
@@ -3109,6 +4255,51 @@
    "n": "姫野 咲耶がバイト先に来る",
    "chara": "sakuya",
    "kind": "バイト",
+   "sex": "m",
+   "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
+   "where": "（えらんだバイト先）",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "job_aoi",
+   "n": "神谷 葵がバイト先に来る",
+   "chara": "aoi",
+   "kind": "バイト",
+   "sex": "f",
+   "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
+   "where": "（えらんだバイト先）",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "job_daichi",
+   "n": "立花 大地がバイト先に来る",
+   "chara": "daichi",
+   "kind": "バイト",
+   "sex": "f",
+   "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
+   "where": "（えらんだバイト先）",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "job_nagisa",
+   "n": "南條 なぎさがバイト先に来る",
+   "chara": "nagisa",
+   "kind": "バイト",
+   "sex": "f",
+   "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
+   "where": "（えらんだバイト先）",
+   "needs": [],
+   "auto": true
+  },
+  {
+   "id": "job_zen",
+   "n": "火野 全がバイト先に来る",
+   "chara": "zen",
+   "kind": "バイト",
+   "sex": "f",
    "when": "バイトのコマンド1回につき1.0%の抽選／好感度50以上",
    "where": "（えらんだバイト先）",
    "needs": [],
@@ -3151,6 +4342,42 @@
    "sei": "姫野",
    "mei": "咲耶",
    "role": "演劇部の主役 / 理事長の孫"
+  },
+  "aoi": {
+   "name": "神谷 葵",
+   "sei": "神谷",
+   "mei": "葵",
+   "role": "幼なじみ / 家庭科部"
+  },
+  "ryu": {
+   "name": "殿城 龍之介",
+   "sei": "殿城",
+   "mei": "龍之介",
+   "role": "生徒会長 / 学年1位"
+  },
+  "daichi": {
+   "name": "立花 大地",
+   "sei": "立花",
+   "mei": "大地",
+   "role": "運動部 / 学校一の元気印"
+  },
+  "nagisa": {
+   "name": "南條 なぎさ",
+   "sei": "南條",
+   "mei": "なぎさ",
+   "role": "読者モデル / 隣のクラス"
+  },
+  "zen": {
+   "name": "火野 全",
+   "sei": "火野",
+   "mei": "全",
+   "role": "美術部 / 図書委員"
+  },
+  "chikage": {
+   "name": "月華寺 千景",
+   "sei": "月華寺",
+   "mei": "千景",
+   "role": "演劇部の主役 / 旧家の跡取り"
   },
   "nanase": {
    "name": "白瀬 ななせ",

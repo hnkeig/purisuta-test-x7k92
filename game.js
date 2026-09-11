@@ -396,8 +396,13 @@ function bgm(name){
     AU.mus.gain.linearRampToValueAtTime(AU.on?0.85*AU.bgmVol:0.0001,n+0.9);
   },520);
 }
+/* 音を置いていないときに、代わりに鳴らす音。
+   assets/se/title.mp3 を置くと称号の音がそれになり、
+   置いていなければ、いままでどおり pinpon（正解音）が鳴ります。 */
+const SEALT={ title:"pinpon" };
 function se(kind){
   if(auPlayFile("se",kind,false))return;
+  if(SEALT[kind]){ se(SEALT[kind]); return; }
   if(!AU.ctx||!AU.on||AU.seVol<=0)return;
   const t=AU.ctx.currentTime;
   const g=AU.ctx.createGain(); g.gain.value=0.5; g.connect(AU.sfx||AU.master);
@@ -781,8 +786,61 @@ function dateSet(pid){
 }
 
 /* GIRLS / HIDDEN / ALLG は story.js が story/<名前>.js から組み立てます。
-   女の子を増やすときは story/ にファイルを1つ足して、
+   攻略対象を増やすときは story/ にファイルを1つ足して、
    index.html に <script> を1行書くだけです。 */
+
+/* =======================================================================
+   いまのキャスト（主人公の性別で切りかわります）
+
+     castNow()    … いま攻略できる相手のうち、最初からいる子
+     castHidden() … いま攻略できる相手のうち、条件つきで出てくる子
+     castAll()    … 性別を問わず、いる子ぜんぶ（きろく・おまけの検索用）
+
+   ★ 「その子を id でさがす」だけのときは castAll() を使ってください。
+     セーブに残っている子が、いまのキャストに入っていないことがあります
+     （両方入りのゲームで、男性主人公のセーブを開いたときなど）。
+   ======================================================================= */
+const castAll   = ()=>(typeof ALLG!=="undefined")?ALLG:[];
+const castOfSex = ()=>(typeof castFor==="function")?castFor(S.sex||"m")
+                    :((typeof ALLG!=="undefined")?ALLG:[]);
+const castNow    = ()=>castOfSex().filter(g=>!g.req);
+const castHidden = ()=>castOfSex().filter(g=> g.req);
+/* おまけ（シーン鑑賞・スチル・プロフィール）に並べる顔ぶれ。
+   ★ おまけは「集めたものを見る場所」なので、既定では男女ぜんぶ並べます。
+     castOfSex() にしてしまうと、タイトル画面の S.sex（既定は男性）で
+     しぼられて、**男性キャラのスチルがいつまでも出ません**。
+     いま選んでいる主人公のぶんだけにしたいときは
+     assets/config.js の GAME_RULE.galleryAll を false に。 */
+function castGal(){
+  const mine=castOfSex();
+  if(typeof GAME_RULE!=="undefined"&&GAME_RULE.galleryAll===false)return mine;
+  /* いま選んでいる主人公の攻略対象を先に、そのあとにもう片方を並べます
+     （ALLG のままだと order 順で男女が交互になって、読みづらいので） */
+  const ok=new Set(mine.map(g=>g.id));
+  return [...mine, ...castAll().filter(g=>!ok.has(g.id))];
+}
+/* ※ 固定行事のふるい分けは fixedOk()（下のほう）が受けもちます。
+     誕生日は G(f.who)——つまり S.girls——で見るので、いま登場していない子の
+     誕生日は出ません。ここに似た関数を作ると、二重になって混乱します。 */
+/* 主人公の性別を選ばせるか（男女どちらのキャストもそろっているときだけ） */
+function sexPickable(){
+  const R=(typeof GAME_RULE!=="undefined")?GAME_RULE:{};
+  const mode=R.protagonist||"auto";
+  if(mode==="m"||mode==="f")return false;
+  const has=s=>castFor(s).length>0;
+  if(mode==="both")return true;
+  return has("m")&&has("f");          /* "auto" */
+}
+/* はじめから遊ぶときの、はじめの性別 */
+function sexDefault(){
+  const R=(typeof GAME_RULE!=="undefined")?GAME_RULE:{};
+  const mode=R.protagonist||"auto";
+  if(mode==="m"||mode==="f")return mode;
+  const d=(R.defaultSex==="f")?"f":"m";
+  if(castFor(d).length)return d;                    /* その側に相手がいる */
+  return castFor(d==="f"?"m":"f").length ? (d==="f"?"m":"f") : d;
+}
+const sexName=s=>(s==="f")?"女性":"男性";
 
 
 
@@ -860,24 +918,27 @@ if(typeof DLC_EVENTS!=="undefined")Array.prototype.push.apply(FIXED,DLC_EVENTS);
    （fixedAt が先に見つけたほうを使うため） */
 FIXED.sort((a,b)=>MORDER.indexOf(a.m)-MORDER.indexOf(b.m)
   || a.d-b.d || (b.y||0)-(a.y||0));
+/* その行事が、いまのプレイで起きるか。
+   ★ 誕生日は「いま攻略できる子」のぶんだけ出します（G は S.girls をさがします）。
+     両方入りのゲームでは、同じ日に男女それぞれの誕生日が入ることがあるので、
+     **見つかった1件目で打ち切らず、起きるものをさがします。** */
+function fixedOk(f){
+  if(f.id==="bday"&&!G(f.who))return false;
+  if(f.id==="match"&&!isSportsClub())return false;    /* 運動部のときだけ */
+  return true;
+}
+const fixedFind=(y,m,d)=>
+  FIXED.filter(e=>e.m===m&&e.d===d&&(!e.y||e.y===y)).find(fixedOk)||null;
 function fixedAt(t){
   const c=CAL[t]; if(!c)return null;
-  const f=FIXED.find(e=>e.m===c.m&&e.d===c.d&&(!e.y||e.y===c.y));
-  if(f){
-    if(f.id==="bday"&&!G(f.who))return null;
-    if(f.id==="match"&&!isSportsClub())return null;   /* 運動部のときだけ */
-    return f;
-  }
+  const f=fixedFind(c.y,c.m,c.d);
+  if(f)return f;
   if(S.bd&&c.m===S.bd.m&&c.d===S.bd.d)return {m:c.m,d:c.d,id:"mybday",n:"あなたの誕生日",c:"bd",bg:"klass"};
   return null;
 }
 function eventOn(y,m,d){
-  const f=FIXED.find(e=>e.m===m&&e.d===d&&(!e.y||e.y===y));
-  if(f){
-    if(f.id==="bday"&&!G(f.who))return null;
-    if(f.id==="match"&&!isSportsClub())return null;
-    return f;
-  }
+  const f=fixedFind(y,m,d);
+  if(f)return f;
   if(S.bd&&m===S.bd.m&&d===S.bd.d)return {m,d,id:"mybday",n:"あなたの誕生日",g:"🎉",c:"bd",bg:"klass"};
   return null;
 }
@@ -891,6 +952,11 @@ const gdow=(y,m,d)=>((gidx(y,m,d)-4)%7+7)%7;
    3. 状態
    ======================================================================= */
 const S={name:"桜坂 優",t:0,
+  /* 主人公の性別。"m" 男性／"f" 女性。
+     ★ 攻略できる相手が誰になるかは、これと assets/config.js の
+       GAME_RULE.target で決まります（既定は異性）。
+       古いセーブには入っていないので、そのときは "m" になります。 */
+  sex:"m",
   p:{study:8,sport:8,art:6,charm:10,care:10,trend:6,rich:30},
   stress:0,girls:[],plan:new Array(6).fill(null),cur:0,pick:null,res:new Array(6).fill(null),
   sel:null,sei:"桜坂",mei:"優",ev:{},evseen:{},log:[],gen:0,speed:2,tspeed:2,bgfade:2,job:null,club:"none",blood:"A",bd:{m:5,d:5},sunPick:null,
@@ -903,6 +969,20 @@ function rec(box,key,n){ if(!S.rec)S.rec=recInit();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const G=id=>S.girls.find(g=>g.id===id);
+/* 役どころ（cue）でさがす。
+   ★ 主人公の性別を変えると、登場する子ごと入れかわります。
+     ですから、みんなが出るイベント（テスト・体育祭など）の中では
+     G("rena") のように名ざしにせず、こちらで引いてください。
+     札は story/<id>.js の p.cue にあります。
+       "osana" 幼なじみ ／ "top" 優等生・生徒会 ／ "sport" 運動部
+     その札の子がいないキャストなら null が返るので、
+     呼ぶ側は「いなければ、その場面を飛ばす」と書いておけば安全です。 */
+function Gcue(cue){
+  if(typeof STORY==="undefined")return null;
+  return (S.girls||[]).find(g=>{
+    const s=STORY[g.id]; return s&&s.p&&s.p.cue===cue;
+  })||null;
+}
 let resolver=null;
 
 /* =======================================================================
@@ -945,9 +1025,15 @@ function evReady(id){
 /* このイベントが「発生条件」になっているイベントのID */
 function evUnlocks(id){ return evAll().filter(e=>e.needs&&e.needs.indexOf(id)>=0).map(e=>e.id); }
 /* 一覧。{id,n,chara,kind,when,where,seen,day,ready} の形でかえします */
+/* イベントの一覧。
+   ★ いまの主人公では起きないもの（sex が反対のもの）は、はじめから外します。
+     f.all を true にすると、性別を問わず全部返します（仕様書づくり用）。 */
 function evList(f){
-  return evAll().filter(e=>!f||(!f.kind||e.kind===f.kind)&&(!f.chara||e.chara===f.chara))
-    .map(e=>({id:e.id,n:e.n,chara:e.chara,kind:e.kind,when:e.when,where:e.where,
+  const my=(S.sex==="f")?"f":"m";
+  return evAll()
+    .filter(e=>(f&&f.all) || !e.sex || e.sex===my)
+    .filter(e=>!f||(!f.kind||e.kind===f.kind)&&(!f.chara||e.chara===f.chara))
+    .map(e=>({id:e.id,n:e.n,chara:e.chara,kind:e.kind,sex:e.sex||null,when:e.when,where:e.where,
               needs:(e.needs||[]).slice(),seen:evSeen(e.id),day:evDay(e.id),ready:evReady(e.id)}));
 }
 /* 昔のセーブ（好感度イベントを S.ev["kanade0"] で持っていたもの）を引きつぐ */
@@ -974,6 +1060,14 @@ const ARTDIR="assets/";
 function artURL(path){
   if(typeof ART_DATA!=="undefined" && ART_DATA[path]) return ART_DATA[path];
   return ARTDIR+path;
+}
+/* その素材に、ほんとうに手が届くか。
+   1ファイル版（ART_ONEFILE）は、埋めこまれていないものには手が届きません。
+   イベントスチルは、ふだん埋めこまない（重いので）ので、これで見わけます。
+   フォルダ版とサーバー版は、いつでも true です。 */
+function artHave(path){
+  if(typeof ART_ONEFILE==="undefined" || !ART_ONEFILE) return true;
+  return !!(typeof ART_DATA!=="undefined" && ART_DATA[path]);
 }
 const artOf=id=>(typeof ART_LIST!=="undefined" && ART_LIST.chara && ART_LIST.chara[id])||null;
 const hasArt=id=>{const a=artOf(id);
@@ -1291,6 +1385,66 @@ function bustURL(g,exp){
 function bustArt(g,exp){
   const u=bustURL(g,exp);
   return u?`<img src="${u}" alt="">`:null;
+}
+
+/* ---- イベントスチル（1枚絵）--------------------------------------------
+     assets/chara/hinata/cg/01.png        1番
+     assets/chara/hinata/cg/01_a.png      1番の差分
+     assets/cg/01.png                     みんなのスチル（who を省いたとき）
+   番号は 1〜CGRULE.slots。差分は、この枠には数えません。
+   題名は story/cg.js（CG_TITLES）に書きます。 */
+const CGRULE=(typeof CG_RULE!=="undefined")?CG_RULE:{};
+const cgSlots=()=>(typeof CGRULE.slots==="number"?CGRULE.slots:30);
+const CGTTL=(typeof CG_TITLES!=="undefined")?CG_TITLES:{};
+/* その子（who 省略で共通）の、スチルのファイル名の一覧 */
+function cgList(who){
+  if(typeof ART_LIST==="undefined")return [];
+  if(!who||who==="common")return ART_LIST.cg||[];
+  const a=ART_LIST.chara&&ART_LIST.chara[who];
+  return (a&&a.cg)||[];
+}
+const cgDir=who=>(!who||who==="common")?"cg/":("chara/"+who+"/cg/");
+/* ファイル名を「番号」と「差分キー」に分ける。01_smile.png → {n:1,d:"smile"} */
+function cgParse(f){
+  const m=String(f).replace(/\.[^.]+$/,"").match(/^(\d+)(?:[_-](.+))?$/);
+  return m ? {n:+m[1], d:(m[2]||"").toLowerCase()} : null;
+}
+/* 番号（と差分）から、実際のファイル名をさがす */
+function cgFile(who,n,diff){
+  const want=(diff||"").toLowerCase();
+  const hit=cgList(who).map(f=>({f,p:cgParse(f)}))
+    .filter(x=>x.p && x.p.n===+n && x.p.d===want)[0];
+  return hit?hit.f:null;
+}
+/* 出せる絵のURL。差分が無ければ、差分なしの絵に落ちます。
+   1ファイル版で埋めこまれていないときは null（＝絵なしで話だけ進みます） */
+function cgURL(who,n,diff){
+  let f=cgFile(who,n,diff);
+  if(!f&&diff)f=cgFile(who,n,"");        /* その差分が無ければ、もとの絵 */
+  if(!f)return null;
+  const p=cgDir(who)+f;
+  return artHave(p)?artURL(p):null;
+}
+/* その番号のスチルが（差分もふくめて）1枚でもあるか */
+const cgHas=(who,n)=>!!cgURL(who,n);
+/* 見出しに出す題名。story/cg.js に書いていなければ「スチル 07」 */
+function cgTitle(who,n,diff){
+  const e=(CGTTL[who||"common"]||{})[n];
+  const two=String(n).padStart(2,"0");
+  if(e===undefined||e===null)return "スチル "+two;
+  if(typeof e==="string")return e||("スチル "+two);
+  const base=e.t||("スチル "+two);
+  const d=diff&&e.d&&e.d[diff];
+  return d?(base+"（"+d+"）"):base;
+}
+/* その番号にある差分キーの一覧（差分なしは含みません） */
+function cgDiffs(who,n){
+  return cgList(who).map(cgParse).filter(p=>p&&p.n===+n&&p.d).map(p=>p.d);
+}
+/* 差分の見出し。story/cg.js に書いていなければ、差分キーをそのまま出します */
+function cgDiffName(who,n,d){
+  const e=(CGTTL[who||"common"]||{})[n];
+  return (e&&e.d&&e.d[d])||d;
 }
 
 /* 重ね絵のHTMLを作る。crop のときは顔だけ切り取る */
@@ -1887,6 +2041,7 @@ function drawVnBar(){
 function applyVnArt(){
   const st=$("stage"); if(!st)return;
   artRefresh();     /* 素材が変わったかもしれないので、絵を描きなおさせる */
+  applyCgRule();    /* イベントスチルの入れかた（CG_RULE） */
   const pv=(k,d)=>(vnu(k,d)*100).toFixed(2)+"%";
   /* クイックメニューのうしろの帯 */
   const qb=vnQmBarArt();
@@ -2005,6 +2160,42 @@ function bgHTML(k){
   return hit ? `<img class="bgimg" src="${artURL("bg/"+hit)}" alt="">`
              : (BG[k]||BG.school)();
 }
+/* assets/bg/<名前>.png（jpg なども可）が置いてあるか */
+function bgHave(k){
+  if(!k)return false;
+  const list=(typeof ART_LIST!=="undefined"&&ART_LIST.bg)||[];
+  const hit=artName(list,k);
+  return !!hit && artHave("bg/"+hit);
+}
+/* ---- 行事ごとの背景 ----------------------------------------------------
+   体育祭・文化祭・修学旅行・初詣は、専用の絵を置けます。
+   上から順にさがして、**assets/bg/ にある絵**を使います。
+   どれも置いていなければ、いちばん最後の名前（もとからある背景）です。
+
+     体育祭 2年目  → sports2.png → sports.png → ground（もとの絵）
+     文化祭 3年目  → culture3.png → culture.png → school
+     修学旅行 2日目 → trip2.png  → trip.png    → town
+     初詣 1年目    → newyear1.png → newyear.png → shrine
+
+   ★ 1枚だけ描くなら sports.png のように番号なしで置けば、3年とも同じ絵です。
+     学年や日ごとに変えたくなったら、番号つきを足すだけで切りかわります。
+   絵の大きさは、ほかの背景と同じ 2400×1350（16:9）が目安です。 */
+const EVBG={
+  sports : y=>["sports"+y, "sports", "ground"],
+  culture: y=>["culture"+y,"culture","school"],
+  newyear: y=>["newyear"+y,"newyear","shrine"],
+  trip   : y=>["trip1","trip","town"],
+  trip2  : y=>["trip2","trip","town"],
+  trip3  : y=>["trip3","trip","town"]
+};
+/* その行事で使う背景の名前を決める */
+function evBg(ev){
+  if(!ev)return "klass";
+  const f=EVBG[ev.id];
+  if(!f)return ev.bg||"klass";
+  const cand=f(examYear())||[];
+  return cand.find(bgHave) || cand[cand.length-1] || ev.bg || "klass";
+}
 /* 背景の切りかわりにかける時間（ミリ秒）。
    オプションの「背景の切りかえ」で決まります。
    SKIP中は待たされたくないので、いつでも 0（一瞬）にします。 */
@@ -2012,7 +2203,22 @@ function bgFadeMs(){
   if(SKIPON)return 0;
   const b=BGFADES[S.bgfade]; return b?b.ms:0;
 }
-const BGF={t:null};
+/* 背景の切りかえの「はじまった時刻」と「かかる時間」をおぼえておきます。
+   立ち絵と顔の絵は、これを見て**背景が出きるまで待って**から出ます。 */
+const BGF={t:null, t0:0, ms:0};
+/* 立ち絵と顔を出すまで、あと何ミリ秒待てばよいか。
+   assets/config.js の VN_UI.charAfterBg で決まります。
+     true（既定）… 背景が出きってから出す
+     false        … いままでどおり、背景といっしょに出す
+     0〜1 の数字  … 背景の切りかえの、何割まで待つか（0.6 なら少し重なる） */
+function bgWaitMs(){
+  if(SKIPON)return 0;
+  const v=VNUI.charAfterBg;
+  const r=(typeof v==="number")?v:(v===false?0:1);
+  if(r<=0||!BGF.ms)return 0;
+  const w=Math.round(BGF.t0+BGF.ms*r-Date.now());
+  return w>0 ? Math.min(w,4000) : 0;      /* 念のため、待ちすぎない上限 */
+}
 /* 背景を切りかえる。
    新しい背景を上に重ねて、じわっと不透明にしていきます（クロスフェード）。
    古い層は切りかわりきってから捨てます。 */
@@ -2033,9 +2239,12 @@ function vnBGset(k){
   const ms=bgFadeMs();
   if(!el.firstElementChild || ms<=0){        /* 1枚目、または「なし」のとき */
     clearTimeout(BGF.t);
+    BGF.t0=0; BGF.ms=0;                      /* 待たずに立ち絵を出してよい */
     el.innerHTML=""; el.appendChild(layer);
     return;
   }
+  /* ここから、じわっと切りかわります。立ち絵と顔は、これが終わるまで待ちます */
+  BGF.t0=Date.now(); BGF.ms=ms;
   /* 立てつづけに切りかわったときに層がたまらないようにする。
      残した層はすぐ不透明にして「土台」にする（ここを飛ばすと、
      消えかけの層だけが残って、一瞬まっ暗になってしまいます）。 */
@@ -2054,6 +2263,45 @@ function vnBGset(k){
       el.removeChild(el.firstElementChild);
     layer.style.transition=""; layer.style.opacity="";
   }, ms+80);
+}
+/* ---- イベントスチル（1枚絵）を出す／消す ------------------------------
+     vnStill("hinata", 1)           1番のスチルを出す
+     vnStill("hinata", 1, "smile")  その差分を出す（無ければ、もとの絵）
+     vnStill(null)                  消す（立ち絵と顔が、また出てきます）
+
+   ・立ち絵より上、メッセージ枠より下に出るので、文章はスチルの上に読めます
+   ・絵が置いていないとき（1ファイル版で埋めこんでいないときも）は、
+     なにも出さずに false を返します。話はそのまま進みます
+   ・出したスチルは、おまけの「スチル」に記録されます
+   ・場面を閉じると（vnClose）、自動で消えます */
+function vnStill(who,n,diff){
+  const el=$("vnStill"); if(!el)return false;
+  const B=document.body;
+  if(!who||!n){                              /* 消す */
+    B.classList.remove("cgon","cgnochar","cgnoface");
+    artSet(el,"",null);
+    return false;
+  }
+  const u=cgURL(who,n,diff);
+  if(!u)return false;                        /* 絵が無い＝なにも出さない */
+  B.classList.add("cgon");
+  B.classList.toggle("cgnochar", CGRULE.charOff!==false);
+  B.classList.toggle("cgnoface", CGRULE.faceOff!==false);
+  const html=`<img src="${u}" alt="">`;
+  const key=who+"|"+n+"|"+(diff||"");
+  if(CGRULE.bgFade===false){ artClear(el); el.dataset.artk=key; el.innerHTML=html; }
+  else artSet(el,html,key);
+  galCG(who,n);
+  return true;
+}
+/* いまスチルが出ているか */
+const vnStillOn=()=>document.body.classList.contains("cgon");
+/* 入れかた（画面いっぱいに切る／絵ぜんぶを出す）を、CG_RULE から画面に伝えます */
+function applyCgRule(){
+  const st=$("stage"); if(!st)return;
+  st.style.setProperty("--cgfit", CGRULE.fit||"cover");
+  st.style.setProperty("--cgfx", Math.round(((typeof CGRULE.focusX==="number")?CGRULE.focusX:0.5)*100)+"%");
+  st.style.setProperty("--cgfy", Math.round(((typeof CGRULE.focusY==="number")?CGRULE.focusY:0.5)*100)+"%");
 }
 /* その場面だけ、着せる服を決めうちしたいとき（例: vnOutfit("swim")）。
    null に戻すと、背景と月から自動で決まる。 */
@@ -2079,6 +2327,8 @@ function vnOpen(bg){
   /* 場面を開きなおすときは、立ち絵と顔はフェードせず、すぐ空にします
      （前の場面の絵が、新しい場面にうすく残って見えないように） */
   artClear($("vnChar")); artClear($("vnFaceWin"));
+  artClear($("vnStill"));
+  document.body.classList.remove("cgon","cgnochar","cgnoface");
   $("vnFaceWin").classList.remove("on");
   $("vnName").classList.remove("on");
   VNFACEOFF=false;
@@ -2089,7 +2339,10 @@ function vnOpen(bg){
    now=true なら、待たずにすぐ消します（タイトルへ戻るときなど）。 */
 function vnClose(now){
   S.vnOn=false; vnStopAuto(); VNFACEOFF=false;
-  hideBoard(); vnFaceWin(null);
+  /* 背景を待っている立ち絵があれば、取り消します
+     （場面を閉じたあとに、あとから立ち絵が出てこないように） */
+  artStop($("vnChar"));
+  hideBoard(); vnFaceWin(null); vnStill(null);
   /* ★ 背景の層も、いっしょに片づけます。
      ここを残しておくと、つぎに会話が始まったときに
      **いったん前の場面の背景が出てから**新しい背景へクロスフェードしてしまいます
@@ -2213,6 +2466,8 @@ function roomVnOpen(){
   /* 場面を開きなおすときは、立ち絵と顔はフェードせず、すぐ空にします
      （前の場面の絵が、新しい場面にうすく残って見えないように） */
   artClear($("vnChar")); artClear($("vnFaceWin"));
+  artClear($("vnStill"));
+  document.body.classList.remove("cgon","cgnochar","cgnoface");
   $("vnFaceWin").classList.remove("on");
   $("vnName").classList.remove("on");
   VNFACEOFF=false; vnHide(false); drawVnBar();
@@ -2341,9 +2596,11 @@ function titleScan(quiet){
     if(!quiet&&typeof SKIPON!=="undefined"&&!SKIPON){
       const top=got.reduce((a,b)=>b.w>a.w?b:a);
       toast(got.length>1
-        ? `称号「${top.n}」ほか${got.length-1}個を手に入れた！`
-        : `称号「${top.n}」を手に入れた！`);
-      se("pinpon");
+        ? `称号「${ttName(top)}」ほか${got.length-1}個を手に入れた！`
+        : `称号「${ttName(top)}」を手に入れた！`);
+      /* 称号だけの音。assets/se/title.mp3 を置くとそれが鳴ります。
+         置いていなければ、いままでどおり pinpon（正解音）です */
+      se("title");
     }
   }
   return got;
@@ -2366,7 +2623,7 @@ function drawStatus(){
       <div class="pr"><span>魅　力</span><b>${v("charm")}</b></div>
     </div>
     <div class="lvl"><span class="lv1">校内評価</span><span class="ttlnm">${
-      (T=>T?T.n:"—")(titleNow())
+      ttName(titleNow())
     }</span><span class="stars">${"★".repeat(L)}<i>${"★".repeat(5-L)}</i></span></div>`;
   titleScan();
 }
@@ -2619,9 +2876,58 @@ function closeMsg(){if(!S.vnOn)$("msg").style.display="none";}
      {{kanade.role}} → 幼なじみ / 家庭科部
    こうしておくと、名前を変えても本文を書きかえずに済みます。
    知らない id はそのまま残すので、書きまちがえても文章は消えません。 */
+/* 主人公の名前を差しこむ。
+     {主}     → 桜坂 優（フルネーム）
+     {主.名}  → 優        「{主.名}さん」なら「優さん」
+     {主.姓}  → 桜坂
+   ★ 主人公の名前はプレイヤーが決めるので、セリフに直に書かず、
+     かならずこの差しこみ口を使ってください。
+   ★ {主彼}（主人公を指す「彼／彼女」）は下の sexWords が受けもちます。
+     ここの正規表現は「主のすぐあとに } か .名 か .姓」だけを見るので、
+     {主彼} はここでは置きかわりません。 */
+function heroWords(t){
+  if(typeof t!=="string"||t.indexOf("{主")<0)return t;
+  return t.replace(/\{主(?:\.(名|姓))?\}/g,(all,f)=>
+    (f==="名") ? (S.mei||S.name||"")
+  : (f==="姓") ? (S.sei||"")
+  :              (S.name||""));
+}
+/* 性別で入れかわる言葉（{彼} など）を、いまの主人公・いまの相手に合わせます。
+   使える言葉の表は story/events.js の SEXWORD にあります。 */
+/* いま話している相手（キャラid）。ふだんは null で、
+   S.sex から「主人公＝どちら／相手＝どちら」を決めます。
+   ★ おまけの「シーン鑑賞」は、いま選んでいる主人公と関係なく、
+     男女どちらの子の場面も再生できます。そのときだけ、ここに相手の id を
+     入れて、{彼} や {くん} をその子に合わせます。
+     （入れないと、女性キャラの場面で「彼」、男性キャラの場面で「彼女」に
+      なってしまいます） */
+let SEXWHO=null;
+function sexWords(t){
+  if(typeof t!=="string"||t.indexOf("{")<0)return t;
+  const W=(typeof SEXWORD!=="undefined")?SEXWORD:null; if(!W)return t;
+  let my=(S.sex==="f")?"f":"m";
+  let you=(typeof targetSex==="function")?targetSex(my):(my==="f"?"m":"f");
+  if(SEXWHO){
+    const g=castAll().find(x=>x.id===SEXWHO);
+    if(g&&g.sex){
+      you=g.sex;
+      /* その子が攻略対象になるのは、どちらの主人公のときか */
+      my=(typeof targetSex==="function")
+           ? ((targetSex("m")===g.sex)?"m":"f")
+           : ((g.sex==="f")?"m":"f");
+    }
+  }
+  return t.replace(/\{([^{}]{1,8})\}/g,(all,k)=>{
+    const w=W[k]; if(!w)return all;           /* 知らない言葉は、そのままにしておく */
+    const s=(w.by==="主人公")?my:you;
+    return (w[s]!==undefined)?w[s]:all;
+  });
+}
 function nm(t){
-  if(typeof t!=="string"||t.indexOf("{{")<0)return t;
-  return t.replace(/\{\{([A-Za-z0-9_]+)(?:\.(mei|sei|name|role))?\}\}/g,(all,id,f)=>{
+  if(typeof t!=="string")return t;
+  t=heroWords(t);                    /* {主.名} などを先に名前へ */
+  if(t.indexOf("{{")<0)return sexWords(t);
+  return sexWords(t.replace(/\{\{([A-Za-z0-9_]+)(?:\.(mei|sei|name|role))?\}\}/g,(all,id,f)=>{
     const k=f||"name";
     const c=(typeof CHARA_NAMES!=="undefined"&&CHARA_NAMES[id])||null;
     if(c&&c[k])return c[k];
@@ -2630,7 +2936,7 @@ function nm(t){
     const s=(typeof STORY!=="undefined")&&STORY[id];
     if(s&&s[k])return s[k];
     return all;                       /* 知らない名前は、そのままにしておく */
-  });
+  }));
 }
 
 /* quote を true にすると「そのページに1つだけ」のセリフ扱いになる */
@@ -2687,7 +2993,7 @@ function choose(opts,anywhere,bare){
       if(opts.length>=7)box.classList.add("many3");
       else if(opts.length>=5)box.classList.add("many2");
       opts.forEach(o=>{const b2=document.createElement("button");
-        b2.className="btn "+(o.pk?"pk":o.gy?"gy":"");b2.innerHTML=o.t;
+        b2.className="btn "+(o.pk?"pk":o.gy?"gy":"");b2.innerHTML=nm(o.t);
         b2.onclick=e=>{e.stopPropagation();finish(o.v);};box.appendChild(b2);});
     };
     const step=()=>{                       /* 進めるものがあれば1つ進める */
@@ -2745,7 +3051,8 @@ function openModal(title,html,btns,full,keep){
   /* 窓は下の画面の上に重なるので、窓のほうをうっすら ⇄ はっきり させます
      （「くわしく」「あそび方」など、この関数を通る窓ぜんぶ） */
   modalShow(()=>{
-    $("modal").style.display="flex";$("modTtl").textContent=title;$("modBody").innerHTML=html;});
+    /* ★ 窓の中身も差しこみ口を通します（{女の子} などが、そのまま出てしまわないように） */
+    $("modal").style.display="flex";$("modTtl").textContent=nm(title);$("modBody").innerHTML=nm(html);});
   const stay=v=>(keep===true)||(typeof keep==="function"&&keep(v));
   const bb=$("modBtns");bb.innerHTML="";
   /* ★ 消えきってから resolve します。先に resolve すると、呼び出し側が
@@ -2904,8 +3211,8 @@ async function iconClick(el){
       ・部活に入っていると、いちばん左に<b>部活コマンド</b>が出ます。部ごとに伸びる能力が違います。<br>
       ・帰宅部なら、緑の<b>🏫入部する</b>から途中入部できます（一度入ると変えられません）。<br>
       ・<b>💰バイト</b>は初回に勤め先を選びます（コンビニ／カフェ／本屋／ペットショップ）。伸びるものが違い、⚙せってい で変更できます。<br>
-      ・バイト中、ごくまれに知り合いの女の子が客としてやってきます。<br>
-      ・その部にいる女の子とは、入部したときに専用のイベントが起こります。<b>まだ会っていない子なら、そこで知り合えます。</b><br>
+      ・バイト中、ごくまれに知り合いの{女の子}が客としてやってきます。<br>
+      ・その部にいる{女の子}とは、入部したときに専用のイベントが起こります。<b>まだ会っていない子なら、そこで知り合えます。</b><br>
       ・<b>📅予定表</b>で年間カレンダーを確認できます。テスト・行事・誕生日・長期休みが色分けされています。<br>
       ・予定を実行すると<b>1日ずつ</b>進みます。◎大成功はピンポンピンポン、○成功はピンポン、×失敗はブブー。<br>
       ・画面をクリックすればすぐ次の日へ進みます。<b>⚙せってい</b>で進行のはやさと音を変えられます。<br>
@@ -2913,9 +3220,9 @@ async function iconClick(el){
       ・<b>💾きろく</b>でセーブ／ロード（スロット100個＋オートセーブ）。セーブは月曜と日曜だけ、ロードはいつでも。メモを書いておけます。<br>
       ・<b>🛠デバッグ</b>で日付ジャンプやパラメータ書き換えができます。<br>
       ・ストレス70超で風邪をひきやすくなります。休養を挟みましょう。<br>
-      ・女の子は理想のパラメータに近い人を自然と好きになります。顔アイコンで好みを確認できます。<br>
+      ・{女の子}は理想のパラメータに近い人を自然と好きになります。顔アイコンで好みを確認できます。<br>
       ・しばらく会わないでいると、好感度は少しずつ下がっていきます。<br>
-      ・<b>特定のパラメータを伸ばすと、新しい女の子と出会えます。</b>流行・芸術・魅力を90まで上げてみてください。<br>
+      ・<b>特定のパラメータを伸ばすと、新しい{女の子}と出会えます。</b>流行・芸術・魅力を90まで上げてみてください。<br>
       ・会話中は下のボタンが使えます。<b>AUTO</b>は自動送り、<b>SKIP</b>は早送り（どちらも選択肢が出ると止まります）。右上の<b>✕</b>でウィンドウを隠せます（画面を押すと戻ります）。<br>
       <span style="color:#8a7a68;font-size:12px">メッセージウィンドウ・ボタン素材：MessageFrame vol.28（空想曲線 様）</span></div>`,
       null,true);
@@ -3056,6 +3363,16 @@ function calMonthBig(y,m){
 }
 /* 3年ぶんを走査して、1か月あたりの行事＋祝日の最大行数を求める（行事欄の高さを揃えるため） */
 let CEVN=0;
+/* 行事のならびに、あらかじめ空けておく行数。
+   ★ 画面の低いスマホでは、ここを空けすぎると、そのぶん日づけのマス目が
+     つぶれて、数字が重なって読めなくなります（iPhone 12 mini の横向きで
+     マスが 6px になっていました）。なので、せまい画面では行数を減らします。
+     行事がそれより多い月は、欄のほうがのびるので、消えたりはしません。 */
+function calEvLines(){
+  const b=document.body.classList;
+  const cap=b.contains("sh2")?1:b.contains("sh")?2:b.contains("mb")?3:99;
+  return Math.min(calMaxEvLines(), cap);
+}
 function calMaxEvLines(){
   if(CEVN)return CEVN;
   let mx=1;
@@ -3085,7 +3402,7 @@ function calendarMenu(){
           <span class="lg eex"></span>テスト <span class="lg eev"></span>行事 <span class="lg ebd"></span>誕生日
           <span class="lg evc"></span>長期休み <span class="lg ehol" style="background:#ffd9e2"></span>祝日
           <span style="color:#8a7a68">（背景の緑は休み期間／赤枠は今日）</span></div>
-        <div class="cwrap2" style="--cevn:${calMaxEvLines()}">${calMonthBig(a.y,a.m)}${calMonthBig(b.y,b.m)}</div>`;
+        <div class="cwrap2" style="--cevn:${calEvLines()}">${calMonthBig(a.y,a.m)}${calMonthBig(b.y,b.m)}</div>`;
       $("modBtns").innerHTML=
         `<button class="btn gy" data-k="-1" ${S.calIdx<=0?"disabled":""}>◀ 前の月</button>
          <button class="btn gy" data-k="now">今月</button>
@@ -3146,7 +3463,7 @@ async function runWeek(startIdx){
       S.dayIdx=i;
       if(ev){
         if(si>=0)S.res[si]={k:"ok",label:ev.n};
-        drawWeek(); vnOpen(ev.bg||"klass"); opened=true;
+        drawWeek(); vnOpen(evBg(ev)); opened=true;   /* 行事ごとの背景（EVBG） */
         await runFixed(ev);
         continue;
       }
@@ -3259,7 +3576,7 @@ async function weekEnd(){
     addAff(g,net,true);
   }
   // 新しい出会い
-  for(const h of HIDDEN){
+  for(const h of castHidden()){
     if(G(h.id))continue;
     if(S.p[h.req.p]>=h.req.v){
       S.girls.push({...h, ideal:{...h.ideal}, aff:h.aff, last:S.t});
@@ -3296,14 +3613,60 @@ const JOBS={
 };
 /* 「どの部活・どのバイト先にその子が出るか」も story/<名前>.js の p.clubs / p.job から。
    女の子を増やして clubs:["band"] と書けば、その子が軽音楽部の相手役になります。 */
-(function linkGirls(){
+/* ★ いまのキャストの子だけを結びつけます。
+   男女ぶんのキャラをそろえると、同じ部活の相手役を取り合ってしまうので、
+   主人公の性別が決まるたび（はじめから／ロード）に、ここをやりなおします。 */
+/* ---- 性別で差しかわる文章を組み立てる ----------------------------------
+   story/events.js（共通）の上に、story/events_f.js または events_m.js の
+   「書いてあるぶんだけ」をかぶせて、TXT の中身を入れかえます。
+   ★ ゲームじゅうが TXT.valen のように直接見ているので、
+     入れものはそのままにして、中身だけ入れかえます。 */
+function deepCopy(o){
+  if(Array.isArray(o))return o.map(deepCopy);
+  if(o&&typeof o==="object"){const r={};for(const k in o)r[k]=deepCopy(o[k]);return r;}
+  return o;
+}
+function deepMerge(base,over){
+  const r=deepCopy(base);
+  for(const k in over){
+    const v=over[k], b=r[k];
+    const obj=x=>x&&typeof x==="object"&&!Array.isArray(x);
+    r[k]=(obj(v)&&obj(b))?deepMerge(b,v):deepCopy(v);
+  }
+  return r;
+}
+const TXTBASE=(typeof TXT!=="undefined")?deepCopy(TXT):null;
+function applyTxtSex(){
+  if(!TXTBASE||typeof TXT==="undefined")return;
+  const over=(S.sex==="f")?((typeof TXT_F!=="undefined")?TXT_F:null)
+                          :((typeof TXT_M!=="undefined")?TXT_M:null);
+  const merged=(over&&Object.keys(over).length)?deepMerge(TXTBASE,over):deepCopy(TXTBASE);
+  for(const k in TXT)delete TXT[k];
+  for(const k in merged)TXT[k]=merged[k];
+}
+function linkCast(){
+  applyTxtSex();
+  /* 称号のうち「◯◯と好きになる」は、いまのキャストのぶんだけ並べます
+     （story/titles.js の ttSync）。ここを忘れると、一覧に取れない称号が出ます。 */
+  if(typeof ttSync==="function")ttSync();
+  /* イベント台帳は一度きり作って持ちまわしています。部活の相手役が変わるので、
+     ここで捨てて、次に見られたときに作りなおさせます。 */
+  EVENTS=null; EVENT_LIST=null;
   if(typeof STORY==="undefined")return;
+  const ok=new Set(castOfSex().map(g=>g.id));
+  /* まず、前のキャストの結びつきを外します。
+     これをしないと、性別を変えたときに「もういない子」が
+     部活の相手役として残ってしまいます。 */
+  for(const k in CLUBS){ CLUBS[k].mate=null; CLUBS[k].girl=null; }
+  for(const k in JOBS){ JOBS[k].fav=null; }
   for(const id in STORY){
+    if(!ok.has(id))continue;
     const p=STORY[id].p; if(!p)continue;
     (p.clubs||[]).forEach(k=>{ if(CLUBS[k]){CLUBS[k].mate=id; CLUBS[k].girl=id;} });
     if(p.job&&JOBS[p.job])JOBS[p.job].fav=id;
   }
-})();
+}
+linkCast();
 function pickVisitor(){
   const J=JOBS[S.job]||JOBS.conv;
   const cand=S.girls.filter(g=>g.aff>=50);
@@ -3461,9 +3824,13 @@ async function restDay(){
       const R=doDay(k,S.t);
       if(await stamp(R.r))return;
       say(R.gain);
+      /* ★ 平日とおなじで、ボタンを押させずに、ひとりでに次へ進みます。
+         待つ長さは「進行のはやさ」で決まり、押せばすぐ飛ばせます。
+         （オプションで「クリックで送る」を選んでいる人は、いままでどおり
+           押すまで待ちます＝ sp が 0 のとき waitOrClick(0) は押し待ちです） */
+      if(await waitOrClick(sp===0?0:700*sp))return;
       if(R.visit)await jobVisit(R.visit);
       if(gen!==S.gen)return;
-      await next("▶ つぎの日へ");
     } finally {
       /* ロードされていたら、新しいゲームの画面を閉じてしまわない */
       if(gen===S.gen){ vnClose(); $("msg").style.display=keepMsg; S.busy=false; }
@@ -3763,12 +4130,14 @@ async function evExam(ev){
   say(fmt(E.result,{順位:rank}));
   S.stress=clamp(S.stress+rnd(8,14),0,100);
   const good=board.rank<=50, bad=board.rank>150;
-  const rena=G("rena");
-  if(rena&&good){addAff(rena,40);line(rena,E.renaGood);}
-  else if(rena&&bad){addAff(rena,-20);line(rena,E.renaBad);}
-  /* いちばん好感度の高い子が、いまの間柄なりの反応をする（玲奈が上のときは重ねない） */
+  /* 優等生の子（p.cue==="top"）が、順位に反応する。
+     男主人公なら天堂 玲奈、女主人公なら殿城 龍之介。いなければ飛ばします */
+  const hon=Gcue("top");
+  if(hon&&good){addAff(hon,40);line(hon,E.topGood);}
+  else if(hon&&bad){addAff(hon,-20);line(hon,E.topBad);}
+  /* いちばん好感度の高い子が、いまの間柄なりの反応をする（優等生が上のときは重ねない） */
   const top=topGirl(S.girls);
-  if(top&&!(rena&&top.id==="rena"&&(good||bad))){
+  if(top&&!(hon&&top.id===hon.id&&(good||bad))){
     const t=tierText(E.top,top);
     if(t){ vnFace(top, good?"happy":bad?"worry":"normal");
       tierPlay(good?t.good:bad?t.bad:(t.mid||t.good), top);
@@ -3862,7 +4231,10 @@ async function evCulture(ev){
   const home=(S.club==="none");
   const list=CULTURE[S.club]||CULTURE.none;
   const P0=list[clamp(c.y-1,0,list.length-1)];
-  if(S.vnOn)vnBGset(P0.bg||"school");
+  /* 文化祭の背景。assets/bg/culture<学年>.png（無ければ culture.png）を置いていれば
+     それを使い、置いていなければ、いままでどおり出し物ごとの背景（P0.bg）です。 */
+  const cbg=(EVBG.culture(c.y)||[]).slice(0,-1).find(bgHave) || P0.bg || "school";
+  if(S.vnOn)vnBGset(cbg);
   vnFace(null);
   say(fmt(E.head,{月:c.m,日:c.d,年:c.y}),"ev");
   say(home?fmt(E.homeLine,{出し物:P0.n})
@@ -3911,12 +4283,38 @@ async function evCulture(ev){
   redraw(); await next();
 }
 
-/* バレンタイン
+/* =======================================================================
+   バレンタイン と ホワイトデー
+   ・主人公が「もらう側」か「渡す側」かで、中身がまるごと変わります。
+     もらう側 … 仲のいい子ぜんぶがくれる（従来どおり）
+     渡す側   … 渡せるのはひとりだけ。誰を選ぶかが、そのまま答えになる
+   ・どちらになるかは assets/config.js の GAME_RULE.valentine で決まります。
+       "auto"（既定）男性主人公はもらう側／女性主人公は渡す側
+       "get"  いつももらう側 ／ "give" いつも渡す側
+   ・ホワイトデーは、かならずバレンタインの逆になります。
+   ・S.valen には「2月14日にやりとりした相手」が入り、3月14日が使います。
+     もらう側 … くれた子ぜんぶ ／ 渡す側 … 渡した相手ひとり
+   ======================================================================= */
+function valenSide(){
+  const r=(typeof GAME_RULE!=="undefined"&&GAME_RULE.valentine)||"auto";
+  if(r==="get"||r==="give")return r;
+  return (S.sex==="f")?"give":"get";
+}
+async function evValentine(){
+  if(valenSide()==="give") await evValenGive();
+  else                     await evValenGet();
+}
+async function evWhite(){
+  if(valenSide()==="give") await evWhiteGet();   /* 渡した人は、もらう側 */
+  else                     await evWhiteGive();
+}
+
+/* ---- バレンタイン：もらう側 -------------------------------------------
    ・「普通」の子はくれない
    ・「友達」「気になる人」は義理チョコ
    ・「好き」の子だけ本命チョコ
    誰が本命をくれたかは覚えておいて、ホワイトデーで使う。 */
-async function evValentine(){
+async function evValenGet(){
   const E=TXT.valen;
   say(E.head,"ev");
   S.valen=[];
@@ -3931,6 +4329,69 @@ async function evValentine(){
     g.last=S.t;
     S.valen.push({id:g.id,h:honmei});
   }
+  S.stress=clamp(S.stress-8,0,100);
+  redraw();await next("▶ 次の日へ");
+}
+
+/* ---- バレンタイン：渡す側 ---------------------------------------------
+   渡せるのは、ひとりだけ。
+   ・「ちゃんとしたチョコを買う」（リッチ度）か「手作りする」（気配り）
+   ・相手の反応は、いまの間柄（普通／友達／気になる人／好き）で変わります
+   ・「好き」の子に渡したときは本命あつかいで、ホワイトデーの返しも大きい
+   ・渡さなかったときは、何も起きません（もらっていないので、下がりもしない） */
+async function evValenGive(){
+  const E=TXT.valenGive;
+  say(E.head,"ev");
+  S.valen=[];
+  const list=S.girls.slice();
+  if(!list.length){ say(E.none); await next("▶ 次の日へ"); return; }
+  say(E.ask);
+  const id=await choose([...list.map(g=>({t:fmt(E.pick,{名前:g.name}),v:g.id})),
+                         {t:E.pickNone,v:null,gy:true}]);
+  if(!id){ say(E.skip,"dn"); await next("▶ 次の日へ"); return; }
+  const g=list.find(x=>x.id===id);
+  const how=await choose([{t:E.opts[0],v:"buy"},{t:E.opts[1],v:"hand"}]);
+  let mul=1;
+  if(how==="buy"){
+    if(S.p.rich<E.cost){ say(E.poor,"dn"); mul=0.5; }
+    else { S.p.rich-=E.cost; say(E.buy); }
+  }else{
+    const q=S.p.care;
+    say(q>=80?E.handGood:E.handPoor);
+    mul = q>=150?1.25 : q>=80?1.0 : 0.6;
+  }
+  se("heart");
+  /* ★ ここが「相手の好感度で反応が変わる」ところ。
+     E.react の normal／friend／crush／love から、いまの間柄のものを選びます。 */
+  const t=tierText(E.react,g);
+  const d=tierPlay(t,g,affAtLeast(g,"crush")?"blush":"happy");
+  if(d) addAff(g, d*(mul-1), true);       /* 上で基本ぶんは足りているので差ぶんだけ */
+  g.last=S.t;
+  const honmei=affTier(g)==="love";
+  S.valen.push({id:g.id,h:honmei});
+  S.stress=clamp(S.stress-8,0,100);
+  redraw();await next("▶ 次の日へ");
+}
+
+/* ---- ホワイトデー：もらう側 -------------------------------------------
+   2月14日に渡した相手が、お返しをくれます。
+   ・くれるかどうかと、その言いかたは、いまの間柄で変わります
+   ・「普通」の間柄なら、律儀に返ってくるだけ。「好き」なら待っていた側になる */
+async function evWhiteGet(){
+  const E=TXT.whiteGet;
+  say(E.head,"ev");
+  const raw=(S.valen||[]).map(v=>typeof v==="string"?{id:v,h:false}:v);
+  const list=raw.map(v=>({g:G(v.id),h:!!v.h})).filter(x=>x.g);
+  if(!list.length){ say(E.none); S.valen=[]; await next("▶ 次の日へ"); return; }
+  for(const {g,h} of list){
+    say(fmt(E.got,{名前:g.name}),"ev");
+    se("heart");
+    const t=tierText(E.react,g);
+    const d=tierPlay(t,g,affAtLeast(g,"crush")?"blush":"happy");
+    if(h&&d) addAff(g, E.honmeiBonus||0, true);
+    g.last=S.t;
+  }
+  S.valen=[];
   S.stress=clamp(S.stress-8,0,100);
   redraw();await next("▶ 次の日へ");
 }
@@ -3956,7 +4417,7 @@ function tripInviter(){
 async function tripAsk(E,except){
   const list=S.girls.filter(g=>!except||g.id!==except.id);
   const id=await choose([...list.map(g=>({t:fmt(E.pickGirl,{名前:g.name}),v:g.id})),
-                         {t:fmt(E.pickAlone,{男友達:E.friendName}),v:null,gy:true}]);
+                         {t:fmt(E.pickAlone,{友達:E.friendName}),v:null,gy:true}]);
   if(!id)return null;
   const g=G(id);
   if(affTier(g)==="normal"){            /* まだ誘える仲ではない → 1人で回る */
@@ -3998,7 +4459,7 @@ async function evTrip1(){
     tierPlay(tierText(E.day1,partner),partner,"happy");
     partner.last=S.t;
   }else{
-    (E.aloneDay1||[]).forEach(s=>say(fmt(s,{男友達:E.friendName})));
+    (E.aloneDay1||[]).forEach(s=>say(fmt(s,{友達:E.friendName})));
   }
   S.stress=clamp(S.stress-14,0,100);
   redraw(); await next();
@@ -4007,7 +4468,7 @@ async function evTrip1(){
   redraw(); await next("▶ 次の日へ");
 }
 
-/* 夜。いちばん好感度が高く、かつ「好き」の子がいればその子と。いなければ男友達と */
+/* 夜。いちばん好感度が高く、かつ「好き」の子がいればその子と。いなければ同室の友達と */
 async function tripNight(){
   const E=TXT.trip, N=E.night;
   const loves=S.girls.filter(g=>affTier(g)==="love");
@@ -4015,7 +4476,7 @@ async function tripNight(){
   say(N.head,"ev");
   if(!g){
     vnFace(null);
-    (N.friends||[]).forEach(s=>say(fmt(s,{男友達:E.friendName})));
+    (N.friends||[]).forEach(s=>say(fmt(s,{友達:E.friendName})));
     S.stress=clamp(S.stress-10,0,100);
     return;
   }
@@ -4037,7 +4498,7 @@ async function evTrip2(){
   say(E.head2,"ev");
   const g=(S.trip&&S.trip.who)?G(S.trip.who):null;
   if(g){ tierPlay(tierText(E.day2,g),g,"happy"); g.last=S.t; }
-  else  { (E.aloneDay2||[]).forEach(s=>say(fmt(s,{男友達:E.friendName}))); }
+  else  { (E.aloneDay2||[]).forEach(s=>say(fmt(s,{友達:E.friendName}))); }
   S.stress=clamp(S.stress-16,0,100);
   redraw(); await next("▶ 次の日へ");
 }
@@ -4048,7 +4509,7 @@ async function evTrip3(){
   say(E.head3,"ev");
   const g=(S.trip&&S.trip.who)?G(S.trip.who):null;
   if(g){ tierPlay(E.day3.with,g,"normal"); g.last=S.t; }
-  else  { (E.day3.alone||[]).forEach(s=>say(fmt(s,{男友達:E.friendName}))); }
+  else  { (E.day3.alone||[]).forEach(s=>say(fmt(s,{友達:E.friendName}))); }
   S.trip=null;
   S.stress=clamp(S.stress-8,0,100);
   redraw(); await next("▶ 次の日へ");
@@ -4114,8 +4575,10 @@ async function evSports(){
                         {t:E.opts[1],v:"normal"},
                         {t:E.opts[2],v:"back"}]);
   const sp=S.p.sport;
-  /* ひなたがいないデータでも落ちないように、居ないときは捨て先を用意する */
-  const h=G("hinata")||{aff:0,last:0,name:"",id:"",q:{ok:"",bad:"",hi:""}};
+  /* 運動部の子（p.cue==="sport"）がリレーの相方。
+     男主人公なら夏川 ひなた、女主人公なら立花 大地。
+     その札の子がいないデータでも落ちないように、居ないときは捨て先を用意する */
+  const h=Gcue("sport")||{aff:0,last:0,name:"",id:"",q:{ok:"",bad:"",hi:""}};
   if(k==="relay"){
     if(sp>=150){se("great");say(E.relayWin[0],"ev");
       E.relayWin.slice(1).forEach(t=>say(t));
@@ -4167,7 +4630,8 @@ async function evNewYear(){
    お返しは「ひとりだけ」。誰を選ぶかがそのまま答えになる。
    選ばれた子の反応は間柄で変わり、本命をくれた子は喜びが大きい。
    選ばれなかった子は、少しだけ気持ちが離れる。 */
-async function evWhite(){
+/* ---- ホワイトデー：渡す側（従来どおり） ---- */
+async function evWhiteGive(){
   const E=TXT.white;
   say(E.head,"ev");
   /* 古いセーブでは id の文字列だけが入っている */
@@ -4485,7 +4949,7 @@ function debugMenu(){
         <div class="dbgsec"><b>登場キャラ</b>
           <span style="color:#8a7a68;font-size:11.5px">押すと、その子を出したり引っこめたりできます（かくれている3人もすぐ出せます）</span>
           <div class="dbgline">
-            ${ALLG.map(x=>{const on=!!G(x.id);
+            ${castOfSex().map(x=>{const on=!!G(x.id);
               return `<span class="chip sm ${on?"on":""}" data-d="girl:${x.id}">${on?"◉":"○"} ${x.name}</span>`;}).join("")}
             <button class="btn gy sm" data-d="gall">全員出す</button>
             <button class="btn gy sm" data-d="gmin">はじめの3人だけ</button>
@@ -4511,7 +4975,7 @@ function debugMenu(){
 
         <div class="dbgsec"><b>称号</b>
           <span style="color:#8a7a68;font-size:11.5px">
-            いまの校内評価：<b>${(T=>T?T.n:"—")(titleNow())}</b>　／
+            いまの校内評価：<b>${ttName(titleNow())}</b>　／
             集めた数：<b>${TITLES.filter(t=>GAL.tt[t.id]).length} / ${TITLES.length}</b></span>
           <div class="dbgline">
             <button class="btn gy sm" data-d="ttall">全部取得したことにする</button>
@@ -4666,15 +5130,15 @@ function debugMenu(){
         else { const d=ALLG.find(x=>x.id===id); S.girls.push({...d,ideal:{...d.ideal},aff:d.aff,last:S.t}); }
         se("click"); redraw(); render(); return;
       }
-      if(a==="gall"){ ALLG.forEach(d=>{ if(!G(d.id))S.girls.push({...d,ideal:{...d.ideal},aff:d.aff,last:S.t}); });
+      if(a==="gall"){ castOfSex().forEach(d=>{ if(!G(d.id))S.girls.push({...d,ideal:{...d.ideal},aff:d.aff,last:S.t}); });
         se("ok"); redraw(); render(); return; }
-      if(a==="gmin"){ S.girls=S.girls.filter(x=>GIRLS.some(y=>y.id===x.id));
-        GIRLS.forEach(d=>{ if(!G(d.id))S.girls.push({...d,ideal:{...d.ideal},aff:d.aff,last:S.t}); });
+      if(a==="gmin"){ S.girls=S.girls.filter(x=>castNow().some(y=>y.id===x.id));
+        castNow().forEach(d=>{ if(!G(d.id))S.girls.push({...d,ideal:{...d.ideal},aff:d.aff,last:S.t}); });
         se("ok"); redraw(); render(); return; }
       /* ---- 記録 ---- */
       if(a==="reczero"){ S.rec=recInit(); toast("記録を0にしました"); render(); return; }
       /* ---- 称号 ---- */
-      if(a==="ttall"){ TITLES.forEach(t=>GAL.tt[t.id]=1); galSave();
+      if(a==="ttall"){ ((typeof ttListAll==="function")?ttListAll():TITLES).forEach(t=>GAL.tt[t.id]=1); galSave();
         toast("称号を全部取得ずみにしました"); render(); return; }
       if(a==="ttnone"){ GAL.tt={}; galSave(); toast("称号の記録を消しました"); render(); return; }
       if(a==="ttnow"){ const got=titleScan(true); galSave();
@@ -4713,7 +5177,7 @@ function debugMenu(){
       /* ---- おまけ ---- */
       if(a==="galall"){ galList().forEach(x=>GAL.sc[x.k]=1); galSave();
         toast("シーンを全部解放しました"); render(); return; }
-      if(a==="galend"){ ALLG.forEach(x=>GAL.end[x.id]=3); galSave();
+      if(a==="galend"){ castGal().forEach(x=>GAL.end[x.id]=3); galSave();
         toast("エンディングを全部解放しました"); render(); return; }
       if(a==="galnone"){ GAL.sc={}; GAL.end={}; galSave();
         toast("おまけの記録を消しました"); render(); return; }
@@ -4741,7 +5205,7 @@ function debugMenu(){
           if(!ev){ toast("イベントが選ばれていません"); return; }
           if(ev.id==="bday"&&!G(ev.who)){ toast(`${ev.n}：その子がまだ登場していません`); return; }
           if(ev.id==="match"&&!isSportsClub()){ toast("練習試合は運動部のときだけ見られます"); return; }
-          fn=()=>runFixed(ev); bg=ev.bg||"klass"; label=ev.n;
+          fn=()=>runFixed(ev); bg=evBg(ev); label=ev.n;
         }
         se("ok"); M.style.display="none";
         (async()=>{
@@ -4888,8 +5352,28 @@ function artSeen(el){
   ARTPEND.set(el,true);
   raf2().then(()=>{ ARTPEND.set(el,false); });
 }
+/* まちぼうけの番号。新しい指示が来たら、待っていた古いものは取り消します */
+const ARTLATE=new WeakMap();
+function artStop(el){ ARTLATE.set(el,(ARTLATE.get(el)||0)+1); }
+/* 背景が切りかわりきるのを待ってから出す絵（立ち絵と、メッセージ枠の顔） */
+const artWaits=el=>(el.id==="vnChar"||el.id==="vnFaceWin");
+/* 絵を入れかえる。
+   ★ 背景が切りかわっている最中に立ち絵や顔を出そうとしたときは、
+     背景が出きるまで待ってから出します（VN_UI.charAfterBg）。
+     消すとき（key が空）は待たずに、すぐ消します。 */
 function artSet(el,html,key,hide){
   el=fadeEl(el); if(!el)return;
+  const wait=key ? bgWaitMs() : 0;
+  if(wait>0 && artWaits(el)){
+    artStop(el);
+    const my=ARTLATE.get(el);
+    setTimeout(()=>{ if(ARTLATE.get(el)===my) artSetNow(el,html,key,hide); }, wait);
+    return;
+  }
+  artStop(el);                 /* 待っていたものがあれば、取り消す */
+  artSetNow(el,html,key,hide);
+}
+function artSetNow(el,html,key,hide){
   const now=el.dataset.artk||"";
   key=key||"";
   if(now===key)return;
@@ -4937,6 +5421,7 @@ let ARTGEN=0;
 function artRefresh(){ ARTGEN++; }
 /* 中身をすぐ空にする（フェードしません）。場面を開きなおすときなど */
 function artClear(el){ el=fadeEl(el); if(!el)return;
+  artStop(el);                 /* 背景待ちの絵があれば、取り消す */
   fadeStop(el); el.dataset.artk=""; el.innerHTML=""; ARTPEND.set(el,false); }
 /* いま動いているフェードを打ち切って、はっきり見えている状態に戻す。
    上に別の画面がかぶさるので、下のフェードはもう要らない、というときに使います */
@@ -4981,7 +5466,7 @@ function storeSet(o){
   catch(e){ STORE_OK=false; return false; }
 }
 function snapshot(){
-  return {v:2, ts:Date.now(), name:S.name, sei:S.sei, mei:S.mei, t:S.t, p:{...S.p}, stress:S.stress,
+  return {v:2, ts:Date.now(), name:S.name, sei:S.sei, mei:S.mei, sex:(S.sex==="f"?"f":"m"), t:S.t, p:{...S.p}, stress:S.stress,
     girls:S.girls.map(g=>({id:g.id,aff:g.aff,last:g.last})),
     club:S.club, job:S.job, blood:S.blood, bd:{...S.bd}, ev:{...S.ev}, evseen:{...(S.evseen||{})},
     valen:(S.valen||[]).slice(), lastPlan:(S.lastPlan||null), lastM:S.lastM,
@@ -5046,10 +5531,13 @@ function restore(d){
   S.pre=d.pre||null;
   S.pick=null;
   S.valen=(d.valen||[]).slice(); S.lastPlan=d.lastPlan||null; S.lastM=d.lastM;
-  S.girls=(d.girls||[]).map(v=>{const t=ALLG.find(x=>x.id===v.id); if(!t)return null;
+  /* 主人公の性別。古いセーブには入っていないので、そのときは男性です */
+  S.sex=(d.sex==="f")?"f":"m";
+  linkCast();                /* その性別に合わせて、部活とバイトの相手役を決めなおす */
+  S.girls=(d.girls||[]).map(v=>{const t=castAll().find(x=>x.id===v.id); if(!t)return null;
     return {...t, ideal:{...t.ideal}, aff:(v.aff!==undefined?v.aff:t.aff),
             last:(v.last!==undefined?v.last:0)};}).filter(Boolean);
-  if(!S.girls.length)S.girls=GIRLS.map(g=>({...g,ideal:{...g.ideal}}));
+  if(!S.girls.length)S.girls=castNow().map(g=>({...g,ideal:{...g.ideal}}));
   /* 週の状態（plan/res/weekStart/dayIdx）は上で入れなおしているので、ここでは消さない。
      古いセーブには入っていないため、その場合は上の既定値（未定・すべて空）になる */
   S.busy=false; S.vnOn=false; S.sunResolve=null; S.lastToast=0;
@@ -5060,7 +5548,7 @@ function autoSave(){ const d=storeGet(); const m=d.a&&d.a.memo; d.a=snapshot(); 
 function toast(msg){
   let el=$("toast");
   if(!el){el=document.createElement("div");el.id="toast";$("stage").appendChild(el);}
-  el.textContent=msg; el.className="show";
+  el.textContent=nm(String(msg)); el.className="show";
   clearTimeout(S.toastT); S.toastT=setTimeout(()=>el.className="",1600);
 }
 const slotLabel=k=>k==="a"?"オートセーブ":"スロット "+k;
@@ -5294,31 +5782,49 @@ async function openSaveMenu(fromTitle){
    18. ギャラリー（おまけ）
    ======================================================================= */
 const GALKEY="starmate_gal";
-let GAL={sc:{},end:{},tt:{}};
+let GAL={sc:{},end:{},tt:{},cg:{}};
 function galLoad(){try{const o=JSON.parse(localStorage.getItem(GALKEY)||"null");
-  if(o){GAL.sc=o.sc||{};GAL.end=o.end||{};GAL.tt=o.tt||{};}}catch(e){}}
+  if(o){GAL.sc=o.sc||{};GAL.end=o.end||{};GAL.tt=o.tt||{};GAL.cg=o.cg||{};}}catch(e){}}
 function galSave(){try{localStorage.setItem(GALKEY,JSON.stringify(GAL));}catch(e){}}
 function galMark(k,v){ if(GAL.sc[k]===undefined||v){GAL.sc[k]=v||1;galSave();} }
 function galEnd(gid,rank){ if((GAL.end[gid]||0)<rank){GAL.end[gid]=rank;galSave();} }
+/* 見たイベントスチルを覚えておく（おまけの「スチル」で開けるようになります） */
+function galCG(who,n){ const k=(who||"common")+":"+(+n);
+  if(!GAL.cg[k]){GAL.cg[k]=1;galSave();} }
+const galCGgot=(who,n)=>!!GAL.cg[(who||"common")+":"+(+n)];
 const ENDNAME={1:"フレンドエンド",2:"ハッピーエンド",3:"トゥルーエンド"};
 /* その子が相手役になる部活。いま入っている部活が当てはまるなら、それを優先する
    （ひなたは野球・サッカー・テニス・バスケの4つで相手役になるため） */
 function clubOfMate(mid){
   if(CLUBS[S.club]&&CLUBS[S.club].mate===mid)return S.club;
-  return Object.keys(CLUBS).find(k=>CLUBS[k].mate===mid);
+  const k=Object.keys(CLUBS).find(k2=>CLUBS[k2].mate===mid);
+  if(k)return k;
+  /* いま選んでいる主人公のキャストでない子（おまけに並べるとき）は、
+     CLUBS の相手役が付いていないので、その子のファイルから引きます */
+  const s=(typeof STORY!=="undefined")&&STORY[mid];
+  return (s&&s.p&&(s.p.clubs||[])[0])||null;
 }
 
 function galList(){
   const out=[];
-  Object.keys(AFF_EV).forEach(g=>AFF_EV[g].forEach((e,i)=>
-    out.push({k:`aff:${g}:${i}`,cat:"好感度",gid:g,t:e.t})));
-  Object.keys(INTRO).forEach(g=>out.push({k:`intro:${g}`,cat:"出会い",gid:g,t:"はじめての出会い"}));
-  const mates=[...new Set(Object.keys(CLUBS).map(k=>CLUBS[k].mate).filter(Boolean))];
-  mates.forEach(m=>{
-    if(CLUBJOIN[m])out.push({k:`club:${m}`,cat:"部活",gid:m,t:(CLUBS[clubOfMate(m)]||{}).n+"に入部"});
-    if(CLUBMEET[m])out.push({k:`clubm:${m}`,cat:"部活",gid:m,t:(CLUBS[clubOfMate(m)]||{}).n+"で出会う"});
+  /* おまけに並べる顔ぶれ（既定は男女ぜんぶ。GAME_RULE.galleryAll） */
+  const ok=new Set(castGal().map(g=>g.id));
+  const use=id=>ok.has(id);
+  Object.keys(AFF_EV).forEach(g=>{ if(!use(g))return;
+    AFF_EV[g].forEach((e,i)=>out.push({k:`aff:${g}:${i}`,cat:"好感度",gid:g,t:e.t}));});
+  Object.keys(INTRO).forEach(g=>{ if(!use(g))return;
+    out.push({k:`intro:${g}`,cat:"出会い",gid:g,t:"はじめての出会い"});});
+  /* ★ CLUBS の相手役は、いま選んでいる主人公のぶんしか付いていません。
+       おまけには両方ならべたいので、部活の相手役は CLUBJOIN／CLUBMEET を
+       書いてある子そのものから引きます（clubOfMate が p.clubs も見ます）。 */
+  const mates=[...new Set([...Object.keys(CLUBJOIN),...Object.keys(CLUBMEET)])];
+  mates.forEach(m=>{ if(!use(m))return;
+    const cn=(CLUBS[clubOfMate(m)]||{}).n; if(!cn)return;
+    if(CLUBJOIN[m])out.push({k:`club:${m}`,cat:"部活",gid:m,t:cn+"に入部"});
+    if(CLUBMEET[m])out.push({k:`clubm:${m}`,cat:"部活",gid:m,t:cn+"で出会う"});
   });
-  Object.keys(JOBMEET).forEach(g=>out.push({k:`job:${g}`,cat:"バイト",gid:g,t:"バイト先での再会"}));
+  Object.keys(JOBMEET).forEach(g=>{ if(!use(g))return;
+    out.push({k:`job:${g}`,cat:"バイト",gid:g,t:"バイト先での再会"});});
   return out;
 }
 function sceneDef(k){
@@ -5339,6 +5845,8 @@ function sceneDef(k){
 }
 async function replayScene(def){
   const g=ALLG.find(x=>x.id===def.gid);
+  /* 回想のあいだは、{彼}／{くん} をこの子に合わせます（上の SEXWHO） */
+  SEXWHO=def.gid||null;
   /* タイトル画面（z-index 12）がノベル画面（z-index 5）を覆ってしまうので、
      回想のあいだだけ隠す。終わったら必ず元に戻す。 */
   const tEl=$("title"), tKeep=tEl.style.display;
@@ -5356,33 +5864,44 @@ async function replayScene(def){
     say(def.opts[i].r);
     await next("▶ 回想を終わる");
   });
-  } finally { tEl.style.display=tKeep; sEl.style.display=sKeep; }
+  } finally { SEXWHO=null; tEl.style.display=tKeep; sEl.style.display=sKeep; }
 }
 
 /* 称号の一覧で、下の帯に出す説明 */
 let TTHOVER=null;
+/* 称号の名前。{主プリンス} のような差しこみ口が入っていることがあるので、
+   画面に出すときは、かならずこれを通します。 */
+function ttName(t){ return t ? nm(t.n) : "—"; }
 function ttBarHTML(id){
-  const t=(typeof TITLES!=="undefined")&&TITLES.find(x=>x.id===id);
+  const all=(typeof ttListAll==="function")?ttListAll()
+           :((typeof TITLES!=="undefined")?TITLES:[]);
+  const t=all.find(x=>x.id===id);
   if(!t)return `<span class="ttbh">称号にカーソルを合わせると、ここに取りかたが出ます</span>`;
   const got=!!GAL.tt[t.id];
-  return `<span class="ttbn">${got?"🏅":"🔒"} ${t.n}</span>`+
+  return `<span class="ttbn">${got?"🏅":"🔒"} ${ttName(t)}</span>`+
          `<span class="ttbc">${t.c}</span>`+
          `<span class="ttbd">${nm(t.d)}</span>`+
          `<span class="ttbs ${got?"got":""}">${got?"取得ずみ":"未取得"}</span>`;
 }
 function galleryMenu(){
   return new Promise(resolve=>{
-    const M=$("modal"); M.style.width="880px";
+    /* ★ おまけは全画面で出します。
+       タブ（シーン鑑賞／スチル／プロフィール／称号／BGM）で中身の量がまるで違うので、
+       窓の大きさを内容に合わせていると、押すたびに窓が伸び縮みして落ち着きません。
+       予定表・くわしく・きろく・せっていと同じ「全画面」にそろえました。
+       mode に "gal" を渡しているのは、文字ごと1.3倍にする zoom を避けるためです
+       （一覧はマス目なので、拡大すると一度に見える数が減ってしまいます）。 */
+    const M=$("modal"); modalFull(true,"gal");
     if(!S.galTab)S.galTab="sc";
     /* おまけはタイトルから開くので、閉じるときも幕を下ろします */
     const close=async()=>{
-      await fadeOut(M,()=>{ M.style.display="none";M.style.width="640px"; });
+      await fadeOut(M,()=>{ M.style.display="none"; modalFull(false); M.style.width="640px"; });
       TTHOVER=null;
       if(AU.ctx){AU.cur=null;bgm(S.inGame?bgmFor(S.t):titleBgmName());}
       resolve();
     };
     const tabs=()=>`<div class="gtabs">
-      ${[["sc","🖼 シーン鑑賞"],["pf","👤 プロフィール"],["tt","🏅 称号"],["bg","🎵 BGM"]].map(([k,n])=>
+      ${[["sc","🖼 シーン鑑賞"],["cg","🎞 スチル"],["pf","👤 プロフィール"],["tt","🏅 称号"],["bg","🎵 BGM"]].map(([k,n])=>
         `<span class="gtab ${S.galTab===k?"on":""}" data-g="tab:${k}">${n}</span>`).join("")}</div>`;
     const render=()=>{
       $("modTtl").textContent="おまけ";
@@ -5398,9 +5917,56 @@ function galleryMenu(){
               <div class="ginfo"><div class="gcat">${x.cat}</div>
                 <div class="gt">${open?x.t:"？？？"}</div>
                 <div class="gn">${open?g.name:"—"}</div></div></div>`;}).join("")}</div>`;
+      }else if(S.galTab==="cg"){
+        /* ---- イベントスチル（1枚絵）---------------------------------
+           1人 CG_RULE.slots 枚（既定30枚）の枠を並べます。
+           絵を置いていない番号は、うすい空き枠のままです。 */
+        const cast=[...castGal().map(g=>[g.id,g.name]),["common","みんな・その他"]]
+          .filter(([id])=>cgList(id).length>0);
+        if(S.cgView){
+          const {who,n}=S.cgView, d=S.cgView.d||"";
+          const ds=cgDiffs(who,n), u=cgURL(who,n,d);
+          body+=`<div class="cgview">
+            ${u?`<img src="${u}" alt="">`:`<div class="glock" style="height:220px">？</div>`}
+            <div class="cgcap">${cgTitle(who,n,d)}</div>
+            ${ds.length?`<div class="chips" style="justify-content:center;margin-top:6px">
+              <span class="chip ${d?"":"on"}" data-g="cgd:">もとの絵</span>
+              ${ds.map(k=>`<span class="chip ${d===k?"on":""}" data-g="cgd:${k}">${cgDiffName(who,n,k)}</span>`).join("")}
+            </div>`:""}</div>`;
+        }else if(!cast.length){
+          body+=`<div class="savenote" style="margin:0">
+            まだイベントスチル（1枚絵）は置かれていません。<br>
+            <b>assets/chara/&lt;キャラid&gt;/cg/</b> に <b>01.png 〜 ${String(cgSlots()).padStart(2,"0")}.png</b>
+            を入れると、ここに並びます（みんなのスチルは <b>assets/cg/</b>）。<br>
+            表情ちがいなどの差分は <b>01_a.png</b> のように「_」のあとに名前を付けます。
+            差分は ${cgSlots()}枚の枠には数えません。<br>
+            題名は <b>story/cg.js</b> に書けます。</div>`;
+        }else{
+          /* 番号を 1〜枠数 まで並べた配列（数えるのにも、並べるのにも使います） */
+          const nums=Array.from({length:cgSlots()},(_,i)=>i+1);
+          const nHave=id=>nums.filter(n=>cgHas(id,n)).length;
+          const nGot =id=>nums.filter(n=>cgHas(id,n)&&galCGgot(id,n)).length;
+          const all=cast.length*cgSlots();
+          const got=cast.reduce((s,[id])=>s+nGot(id),0);
+          body+=`<div class="savenote" style="margin:0 0 7px">解放 ${got} / ${all}
+            見たことのあるスチルを選ぶと、大きく見られます。</div>`;
+          for(const [id,nm2] of cast){
+            body+=`<div class="cgh2"><span>${nm2}</span>`
+                + `<i>${nGot(id)} / ${nHave(id)}</i></div><div class="cggrid">`;
+            for(const n of nums){
+              const has=cgHas(id,n), seen=has&&galCGgot(id,n);
+              const u=seen?cgURL(id,n):null;
+              const two=String(n).padStart(2,"0");
+              body+=`<div class="cgcell ${seen?"":(has?"lock":"none")}" ${seen?`data-g="cg:${id}:${n}"`:""}>
+                ${u?`<img src="${u}" alt="">`:`<span class="cgno">${two}</span>`}
+                <span class="cgnum">${two}</span></div>`;
+            }
+            body+=`</div>`;
+          }
+        }
       }else if(S.galTab==="pf"){
         body+=`<div class="savenote" style="margin:0 0 7px">エンディングを迎えた子は、くわしいプロフィールが見られます。</div>
-          <div class="pgrid">${ALLG.map(g=>{
+          <div class="pgrid">${castGal().map(g=>{
             const rank=GAL.end[g.id]||0;
             const met=galList().some(x=>x.gid===g.id&&GAL.sc[x.k]);
             if(!met&&!rank)return `<div class="pcard lock"><div class="pface"><div class="glock">？</div></div>
@@ -5417,25 +5983,30 @@ function galleryMenu(){
                  :`<div class="pd" style="color:#a08090">エンディングを迎えると、くわしく見られます</div>`}
               </div></div>`;}).join("")}</div>`;
       }else if(S.galTab==="tt"){
-        const got=TITLES.filter(t=>GAL.tt[t.id]).length;
-        const cur=titleNow();
+        /* ★ 一覧は「集めたもの」なので、男女ぜんぶを並べます（ttListAll）。
+           TITLES（いまのキャストぶん）にすると、もう片方の主人公で取った
+           「◯◯と好きになる」が消えてしまいます。 */
+        const list=(typeof ttListAll==="function")?ttListAll():TITLES;
+        const got=list.filter(t=>GAL.tt[t.id]).length;
+        /* 校内評価は「いま遊んでいる人」のものなので、ゲーム中だけ光らせます */
+        const cur=S.inGame?titleNow():null;
         body+=`<div class="savenote" style="margin:0 0 7px">
-            集めた称号 <b>${got} / ${TITLES.length}</b>　${S.inGame?`いまの校内評価：<b>${cur?cur.n:"—"}</b>　`:""}
+            集めた称号 <b>${got} / ${list.length}</b>　${S.inGame?`いまの校内評価：<b>${ttName(cur)}</b>　`:""}
             ひとつにカーソルを合わせる（またはタップする）と、下に取りかたが出ます。</div>
           <div class="ttgrid">${(()=>{
             let out="", last=null;
-            for(const t of TITLES){
+            for(const t of list){
               if(t.c!==last){
                 last=t.c;
-                const inCat=TITLES.filter(x=>x.c===t.c);
+                const inCat=list.filter(x=>x.c===t.c);
                 const gc=inCat.filter(x=>GAL.tt[x.id]).length;
                 out+=`<div class="tth2"><span>${t.c}</span><i>${gc} / ${inCat.length}</i></div>`;
               }
               const open=!!GAL.tt[t.id], now=cur&&cur.id===t.id;
               out+=`<div class="ttc ${open?"":"lock"} ${now?"now":""}" tabindex="0" data-tt="${t.id}"
-                title="${t.n}／${nm(t.d)}">
+                title="${ttName(t)}／${nm(t.d)}">
                 <span class="ttm">${open?"🏅":"🔒"}</span>
-                <span class="ttn">${t.n}</span></div>`;
+                <span class="ttn">${ttName(t)}</span></div>`;
             }
             return out;})()}</div>`;
       }else{
@@ -5450,6 +6021,7 @@ function galleryMenu(){
       $("modBody").innerHTML=body;
       $("modBtns").innerHTML=
         (S.galTab==="tt"?`<div class="ttbar" id="ttBar">${ttBarHTML(null)}</div>`:"")+
+        (S.galTab==="cg"&&S.cgView?`<button class="btn gy" data-g="cgback">◀ 一覧へもどる</button>`:"")+
         `<button class="btn pk" data-g="close" style="margin-left:auto">閉じる</button>`;
       /* 称号にカーソルを合わせたら、下の帯に取りかたを出す */
       TTHOVER=id=>{const b=$("ttBar"); if(b)b.innerHTML=ttBarHTML(id);};
@@ -5469,13 +6041,16 @@ function galleryMenu(){
         const [a,v]=el.dataset.g.split(":").length>2
           ? [el.dataset.g.split(":")[0], el.dataset.g.split(":").slice(1).join(":")]
           : el.dataset.g.split(":");
-        if(a==="tab"){S.galTab=v;se("click");render();}
+        if(a==="tab"){S.galTab=v;S.cgView=null;se("click");render();}
+        else if(a==="cg"){const [w,n]=v.split(":");S.cgView={who:w,n:+n,d:""};se("ok");render();}
+        else if(a==="cgd"){if(S.cgView){S.cgView.d=v||"";}se("click");render();}
+        else if(a==="cgback"){S.cgView=null;se("cancel");render();}
         else if(a==="bgm"){se("click");if(AU.ctx){AU.cur=null;bgm(v);}setTimeout(render,600);}
         else if(a==="play"){
           const def=sceneDef(v); if(!def)return;
           M.style.display="none";
           await replayScene(def);
-          M.style.display="flex"; M.style.width="880px"; render();
+          M.style.display="flex"; modalFull(true,"gal"); render();
         }
         else close();
       });
@@ -5488,26 +6063,31 @@ function galleryMenu(){
 /* =======================================================================
    15. メインループ
    ======================================================================= */
+/* 入学式で顔を出す面々。
+   ★ 特定の子を名ざしにすると、主人公の性別を変えたときに誰も出なくなります。
+     いま登場している「最初からいる子」のうち、story/<id>.js に pro を
+     書いてある子だけが、書いてある順（p.order）に出ます。 */
+function proCast(){
+  const P=(typeof PRO!=="undefined")?PRO:{};
+  return castNow().map(g=>({g, pr:P[g.id]})).filter(x=>x.pr&&x.pr.t);
+}
 async function prologue(){
   evMark("sys_prologue");
+  const T=((typeof TXT!=="undefined")&&TXT.pro)||{};
   await scene("school",async()=>{
   openMsg("入学式");
-  say("✦ <b>1年目 4月5日（月）── 入学式</b>","ev");
-  say("桜坂高校、正門。舞い散る花びらの向こうに、これから3年間を共にする顔ぶれがあった。");
+  say(T.head||"✦ <b>1年目 4月5日（月）── 入学式</b>","ev");
+  if(T.open)say(T.open);
   await next();
-  line(G("kanade"),"やっと来た！遅刻するかと思ってハラハラしたんだから。","happy");
-  say("{{kanade}}。家が隣で、幼稚園からの腐れ縁。");
-  await next();
-  line(G("rena"),"新入生代表、{{rena}}です。——以上。","normal");
-  say("完璧な挨拶、完璧な姿勢。誰もが見上げる存在。");
-  await next();
-  line(G("hinata"),"ねー、そこの人！校庭ってどっち！？あたし{{hinata}}、陸上部入るんだ！","happy");
-  say("嵐のように現れて、嵐のように走り去っていった。");
-  await next();
+  for(const {g,pr} of proCast()){
+    line(G(g.id)||g, pr.t, pr.exp||"normal");
+    if(pr.d)say(pr.d);
+    await next();
+  }
   vnFace(null);
-  say("——3年後の卒業式。伝説の樹の下で告白されたカップルは、永遠に結ばれるという。","ev");
-  say("さあ、どんな3年間にする？");
-  await next("▶ 高校生活を始める");
+  if(T.legend)say(T.legend,"ev");
+  if(T.ask)say(T.ask);
+  await next(T.go||"▶ 高校生活を始める");
   });
 }
 
@@ -5612,6 +6192,29 @@ let SETUPSYNC=null;      /* 選択の見た目を S に合わせ直す関数（�
   mS.onchange=()=>{fillD();info();};
   dS.onchange=info;
 
+  /* ---- 主人公の性別 ----
+     男女どちらの攻略対象もそろっているときだけ出します。
+     片方しか作っていないうちは、いままでどおり出ません。 */
+  const drawSex=()=>{
+    const row=$("sexRow"); if(!row)return;
+    if(!sexPickable()){ row.style.display="none"; return; }
+    row.style.display="flex";
+    $("sexSel").innerHTML=["m","f"].map(k=>
+      `<span class="chip ${k===S.sex?"on":""}" data-x="${k}">${sexName(k)}主人公</span>`).join("");
+  };
+  const setSex=k=>{
+    S.sex=(k==="f")?"f":"m";
+    linkCast();                       /* 部活とバイトの相手役を決めなおす */
+    S.club="none"; S.job=null;        /* 相手役が変わるので、選びなおしてもらう */
+    drawSex();
+    $("clubSel").innerHTML=Object.keys(CLUBS).map(k2=>`<span class="chip ${k2===S.club?"on":""}" data-c="${k2}">${CLUBS[k2].g} ${CLUBS[k2].n}</span>`).join("");
+    $("jobSel").innerHTML=
+      `<span class="chip ${S.job?"":"on"}" data-j="">まだ決めない</span>`+
+      Object.keys(JOBS).map(k2=>`<span class="chip ${S.job===k2?"on":""}" data-j="${k2}">${JOBS[k2].g} ${JOBS[k2].n}</span>`).join("");
+    info();
+  };
+  $("sexSel").onclick=e=>{const c=e.target.closest("[data-x]");if(!c)return;se("click");setSex(c.dataset.x);};
+
   $("bloodSel").innerHTML=Object.keys(BLOOD).map(k=>`<span class="chip ${k===S.blood?"on":""}" data-b="${k}">${BLOOD[k].n}</span>`).join("");
   $("clubSel").innerHTML=Object.keys(CLUBS).map(k=>`<span class="chip ${k===S.club?"on":""}" data-c="${k}">${CLUBS[k].g} ${CLUBS[k].n}</span>`).join("");
   $("jobSel").innerHTML=
@@ -5626,11 +6229,13 @@ let SETUPSYNC=null;      /* 選択の見た目を S に合わせ直す関数（�
     $("jobSel").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",(x.dataset.j||null)===S.job));info();};
 
   SETUPSYNC=()=>{
+    drawSex();
     $("bloodSel").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.b===S.blood));
     $("clubSel").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.c===S.club));
     $("jobSel").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",(x.dataset.j||null)===S.job));
     info();
   };
+  drawSex();
   info();
 })();
 
@@ -5665,6 +6270,8 @@ function showTitle(keep){
 function showSetup(){
   /* 前のプレイの選択が残らないように、部活と血液型を選びなおしの状態に戻す */
   S.club="none"; S.blood="A"; S.job=null;
+  S.sex=sexDefault();          /* 主人公の性別も、はじめの状態に戻す */
+  linkCast();
   if(SETUPSYNC)SETUPSYNC();
   $("setup").style.display="flex";
 }
@@ -5720,7 +6327,8 @@ function resetGame(){
   S.plan=new Array(6).fill(null); S.res=new Array(6).fill(null);
   S.pick=null; S.sel=null; S.cur=0; S.busy=false; S.vnOn=false;
   S.sunResolve=null; S.lastToast=0;
-  S.girls=GIRLS.map(g=>({...g,ideal:{...g.ideal}}));
+  linkCast();                /* 主人公の性別に合わせて、部活とバイトの相手役を決めなおす */
+  S.girls=castNow().map(g=>({...g,ideal:{...g.ideal}}));
   CEVN=0;
   flowAbort();                      /* 前のプレイの流れが残っていたら止める */
 }

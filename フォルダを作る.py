@@ -43,8 +43,11 @@ atexit.register(_quiet_exit)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# 女の子のフォルダ名（assets/README.md の「フォルダ名」の表と同じ）
-GIRLS = ["kanade", "rena", "hinata", "luka", "minamo", "sakuya"]
+# 攻略キャラのフォルダ名（assets/README.md の「フォルダ名」の表と同じ）
+#   前半6人 … 男性主人公版の攻略対象（女性）
+#   後半6人 … 女性主人公版の攻略対象（男性）
+GIRLS = ["kanade", "rena", "hinata", "luka", "minamo", "sakuya",
+         "aoi", "ryu", "daichi", "nagisa", "zen", "chikage"]
 
 # 服の名前つきフォルダ。full/ と bust/ の下に作ります。
 # ここにあるのは「ゲームが実際に着せる服」だけです
@@ -73,6 +76,7 @@ def wanted():
         for o in OUTFITS:
             d.append(f"assets/chara/{g}/bust/{o}")
         d.append(f"assets/chara/{g}/save")     # きろく画面の顔
+        d.append(f"assets/chara/{g}/cg")       # イベントスチル（1枚絵）
         d.append(f"assets/chara/{g}/face")     # ※重ね絵モード用
         d.append(f"assets/chara/{g}/outfit")   # ※重ね絵モード用
     return d

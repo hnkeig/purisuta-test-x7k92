@@ -3,7 +3,16 @@
 """
 スターメイト ─ 配布用の1ファイル版をつくる
 
-  python3 build.py
+  python3 build.py          … スチルを入れずに作る（ふだんはこちら）
+  python3 build.py --cg     … イベントスチルも入れて作る
+
+★ イベントスチル（assets/chara/*/cg/ と assets/cg/）は、ふだん1ファイル版に
+  入れません。全画面の絵なので、200枚もあると starmate.html が数十〜数百MBに
+  なって、開くのに時間がかかるためです。
+  入れずに作った1ファイル版でも、ゲームはちゃんと動きます。スチルの場面は
+  「絵が出ないまま、文章だけ進む」形になります。
+  ぜんぶ入りの1ファイル版が要るときだけ --cg を付けてください。
+  （フォルダ版・サーバー版は、いつでもスチルが出ます）
 
 やることは2つです。
 
@@ -57,6 +66,12 @@ IMG_EXT = (".png", ".webp", ".jpg", ".jpeg", ".gif", ".svg")
 SND_EXT = (".mp3", ".ogg", ".m4a", ".wav")
 FNT_EXT = (".woff2", ".woff", ".ttf", ".otf")
 
+# イベントスチルを1ファイル版に埋めこむか。--cg を付けたときだけ True。
+# 一覧（assets/list.js）には、埋めこまないときも入れます。
+# フォルダ版はそれで絵が出ますし、1ファイル版は「手が届かない絵」を
+# 自分で見わけて、絵なしで進むようになっています（game.js の artHave）。
+EMBED_CG = ("--cg" in sys.argv) or ("--with-cg" in sys.argv)
+
 
 def read(name):
     path = os.path.join(HERE, name)
@@ -75,10 +90,57 @@ def ls(d, exts):
                   if f.lower().endswith(exts) and not f.startswith("."))
 
 
+def known_ids():
+    """story.js の STORY に書いてある「キャラid」をぜんぶ読む。
+
+    絵の置きまちがいを見つけるために使います。
+    ★ キャラの id を変えたときに素材フォルダの名前を変えわすれると、
+      **エラーも出ないまま、その子の絵だけ出なくなります。**
+      いちばん見つけにくい事故なので、下の check_ids() で拾います。
+    読めなかったときは None（＝確かめない）を返します。 """
+    p = os.path.join(HERE, "story.js")
+    if not os.path.exists(p):
+        return None
+    try:
+        s = open(p, encoding="utf-8").read()
+        m = re.search(r"const\s+STORY\s*=\s*\{(.*?)\n\};", s, re.S)
+        if not m:
+            return None
+        ids = set(re.findall(r"^\s*([A-Za-z0-9_]+)\s*:", m.group(1), re.M))
+        return ids or None
+    except Exception:
+        return None
+
+
+def check_ids(with_art, ui_files):
+    """「ゲームが知らないキャラの絵」が置かれていないか見る"""
+    ids = known_ids()
+    if ids is None:
+        return
+    ng = [g for g in with_art if g not in ids]
+    for f in ui_files:
+        m = re.match(r"ui_photo_name_([A-Za-z0-9_]+)\.", f)
+        if m and m.group(1) not in ids:
+            ng.append(("ui", f, m.group(1)))
+    if not ng:
+        return
+    say("")
+    say("  ⚠ ゲームが知らないキャラの絵が置かれています。")
+    for x in ng:
+        if isinstance(x, tuple):
+            say(f"      assets/ui/{x[1]}  … story.js に「{x[2]}」というキャラがいません")
+        else:
+            say(f"      assets/chara/{x}/  … story.js に「{x}」というキャラがいません")
+    say("    → フォルダ（ファイル）の名前を直すか、story.js にそのキャラを足してください。")
+    say("      このままだと、その絵は**どこにも出ません**（画面にはエラーも出ません）。")
+    say(f"    いま story.js が知っているid: {' '.join(sorted(ids))}")
+
+
 def scan_assets():
     """assets の中身を調べて、一覧（と、埋めこむファイルの一覧）を返す"""
-    art = {"chara": {}, "bg": [], "bgm": [], "se": [], "ui": [], "font": []}
+    art = {"chara": {}, "bg": [], "cg": [], "bgm": [], "se": [], "ui": [], "font": []}
     files = []                                    # 1ファイル版に埋めこむ相対パス
+    with_art = []                                 # 絵が1枚でも入っていたフォルダ
 
     chara_dir = os.path.join(ASSETS, "chara")
     if os.path.isdir(chara_dir):
@@ -89,7 +151,7 @@ def scan_assets():
             # 一覧には「ファイル名（拡張子つき）」を入れます。
             # こうしておくと png でも webp でも jpg でも同じように使えます。
             ent = {"base": "", "front": "", "face": [], "outfit": [],
-                   "full": {}, "bust": {}, "save": []}
+                   "full": {}, "bust": {}, "save": [], "cg": []}
             # ★ この子のファイルは、いったんここに貯めます。
             #    使われない子（下の判定で落ちる子）の絵まで 1ファイル版に
             #    埋めこんでしまわないようにするためです。
@@ -107,6 +169,13 @@ def scan_assets():
                 for f in ls(f"chara/{gid}/{sub}", IMG_EXT):
                     ent[sub].append(f)
                     mine.append(f"chara/{gid}/{sub}/{f}")
+            # イベントスチル（cg/）。1枚絵なので、そのフォルダの直下だけを見ます。
+            # ★ 1ファイル版に入れるかどうかは、いちばん下の EMBED_CG で決まります
+            #   （ふだんは入れません。全画面の絵なので、入れると数十MBになります）
+            for f in ls(f"chara/{gid}/cg", IMG_EXT):
+                ent["cg"].append(f)
+                if EMBED_CG:
+                    mine.append(f"chara/{gid}/cg/{f}")
             # 立ち絵（full/）と顔画像（bust/）。
             # どちらも「直下」＋「服の名前のフォルダ」という同じ形で覚えます。
             for kind in ("full", "bust"):
@@ -126,10 +195,13 @@ def scan_assets():
                         ent[kind][sub] = fs
                         for f in fs:
                             mine.append(f"chara/{gid}/{kind}/{sub}/{f}")
+            if mine:
+                with_art.append(gid)      # 絵が入っていたフォルダとして覚えておく
             ent["face"].sort()
             ent["outfit"].sort()
             ent["save"].sort()
-            if ent["base"] or ent["full"] or ent["bust"] or ent["save"]:
+            ent["cg"].sort()
+            if ent["base"] or ent["full"] or ent["bust"] or ent["save"] or ent["cg"]:
                 art["chara"][gid] = ent
                 files.extend(mine)          # 使う子のぶんだけ、埋めこみます
             elif ent["face"] or ent["outfit"]:
@@ -138,6 +210,10 @@ def scan_assets():
     for f in ls("bg", IMG_EXT):
         art["bg"].append(f)                       # 背景も拡張子ごと覚えておく
         files.append("bg/" + f)
+    for f in ls("cg", IMG_EXT):                   # みんなのイベントスチル
+        art["cg"].append(f)
+        if EMBED_CG:
+            files.append("cg/" + f)
     for f in ls("ui", IMG_EXT):                   # タイトルのロゴ・ボタン画像
         art["ui"].append(f)
         files.append("ui/" + f)
@@ -149,6 +225,7 @@ def scan_assets():
             art[kind].append(f)                   # 音は拡張子ごと覚えておく
             files.append(kind + "/" + f)
 
+    check_ids(with_art, art["ui"])                # 絵の置きまちがいがないか
     return art, files
 
 
@@ -170,15 +247,20 @@ def write_list(art):
             + sum(len(x) for x in v["full"].values())
             + sum(len(x) for x in v["bust"].values())
             for v in art["chara"].values())
+    ncg = sum(len(v["cg"]) for v in art["chara"].values()) + len(art["cg"])
     say(f"  素材の一覧: 立ち絵 {len(art['chara'])}人ぶん（{n}枚）／"
-          f"背景 {len(art['bg'])}／BGM {len(art['bgm'])}／SE {len(art['se'])}／"
+          f"背景 {len(art['bg'])}／スチル {ncg}／BGM {len(art['bgm'])}／SE {len(art['se'])}／"
           f"UI {len(art['ui'])}／書体 {len(art['font'])}")
 
 
 def embed(files):
     """1ファイル版のために、素材を base64 のデータURLにする"""
+    # ART_ONEFILE は「いま動いているのは1ファイル版です」という目じるし。
+    # 埋めこまれていない素材（ふだんはスチル）に手が届かないことを、
+    # game.js の artHave() がこれで見わけます。
+    head = "/* ===== assets（埋めこみ） ===== */\nconst ART_ONEFILE = true;\n"
     if not files:
-        return ""
+        return head + "const ART_DATA = {};\n"
     data, total = {}, 0
     for rel in files:
         p = os.path.join(ASSETS, rel)
@@ -193,7 +275,7 @@ def embed(files):
     if mb > 25:
         say("  ⚠ 素材が大きいので、1ファイル版は開くのに時間がかかります。")
         say("    人に渡すときは、フォルダごと渡す方が快適かもしれません。")
-    return "/* ===== assets（埋めこみ） ===== */\nconst ART_DATA = " + \
+    return head + "const ART_DATA = " + \
            json.dumps(data, ensure_ascii=False) + ";\n"
 
 
@@ -231,6 +313,13 @@ def main():
     size = os.path.getsize(OUT) / 1024
     say(f"\n  書き出しました: starmate.html  ({size:.1f} KB)")
     say("  このファイル1つで動きます。")
+    ncg = sum(len(v["cg"]) for v in art["chara"].values()) + len(art["cg"])
+    if ncg and not EMBED_CG:
+        say(f"  ※ イベントスチル {ncg}枚は、1ファイル版に入れていません"
+            "（重くなるため）。")
+        say("    ぜんぶ入りが要るときは  python3 build.py --cg  で作りなおしてください。")
+    elif ncg:
+        say(f"  ※ イベントスチル {ncg}枚も入れました（--cg）。")
 
 
 if __name__ == "__main__":

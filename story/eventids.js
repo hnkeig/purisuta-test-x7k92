@@ -17,6 +17,12 @@
      where   … 発生場所（背景のキー。assets/bg/ の名前と同じ）
      needs   … 先に見ておく必要があるイベントIDの並び（任意）
      cond    … いま条件を満たしているかを返す関数（任意）
+     sex     … その主人公のときだけ起きるイベント。"m" 男性／"f" 女性。
+                書かなければ「男女どちらでも起きる（共通）」です。
+                ★ 立場が入れかわるだけ（バレンタインのもらう／渡す など）なら、
+                  **IDは共通のままにして、文章のほうを差しかえてください**
+                  （story/events_f.js）。IDを分けるのは、片方にしか無い
+                  イベントを足すときだけにすると、管理が楽です。
      auto    … true なら、この台帳ではなくデータから自動で作られたもの
 
    ---- IDの付けかた（そろえておくと探しやすい）------------------------------
@@ -75,6 +81,29 @@ const EVKIND_BG = { exam:"klass", match:"ground", vacs:"sea", invite:"fest",
   sports:"ground", culture:"school", trip:"town", trip2:"town", trip3:"town",
   newyear:"shrine", valen:"klass", white:"klass" };
 
+/* そのキャラを攻略できるのは、どちらの性別の主人公か。
+   相手が女性なら男性主人公（"m"）、相手が男性なら女性主人公（"f"）。
+   ★ assets/config.js の GAME_RULE.target を変えているときは、
+     targetSex() が答えを決めるので、それに合わせます。 */
+/* その子が相手役をつとめる部活のキー。
+   CLUBS の相手役（linkCast がいまのキャストぶんだけ付ける）を先に見て、
+   付いていなければ、その子のファイルの p.clubs から引きます。 */
+function clubKeyOf(gid){
+  if(typeof CLUBS!=="undefined"){
+    const k=Object.keys(CLUBS).find(k2=>CLUBS[k2].mate===gid);
+    if(k)return k;
+  }
+  const st=(typeof STORY!=="undefined")&&STORY[gid];
+  const c=st&&st.p&&(st.p.clubs||[])[0];
+  return (c&&typeof CLUBS!=="undefined"&&CLUBS[c])?c:null;
+}
+function evSexOf(gid){
+  const g=(typeof ALLG!=="undefined")&&ALLG.find(x=>x.id===gid);
+  if(!g)return null;
+  if(typeof targetSex!=="function")return (g.sex==="m")?"f":"m";
+  return (targetSex("m")===g.sex) ? "m" : "f";
+}
+
 /* 2けたにそろえる（4月5日 → 0405） */
 const evMMDD = (m,d) => (m<10?"0":"")+m+(d<10?"0":"")+d;
 
@@ -99,7 +128,7 @@ function buildEventDefs(){
     const dlc = (typeof f.run==="function");
     const id  = f.eid || "fx_"+f.id+"_"+evMMDD(f.m,f.d);
     if(has(id))continue;
-    out.push({ id, n:f.n, chara:f.who||null, kind:dlc?"DLC":"固定行事", auto:true,
+    out.push({ id, n:f.n, chara:f.who||null, kind:dlc?"DLC":"固定行事", auto:true, sex:(f.who?evSexOf(f.who):(f.sex||null)),
       when:`${f.m}月${f.d}日`+(f.y?`（${f.y}年目だけ）`:"（毎年）")
         +(f.id==="match"?"／運動部のときだけ":"")
         +(f.need?`／好感度 ${f.need} 以上の子がいるとき`:""),
@@ -115,7 +144,7 @@ function buildEventDefs(){
 
   /* 誕生日 */
   if(typeof BDAYS!=="undefined")for(const b of BDAYS){
-    out.push({ id:"bday_"+b.who, n:b.n, chara:b.who, kind:"誕生日", auto:true,
+    out.push({ id:"bday_"+b.who, n:b.n, chara:b.who, kind:"誕生日", auto:true, sex:evSexOf(b.who),
       when:`${b.m}月${b.d}日（毎年）／その子が登場していること`, where:b.bg||"klass",
       cond:()=>evFutureDate(b.m,b.d) && (S.girls||[]).some(g=>g.id===b.who) });
   }
@@ -123,7 +152,7 @@ function buildEventDefs(){
   /* 好感度イベント（3本ずつ。前のものを見てから次が出ます） */
   if(typeof AFF_EV!=="undefined")for(const gid in AFF_EV){
     AFF_EV[gid].forEach((e,i)=>{
-      out.push({ id:`aff_${gid}_${i+1}`, n:e.t, chara:gid, kind:"好感度", auto:true,
+      out.push({ id:`aff_${gid}_${i+1}`, n:e.t, chara:gid, kind:"好感度", auto:true, sex:evSexOf(gid),
         when:`好感度 ${e.at} 以上／週の終わり`,
         where:e.bg||"sunset",
         needs:i>0?[`aff_${gid}_${i}`]:[],
@@ -135,7 +164,7 @@ function buildEventDefs(){
   if(typeof INTRO!=="undefined")for(const gid in INTRO){
     const g=(typeof ALLG!=="undefined")&&ALLG.find(x=>x.id===gid);
     const req=g&&g.req;
-    out.push({ id:"meet_"+gid, n:(g?g.name:gid)+"と出会う", chara:gid, kind:"出会い", auto:true,
+    out.push({ id:"meet_"+gid, n:(g?g.name:gid)+"と出会う", chara:gid, kind:"出会い", auto:true, sex:evSexOf(gid),
       when:req?`${req.n}が${req.v}以上になったとき`:"最初から知っている",
       where:INTRO[gid].bg||"school",
       cond:()=>{ if(!req)return true;
@@ -145,17 +174,20 @@ function buildEventDefs(){
   /* 部室での初対面（その子が相手役になる部活の部室） */
   if(typeof CLUBMEET!=="undefined")for(const gid in CLUBMEET){
     const g=(typeof ALLG!=="undefined")&&ALLG.find(x=>x.id===gid);
-    const ck=(typeof CLUBS!=="undefined")&&Object.keys(CLUBS).find(k=>CLUBS[k].mate===gid);
-    const cn=ck?CLUBS[ck].n:"その子のいる部活";
-    out.push({ id:"club_"+gid, n:(g?g.name:gid)+"と部室で会う", chara:gid, kind:"部活", auto:true,
-      when:`${cn}に入部したとき`, where:(ck&&CLUBS[ck].bg)||"klass",
-      cond:()=>S.club===ck });
+    /* ★ CLUBS[].mate は「いま選んでいる主人公のぶん」しか付いていません。
+       台帳は男女ぜんぶを載せるので、付いていない子は、その子のファイル
+       （story/<id>.js の p.clubs）から部活を引きます。 */
+    const ck=clubKeyOf(gid);
+    const cn=(ck&&CLUBS[ck])?CLUBS[ck].n:"その子のいる部活";
+    out.push({ id:"club_"+gid, n:(g?g.name:gid)+"と部室で会う", chara:gid, kind:"部活", auto:true, sex:evSexOf(gid),
+      when:`${cn}に入部したとき`, where:(ck&&CLUBS[ck]&&CLUBS[ck].bg)||"klass",
+      cond:()=>ck?S.club===ck:false });
   }
 
   /* バイト先に来る（背景はえらんだバイト先によって変わります） */
   if(typeof JOBMEET!=="undefined")for(const gid in JOBMEET){
     const g=(typeof ALLG!=="undefined")&&ALLG.find(x=>x.id===gid);
-    out.push({ id:"job_"+gid, n:(g?g.name:gid)+"がバイト先に来る", chara:gid, kind:"バイト", auto:true,
+    out.push({ id:"job_"+gid, n:(g?g.name:gid)+"がバイト先に来る", chara:gid, kind:"バイト", auto:true, sex:evSexOf(gid),
       when:"バイトのコマンド1回につき1.0%の抽選／好感度50以上",
       where:"（えらんだバイト先）",
       cond:()=>{const x=(S.girls||[]).find(y=>y.id===gid); return !!S.job&&!!x&&x.aff>=50;} });

@@ -25,12 +25,7 @@ html,body{margin:0;height:100%;background:#1a1520;overflow:hidden;
 
 /* ==================== スマホ（横向き）用レイアウト ==================== */
 body{touch-action:manipulation;-webkit-text-size-adjust:100%;overscroll-behavior:none}
-@media (hover:none){
-  .ic:hover{transform:none;filter:none;animation:none}
-  button:hover:not(:disabled){transform:none;filter:none;background:var(--panel2)}
-  .slot:hover{border-color:#d9c9b0;background:#fff}
-  .gcard:hover,.clubrow:hover{border-color:#e8d9c4;background:#fff}
-}
+/* ★ 指でさわる端末むけの決まりごとは、このファイルのいちばん下に書いてあります。 */
 .ic:active{transform:scale(.94)}
 input,select,textarea{font-size:16px!important}
 
@@ -188,8 +183,10 @@ body.pt #rotate{display:flex}
   0%,100%{transform:translateY(-2px)}
   50%    {transform:translateY(-9px)}
 }
-.ic:hover,.ic.gpf{filter:brightness(1.08);
+.ic.gpf{filter:brightness(1.08);
   animation:icBob .68s ease-in-out infinite}
+@media (hover:hover){.ic:hover{filter:brightness(1.08);
+  animation:icBob .68s ease-in-out infinite}}
 /* 押しているあいだは揺れを止めて、沈みこませる */
 .ic:active{animation:none;transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.22)}
 .ic .g{font-size:30px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
@@ -206,9 +203,9 @@ body.pt #rotate{display:flex}
 .gtab.on{background:linear-gradient(180deg,#fb9cc4,#e5619b);color:#fff;border-color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
 .ggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .gcell{display:flex;gap:6px;align-items:center;border:2px solid #e8d9c4;border-radius:9px;padding:4px;background:#fff;cursor:pointer;transition:.12s}
-.gcell:hover{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}
+@media (hover:hover){.gcell:hover{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}}
 .gcell.lock{cursor:default;background:#f6f2ee;border-color:#e4ddd4}
-.gcell.lock:hover{transform:none;border-color:#e4ddd4;background:#f6f2ee}
+@media (hover:hover){.gcell.lock:hover{transform:none;border-color:#e4ddd4;background:#f6f2ee}}
 .gface{width:44px;height:52px;border-radius:7px;overflow:hidden;flex:0 0 auto;background:#efe6ee}
 .gface svg{width:100%;height:100%;display:block}
 .glock{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#c9bfc6;font-weight:800}
@@ -216,6 +213,36 @@ body.pt #rotate{display:flex}
 .gcat{font-size:8.5px;color:#c2306a;font-weight:800}
 .gt{font-size:11px;font-weight:700;color:#4a3a44;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
 .gn{font-size:9.5px;color:#8a7a68}
+/* ---- おまけ：イベントスチル（1枚絵）の一覧 ---- */
+.cgh2{display:flex;align-items:baseline;gap:8px;margin:9px 2px 4px;
+  font-size:12.5px;font-weight:900;color:#8a6076;letter-spacing:.06em;
+  border-bottom:1px dotted #e6d4de;padding-bottom:3px}
+.cgh2:first-of-type{margin-top:0}
+.cgh2 i{font-style:normal;font-size:10.5px;font-weight:800;color:#a08090;margin-left:auto}
+.cggrid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:8px}
+.cgcell{position:relative;aspect-ratio:16/9;border:2px solid #e8d9c4;border-radius:8px;
+  overflow:hidden;background:#fff;cursor:pointer;transition:.12s;
+  display:flex;align-items:center;justify-content:center}
+@media (hover:hover){.cgcell:hover{border-color:#f48fb1;transform:translateY(-1px)}}
+.cgcell img{width:100%;height:100%;object-fit:cover;display:block}
+/* 絵はあるが、まだ見ていない */
+.cgcell.lock{cursor:default;background:#f6f2ee;border-color:#e4ddd4}
+/* まだ絵を置いていない空き枠 */
+.cgcell.none{cursor:default;background:#faf7f4;border-style:dashed;border-color:#e8e0d6}
+@media (hover:hover){.cgcell.lock:hover, .cgcell.none:hover{transform:none;border-color:#e4ddd4}}
+.cgcell .cgno{font-size:13px;font-weight:800;color:#cfc4ca}
+.cgcell.none .cgno{color:#e0d8ce}
+.cgcell .cgnum{position:absolute;left:2px;top:1px;font-size:8.5px;font-weight:800;
+  color:#fff;background:rgba(0,0,0,.42);border-radius:4px;padding:0 4px;line-height:1.5}
+.cgcell.none .cgnum,.cgcell.lock .cgnum{background:rgba(0,0,0,.18)}
+/* 1枚を大きく見るとき */
+.cgview{text-align:center}
+.cgview img{width:100%;max-height:56vh;object-fit:contain;border-radius:10px;
+  background:#1a1520;display:block}
+.cgcap{margin-top:6px;font-size:13.5px;font-weight:800;color:#4a3a44}
+body.mb .cggrid{grid-template-columns:repeat(4,1fr)}
+body.sh .cggrid{grid-template-columns:repeat(3,1fr)}
+
 .pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
 .pcard{display:flex;gap:9px;border:2px solid #e8d9c4;border-radius:10px;padding:7px;background:#fff}
 .pcard.lock{background:#f6f2ee;border-color:#e4ddd4}
@@ -227,7 +254,7 @@ body.pt #rotate{display:flex}
 .pd{font-size:10.5px;color:#5d5060;line-height:1.5}
 .bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .bcell{display:flex;gap:8px;align-items:center;border:2px solid #e8d9c4;border-radius:9px;padding:7px 9px;background:#fff;cursor:pointer}
-.bcell:hover{border-color:#f48fb1;background:#fff6f9}
+@media (hover:hover){.bcell:hover{border-color:#f48fb1;background:#fff6f9}}
 .bcell.on{background:linear-gradient(180deg,#fff2f7,#ffe2ee);border-color:#f48fb1}
 .bico{font-size:16px;color:#c2306a;width:18px;text-align:center}
 .bn{font-size:13px;font-weight:800;color:#4a3a44}
@@ -242,8 +269,9 @@ body.mb .pgrid{grid-template-columns:1fr}
 .ic.off{filter:grayscale(.85) brightness(.8);cursor:not-allowed;opacity:.75}
 /* 押せないボタンは、ゆれず・明るくならず・カーソルの絵にも変わらない
    （animation は指定より強いので、ここで止めておかないと揺れつづけます） */
-.ic.off:hover{transform:none;animation:none}
-.ic.img.off:hover>.u1,.ic.img.off.gpf>.u1{opacity:0}
+@media (hover:hover){.ic.off:hover{transform:none;animation:none}}
+.ic.img.off.gpf>.u1{opacity:0}
+@media (hover:hover){.ic.img.off:hover>.u1{opacity:0}}
 /* きろくのように「いまは書けないだけで、押せる」ボタン。
    うすくするだけで、カーソルも見た目も「押せる」ままにします */
 .ic.dim{filter:saturate(.45) brightness(.93)}
@@ -263,13 +291,16 @@ body.mb .pgrid{grid-template-columns:1fr}
   object-fit:var(--cmdfit,contain);display:block;pointer-events:none;
   max-width:none;max-height:none}
 .ic.img>.u1{opacity:0;transition:opacity .12s linear}
-.ic.img:hover>.u1,.ic.img.gpf>.u1{opacity:1}
+.ic.img.gpf>.u1{opacity:1}
+@media (hover:hover){.ic.img:hover>.u1{opacity:1}}
 .ic.img:active{box-shadow:none}
 /* 明るさの足しこみはしません（カーソルのときの絵が、そのまま出るように）。
    ただし「押せないとき」の暗さは残します */
-.ic.img:not(.off):hover,.ic.img:not(.off).gpf{filter:none}
+.ic.img:not(.off).gpf{filter:none}
+@media (hover:hover){.ic.img:not(.off):hover{filter:none}}
 /* CMD_ICON.bob を false にすると、ふわふわ揺れなくなります */
-body.nobob .ic:hover,body.nobob .ic.gpf{animation:none}
+body.nobob .ic.gpf{animation:none}
+@media (hover:hover){body.nobob .ic:hover{animation:none}}
 /* 絵にしたボタンでは、絵文字と文字はふだん隠しておきます。
    （絵が読めなかったときの戻り先として、中には残してあります） */
 .ic.img>.g,.ic.img>.t{display:none}
@@ -299,7 +330,7 @@ body.cmdlabel .ic.img>.t{display:block;position:absolute;left:0;right:0;bottom:1
 .btn{background:linear-gradient(180deg,#ffd98a,#f0a83f);border:2px solid #fff;color:#5a3a10;font-weight:800;
   border-radius:10px;padding:8px 16px;cursor:pointer;font-size:14px;font-family:inherit;
   box-shadow:0 3px 0 rgba(0,0,0,.2);transition:.12s}
-.btn:hover{filter:brightness(1.07);transform:translateY(-1px)}
+@media (hover:hover){.btn:hover{filter:brightness(1.07);transform:translateY(-1px)}}
 .btn:active{transform:translateY(2px);box-shadow:none}
 .btn.pk{background:linear-gradient(180deg,#fb9cc4,#e5619b);color:#fff}
 .btn.gy{background:linear-gradient(180deg,#e6e2d8,#c8c2b4);color:#4a4438}
@@ -311,7 +342,7 @@ body.cmdlabel .ic.img>.t{display:block;position:absolute;left:0;right:0;bottom:1
 .week{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .slot{background:#fff;border:2px solid #d9c9b0;border-radius:9px;padding:5px 3px;text-align:center;cursor:pointer;
   transition:.12s;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px}
-.slot:hover{border-color:#f48fb1;background:#fff6f9}
+@media (hover:hover){.slot:hover{border-color:#f48fb1;background:#fff6f9}}
 .slot.cur{border-color:#ff5d8f;background:#ffeef4;box-shadow:0 0 0 3px rgba(255,93,143,.25)}
 .slot .dw{font-size:12px;font-weight:800;color:#8a7a68}
 .slot .dw.sa{color:#3f7fd0}
@@ -369,11 +400,18 @@ body.mb .evl{height:1.45em;line-height:1.45}
 .evl .el{line-height:1.25}
 
 /* ---- カレンダーを全画面いっぱいに広げる ---- */
-#modal.cal>#modBody{display:flex;flex-direction:column;overflow:hidden;padding:10px 14px}
+/* ★ 日づけのマス目には、かならず --calrow の高さを残します。
+   ここを 0 にしておくと、画面の低いスマホ（iPhone 12 mini の横向きなど）で
+   マス目が数pxまでつぶれ、日づけの数字が重なって読めなくなります。
+   それでも入りきらないときは、#modBody のほうを縦にスクロールさせます。 */
+#modal.cal>#modBody{display:flex;flex-direction:column;overflow:auto;padding:10px 14px;
+  --calrow:30px}
 #modal.cal .cwrap2{flex:1 1 auto;min-height:0}
 #modal.cal .cm2{display:flex;flex-direction:column;min-height:0;padding:8px 12px 8px}
-#modal.cal .cgd2{flex:1 1 auto;min-height:0;grid-auto-rows:1fr}
-#modal.cal .cd2{min-height:0;font-size:17px;line-height:1.1;justify-content:flex-start;padding-top:2px}
+#modal.cal .cgd2{flex:1 1 auto;min-height:0;
+  grid-auto-rows:minmax(var(--calrow,30px),1fr)}
+#modal.cal .cd2{min-height:var(--calrow,30px);font-size:17px;line-height:1.1;
+  justify-content:flex-start;padding-top:2px}
 #modal.cal .cd2 .cem{font-size:18px;line-height:1;margin-top:1px}
 #modal.cal .cd2 .en{font-size:10px;line-height:1.05;margin-top:1px}
 #modal.cal .cmh2{font-size:22px;margin-bottom:7px}
@@ -382,7 +420,9 @@ body.mb .evl{height:1.45em;line-height:1.45}
 #modal.cal .clegend{font-size:13.5px;margin-bottom:8px}
 #modal.cal .lg{width:14px;height:14px}
 #modal.cal .el{font-size:12px}
-body.mb #modal.cal>#modBody{padding:5px 8px}
+body.mb #modal.cal>#modBody{padding:5px 8px;--calrow:21px}
+body.sh #modal.cal>#modBody{--calrow:17px}
+body.sh2 #modal.cal>#modBody{--calrow:14px}
 body.mb #modal.cal .cm2{padding:4px 6px}
 /* せまい画面では日付と絵文字を横に並べて、1行ぶん高さを節約する */
 body.mb #modal.cal .cd2{font-size:13px;padding:0 1px;flex-direction:row;align-items:center;
@@ -435,9 +475,9 @@ body.mb .cev2{font-size:8.5px;line-height:1.45;margin-top:4px;padding-top:3px;
 .slotrow{display:flex;flex-direction:column;gap:5px;border:2px solid #e8d9c4;border-radius:12px;
   padding:8px 9px 9px;background:#fff;box-shadow:0 2px 6px rgba(120,90,70,.09);
   transition:border-color .13s,box-shadow .13s,transform .13s}
-.slotrow:hover{border-color:#f0b8cf;box-shadow:0 5px 14px rgba(190,110,150,.2);transform:translateY(-1px)}
+@media (hover:hover){.slotrow:hover{border-color:#f0b8cf;box-shadow:0 5px 14px rgba(190,110,150,.2);transform:translateY(-1px)}}
 .slotrow.empty{background:#fdfaf6;box-shadow:none}
-.slotrow.empty:hover{transform:none;box-shadow:none}
+@media (hover:hover){.slotrow.empty:hover{transform:none;box-shadow:none}}
 .slotrow .sk{font-size:12px;font-weight:800;color:#c2306a;letter-spacing:.03em;
   border-bottom:1px dotted #f0dce6;padding-bottom:3px}
 .slotrow .sbody{display:flex;align-items:center;gap:9px;min-height:66px}
@@ -507,13 +547,41 @@ body.mb .slotrow .sb .btn.sm{padding:3px 0;font-size:10.5px}
 #modal.full>.ttl{border-radius:0;font-size:18px;padding:9px 18px}
 body.mb #modal.full>.ttl{font-size:14px;padding:6px 12px}
 #modal.full>#modBtns{padding:8px 18px 12px!important}
+/* おまけ（シーン鑑賞・スチル・プロフィール・称号・BGM）。
+   タブで中身の量が違っても窓が伸び縮みしないよう、全画面で固定します。
+   ★ zoom はかけません（一覧はマス目なので、拡大すると見える数が減ります）。
+     そのぶん、画面が広いときはマスを増やして、一度にたくさん見せます。 */
+#modal.full.gal>#modBody{padding:10px 18px 12px}
+body.mb #modal.full.gal>#modBody{padding:6px 10px 8px}
+/* 全画面ぶん横に広がったので、マスの数も増やします。
+   ★ スマホ横（724×302 など）は「横に広くて、縦が短い」画面です。
+     マスを少なくすると1つが大きくなり、縦に入りきらなくなるので、
+     せまい画面ほど**マスを増やして**小さくします。 */
+#modal.full.gal .cggrid{grid-template-columns:repeat(6,1fr)}
+#modal.full.gal .ttgrid{grid-template-columns:repeat(3,1fr)}
+#modal.full.gal .ggrid {grid-template-columns:repeat(4,1fr)}
+#modal.full.gal .pgrid {grid-template-columns:repeat(2,1fr)}
+@media (min-width:1000px){
+  #modal.full.gal .cggrid{grid-template-columns:repeat(8,1fr)}
+  #modal.full.gal .ggrid {grid-template-columns:repeat(5,1fr)}
+  #modal.full.gal .pgrid {grid-template-columns:repeat(3,1fr)}
+  #modal.full.gal .ttgrid{grid-template-columns:repeat(5,1fr)}
+}
+@media (min-width:1500px){
+  #modal.full.gal .cggrid{grid-template-columns:repeat(10,1fr)}
+  #modal.full.gal .ggrid {grid-template-columns:repeat(6,1fr)}
+  #modal.full.gal .ttgrid{grid-template-columns:repeat(6,1fr)}
+}
+/* 大きく出したスチルは、全画面ぶん高さを使えます */
+#modal.full.gal .cgview img{max-height:70vh}
+
 /* 文字ごと拡大する画面（カレンダー以外） */
 #modal.zoom>#modBody{zoom:1.3}
 body.mb #modal.zoom>#modBody{zoom:1.08}
 #modal.zoom>#modBtns .btn{font-size:16px;padding:9px 20px}
 body.mb #modal.zoom>#modBtns .btn{font-size:13px}
 .gcard{display:flex;gap:12px;align-items:center;background:#fff;border:2px solid #e8d9c4;border-radius:10px;padding:8px;margin-bottom:8px;cursor:pointer}
-.gcard:hover{border-color:#f48fb1;background:#fff6f9}
+@media (hover:hover){.gcard:hover{border-color:#f48fb1;background:#fff6f9}}
 .gcard .pf{width:64px;height:76px;border-radius:8px;overflow:hidden;flex:0 0 auto}
 .gcard .pf svg{width:100%;height:100%;display:block}
 
@@ -596,6 +664,20 @@ body.mb .gstr .v{font-size:11.5px}
   display:flex;align-items:flex-end;justify-content:center;
   filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));transition:opacity .25s}
 #vnChar svg{width:100%;height:100%;display:block}
+/* ---- イベントスチル（1枚絵）----
+   画面いっぱいに出します。立ち絵（z-index:1）より上、
+   メッセージ枠（3）より下なので、文章はスチルの上に読めます。
+   入れかたは assets/config.js の CG_RULE（fit / focusX / focusY）。 */
+#vnStill{position:absolute;inset:0;z-index:2;overflow:hidden}
+#vnStill img{width:100%;height:100%;display:block;
+  object-fit:var(--cgfit,cover);
+  object-position:var(--cgfx,50%) var(--cgfy,50%)}
+#vnStill .ghost{position:absolute;left:0;top:0;width:100%;height:100%;
+  pointer-events:none;opacity:1}
+/* スチルを出しているあいだ、立ち絵と顔を隠します
+   （CG_RULE の charOff / faceOff。false にすると隠しません） */
+body.cgon.cgnochar #vnChar{display:none}
+body.cgon.cgnoface #vnFaceWin{display:none}
 /* ---- 絵を入れかえるときの「幽霊」----
    立ち絵や顔の絵をべつのものにさしかえるとき、古い絵をこの中に入れて
    新しい絵の上に重ね、うすくしてから捨てます（じわっと入れかわって見えます）。
@@ -687,7 +769,7 @@ body.vnart.photo #vnName,body.vnart.photoin #vnName{left:calc(var(--vnnx,1.3%) +
 /* 閉じる（×） */
 #vnClose{position:absolute;right:1.2%;top:14%;width:44px;height:39px;cursor:pointer;
   background:no-repeat center/100% 100%;background-image:var(--x1)}
-#vnClose:hover{background-image:var(--x2)}
+@media (hover:hover){#vnClose:hover{background-image:var(--x2)}}
 /* 「▼」のかわりに、枠の右下でしずくが点滅 */
 #vnWin.waiting::after{content:"▼";position:absolute;right:4.6%;bottom:3%;
   font-size:calc(var(--vnnfs,20px) * 0.6);color:#128eae;animation:blink2 1s steps(2,start) infinite;text-shadow:none}
@@ -707,7 +789,7 @@ body.vnart.photo #vnName,body.vnart.photoin #vnName{left:calc(var(--vnnx,1.3%) +
   color:#2a2630;font-weight:700;font-size:var(--vncfs,17px);line-height:1.15;
   display:flex;align-items:center;justify-content:center;text-align:center;
   filter:drop-shadow(0 3px 7px rgba(0,0,0,.3));transition:.1s}
-#vnChoices .btn:hover{background-image:var(--cb2);transform:none;filter:drop-shadow(0 3px 9px rgba(0,0,0,.4))}
+@media (hover:hover){#vnChoices .btn:hover{background-image:var(--cb2);transform:none;filter:drop-shadow(0 3px 9px rgba(0,0,0,.4))}}
 #vnChoices .btn:active{transform:translateY(1px)}
 /* 選択肢が5つ以上のときは横に並べる（デートの行き先など） */
 #vnChoices.many2,#vnChoices.many3{
@@ -726,7 +808,10 @@ body.mb #vnChoices.many3 .btn{width:31%;height:34px;padding:0 6px}
 #vnBar.hide{display:none}
 #vnBar .sb{width:70px;height:30px;cursor:pointer;pointer-events:auto;flex:0 0 auto;
   background:no-repeat center/100% 100%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
-#vnBar .sb.on,#vnBar .sb:hover{background-image:var(--h)!important}
+#vnBar .sb.on{background-image:var(--h)!important}
+/* ★ hover の光りは、マウスのある端末だけ。
+   （指でさわる端末では、1回目のタップが「乗せただけ」になってしまうため） */
+@media (hover:hover){ #vnBar .sb:hover{background-image:var(--h)!important}}
 
 /* ---------- クイックメニュー（画面の右上・新しい素材のとき）----------
    assets/ui/ui_btn_save_normal.png などを置くと、この並びになります。
@@ -752,7 +837,7 @@ body.mb #vnChoices.many3 .btn{width:31%;height:34px;padding:0 6px}
   border-radius:8%;box-shadow:0 2px 5px rgba(0,0,0,.2)}
 #vnBar.qm .sb.ph b{position:relative;font-size:calc(var(--qmb,69px)*.16);
   font-weight:700;color:#6a5480;letter-spacing:.04em}
-#vnBar.qm .sb.ph:hover::before{background:rgba(240,225,246,.92)}
+@media (hover:hover){ #vnBar.qm .sb.ph:hover::before{background:rgba(240,225,246,.92)}}
 /* ★ 絵をまだ置いていないボタン（仮のひし形）にも「入っている」見た目を付けます。
    これが無いと、AUTO や SKIP を押しても見た目が変わらず、
    効いているのかどうか分からなくなります。 */
@@ -793,7 +878,7 @@ body.mb .tinner{padding-bottom:30px}
   border:3px solid #f090b4;color:#b4285e;box-shadow:0 4px 0 rgba(200,90,130,.45),0 8px 20px rgba(0,0,0,.16);
   cursor:pointer;font-family:inherit;transition:.13s;letter-spacing:.08em}
 .tbtn .tg{margin-right:8px;font-size:16px}
-.tbtn:hover{transform:translateY(-2px);background:linear-gradient(180deg,#fff,#ffe0ee)}
+@media (hover:hover){.tbtn:hover{transform:translateY(-2px);background:linear-gradient(180deg,#fff,#ffe0ee)}}
 .tbtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(200,90,130,.45)}
 .tbtn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
@@ -813,8 +898,9 @@ body.mb .tinner{padding-bottom:30px}
   filter:drop-shadow(0 3px 7px rgba(0,0,0,.17))}
 .tbtn.img .u0,.tbtn.img .u1{width:100%;height:auto;display:block}
 .tbtn.img .u1{position:absolute;inset:0;opacity:0;transition:opacity .13s}
-.tbtn.img:hover .u1,.tbtn.img.gpf .u1{opacity:1}
-.tbtn.img:hover{transform:translateY(-2px);background:none}
+.tbtn.img.gpf .u1{opacity:1}
+@media (hover:hover){.tbtn.img:hover .u1{opacity:1}}
+@media (hover:hover){.tbtn.img:hover{transform:translateY(-2px);background:none}}
 .tbtn.img:active{transform:translateY(2px);box-shadow:none}
 /* セーブが無いときの「つづきから」。色を落として少し薄くするだけにして、
    何のボタンかは読めるようにしておく（真っ白にすると文字が消えてしまう） */
@@ -882,7 +968,7 @@ body.sh #setup .btn{font-size:12px !important;padding:6px 16px !important}
 .chips{display:flex;gap:5px;flex-wrap:wrap}
 .chip{background:#fff;border:2px solid #e6c9d6;border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer;
   font-weight:700;color:#7a6070;transition:.12s;user-select:none}
-.chip:hover{border-color:#f48fb1}
+@media (hover:hover){.chip:hover{border-color:#f48fb1}}
 .chip.on{background:linear-gradient(180deg,#fb9cc4,#e5619b);border-color:#fff;color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.15)}
 .nmhint{font-size:10.5px;color:#a08090;letter-spacing:.04em}
 .note2{font-size:11.5px;color:#8a6076;line-height:1.6;text-align:left;flex:1;min-width:0}
@@ -951,7 +1037,8 @@ body.mb .lvl .ttlnm{font-size:.95em}
 .ttgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .ttc{display:flex;gap:5px;align-items:center;border:2px solid #e8d9c4;border-radius:8px;
   padding:3px 6px;background:#fff;cursor:pointer;transition:.12s;outline:none}
-.ttc:hover,.ttc:focus,.ttc.gpf{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}
+.ttc:focus, .ttc.gpf{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}
+@media (hover:hover){.ttc:hover{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}}
 .ttc.lock{background:#f6f2ee;border-color:#e4ddd4}
 .ttc.lock .ttn{color:#a89e94}
 .ttc.now{border-color:#e8b23a;background:#fffbe9;box-shadow:0 0 0 2px rgba(232,178,58,.3)}
@@ -1006,7 +1093,8 @@ body.mb .ttgrid .tth2{font-size:10.5px;padding:4px 2px 1px}
 
 /* 動きを減らす設定にしている人には、揺らさず静かに浮かせるだけにする */
 @media (prefers-reduced-motion: reduce){
-  .ic:hover,.ic.gpf{animation:none;transform:translateY(-3px)}
+  .ic.gpf{animation:none;transform:translateY(-3px)}
+@media (hover:hover){.ic:hover{animation:none;transform:translateY(-3px)}}
 }
 
 /* ===== 顔画像（メッセージ枠の左どなり） =====
@@ -1123,3 +1211,24 @@ body.photo #vnFaceWin .pf>.pfname{position:absolute;
    下の画面はずっと見えているので、すっと入れかわって見えます。
    動かすのは game.js の fadeIn() / fadeOut()（opacity をじかに書きます）。
    長さは オプションの「背景の切りかえ」（S.bgfade）と同じです。 */
+
+/* =========================================================================
+   指でさわる端末（マウスのない端末）について
+
+   ★ iPhone などでは、1回目のタップを「カーソルを乗せた（hover）」と受けとり、
+     **そのとき見た目が変わると、押したことにしてくれません。**
+     つまり **2回タップしないと進めない** ことになります。
+     タイトルの「はじめから」が押しにくかったのは、これでした
+     （.tbtn:hover でボタンが 2px 浮き上がっていたためです）。
+
+   そこでこのファイルでは、**`:hover` の規則をぜんぶ `@media (hover:hover){ }` で
+   囲んであります。** マウスのある端末（PC）ではいままでどおり、
+   指でさわる端末では hover の飾りが、そもそも当たりません。
+
+   ★ 新しく `:hover` を書くときも、かならず `@media (hover:hover){ }` の中に
+     書いてください。**外に書くと、そのボタンだけ2回タップが必要になります。**
+     `tests/verifyTap.js` が、書きもれを毎回見つけます。
+   ★ `:active`（押しているあいだ）は囲みません。指でも押した手ごたえが要ります。
+   ★ `.gpf`（キーボード・ゲームパッドで選んでいる印）も囲みません。
+     もともと `:hover` と同じ見た目なので、選択子を分けてあります。
+   ========================================================================= */

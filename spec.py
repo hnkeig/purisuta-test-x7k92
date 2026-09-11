@@ -1011,7 +1011,8 @@ assets/ui/ui_cmd_<なまえ>_hover.png    カーソルが乗ったとき（無�
   四角い写真がはみ出して見えるので、`photoHeadOut:0` か `photoHead:false` にします。
   立ち絵の切り抜き（`.chara.crop`）とSVGの子には、はじめから付けていません
 - **写真の右下に、その子の名前の絵をのせられます**（`ui_photo_name_<キャラid>.png`）。
-  `<キャラid>` は `kanade` / `rena` / `hinata` / `luka` / `minamo` / `sakuya`。
+  `<キャラid>` は `kanade` / `rena` / `hinata` / `luka` / `minamo` / `sakuya`（男性主人公版）
+  と `aoi` / `ryu` / `daichi` / `nagisa` / `zen` / `chikage`（女性主人公版）。
   枠といっしょに傾き、置いた子にだけ出ます
   （大きさと位置は `photoNameW` / `photoNameRight` / `photoNameBottom`）
 - ⚠ **CSS の mask は「よその場所のファイル」あつかい**で、`file://` で直に開いた
@@ -1133,7 +1134,8 @@ starmate/
 │       ├── save/       … きろく画面の顔（friend / crush / love）
 │       └── face/ outfit/ base.png front.png  … 重ね絵モード用
 ├── story/              … ★ゲーム内の文章はすべてここ
-│   ├── kanade.js  rena.js  hinata.js  luka.js  minamo.js  sakuya.js
+│   ├── kanade.js  rena.js  hinata.js  luka.js  minamo.js  sakuya.js   ← 男性主人公版
+│   ├── aoi.js  ryu.js  daichi.js  nagisa.js  zen.js  chikage.js       ← 女性主人公版
 │   ├── events.js       … 誰かひとりのものではない文章＋デートの選択肢
 │   └── titles.js       … 称号100種
 ├── story.js            … story/ の索引
@@ -1233,6 +1235,11 @@ def ev_chara(cid):
     return c.get("name", cid)
 
 
+def ev_sex(v):
+    """そのイベントが、どちらの主人公のときに起きるか"""
+    return {"m": "男性", "f": "女性"}.get(v, "共通")
+
+
 E = ["# イベント一覧",
      "",
      f"スターメイト に入っているイベントの全部です。ぜんぶで **{len(EV)} 件**。",
@@ -1263,6 +1270,22 @@ E = ["# イベント一覧",
      "| `club_◯◯` | 部室での初対面 |",
      "| `job_◯◯` | バイト先に来る |",
      "",
+     "### 「主人公」の欄", "",
+     "そのイベントが、どちらの性別の主人公のときに起きるかです。",
+     "",
+     "| 出かた | 意味 |",
+     "|---|---|",
+     "| 共通 | 男女どちらの主人公でも起きます |",
+     "| 男性 | 男性主人公のときだけ起きます |",
+     "| 女性 | 女性主人公のときだけ起きます |",
+     "",
+     "攻略対象ごとのイベント（好感度・出会い・部活・バイト・誕生日）は、"
+     "**その相手を攻略できる側の主人公**のところに自動で入ります。",
+     "",
+     "> **立場が入れかわるだけのイベント**（バレンタインのもらう／渡すなど）は、"
+     "**IDを分けずに文章だけ差しかえる**のがおすすめです（`story/events_f.js`）。",
+     "> IDを分けるのは、片方にしか無いイベントを足すときだけにすると、管理が楽です。",
+     "",
      "※ 電話・おでかけの「ふつうの会話」はここに入れていません（数が多いため）。",
      "　`story/<名前>.js` の `tel` / `date` と、`story/events.js` の `DATE` にあります。",
      "",
@@ -1276,8 +1299,8 @@ for kind in KIND_ORDER + sorted({e["kind"] for e in EV} - set(KIND_ORDER)):
     E += [f"## {kind}（{len(rows)} 件）", ""]
     if KIND_NOTE.get(kind):
         E += [KIND_NOTE[kind], ""]
-    E += [table(["イベントID", "イベント名", "だれの", "発生条件", "場所", "先に見ておくもの"],
-                [[f"`{e['id']}`", e["n"], ev_chara(e["chara"]), e["when"],
+    E += [table(["イベントID", "イベント名", "主人公", "だれの", "発生条件", "場所", "先に見ておくもの"],
+                [[f"`{e['id']}`", e["n"], ev_sex(e.get("sex")), ev_chara(e["chara"]), e["when"],
                   f"`{e['where']}`",
                   " / ".join(f"`{n}`" for n in e["needs"]) or "―"] for e in rows]),
           ""]

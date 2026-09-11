@@ -28,6 +28,14 @@ const CHARA_NAMES = {
   minamo: { name:"綾瀬 みなも", sei:"綾瀬", mei:"みなも", role:"文芸部 / 図書委員" },
   sakuya: { name:"姫野 咲耶",   sei:"姫野", mei:"咲耶",   role:"演劇部の主役 / 理事長の孫" },
 
+  /* ---- 女性主人公版の攻略キャラ（男性6人）---- */
+  aoi:     { name:"神谷 葵",     sei:"神谷",   mei:"葵",     role:"幼なじみ / 家庭科部" },
+  ryu:     { name:"殿城 龍之介", sei:"殿城",   mei:"龍之介", role:"生徒会長 / 学年1位" },
+  daichi:  { name:"立花 大地",   sei:"立花",   mei:"大地",   role:"運動部 / 学校一の元気印" },
+  nagisa:  { name:"南條 なぎさ", sei:"南條",   mei:"なぎさ", role:"読者モデル / 隣のクラス" },
+  zen:     { name:"火野 全",     sei:"火野",   mei:"全",     role:"美術部 / 図書委員" },
+  chikage: { name:"月華寺 千景", sei:"月華寺", mei:"千景",   role:"演劇部の主役 / 旧家の跡取り" },
+
   /* 見本（ふだんは読みこまれません。story/nanase.js を使うときだけ効きます） */
   nanase: { name:"白瀬 ななせ", sei:"白瀬", mei:"ななせ", role:"転校生 / 帰宅部" }
 };
