@@ -15,18 +15,18 @@ const ART_LIST = {
       "outfit": [],
       "full": {
         "": [
-          "normal.png"
+          "normal.webp"
         ]
       },
       "bust": {
         "": [
-          "ChatGPT Image 2026年9月3日 18_39_34.png_(384x512)_(2-1).png",
-          "ChatGPT Image 2026年9月3日 18_39_34.png_(384x512)_(2-4).png",
-          "blush.png",
-          "happy.png",
-          "s.png",
-          "sad.png",
-          "worry.png"
+          "ChatGPT Image 2026年9月3日 18_39_34.png_(384x512)_(2-1).webp",
+          "ChatGPT Image 2026年9月3日 18_39_34.png_(384x512)_(2-4).webp",
+          "blush.webp",
+          "happy.webp",
+          "s.webp",
+          "sad.webp",
+          "worry.webp"
         ]
       },
       "save": [],
