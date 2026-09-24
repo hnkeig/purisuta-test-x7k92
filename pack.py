@@ -45,8 +45,9 @@ atexit.register(_quiet_exit)
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT  = os.path.join(HERE, "starmate.zip")
 # 1ファイル版（starmate.html）は zip に入れません。別ファイルでお渡しします。
-EXTRA = ["build.py", "pack.py", "README.md", "本文の直しかた.md", "仕様書.md",
-         "イベント一覧.md",
+EXTRA = ["build.py", "pack.py", "README.md", "本文の直しかた.md",
+         "本文を直したときのルール.md", "仕様書.md",
+         "イベント一覧.md", "セリフのしくみ.md", "課金の仕様書.md",
          "spec.py", "spec_dump.js", "spec_dump.json",
          "キャラの増やしかた.md", "story/nanase.js",
          "assets/README.md", "引き継ぎメモ.md", "フォルダを作る.py"]
@@ -93,12 +94,31 @@ def main():
     files += re.findall(r'<link[^>]*href=["\']([^"\']+)["\']', html)
     files += re.findall(r'<script src=["\']([^"\']+)["\']', html)
 
-    # assets フォルダの中身（素材）は、あるものを全部入れる
+    # assets フォルダの中身を入れます。
+    #
+    # ★ ただし、**あなたが置いた絵と音（素材）は zip に入れません。**
+    #   素材はあなたの assets フォルダにそのまま残るもので、
+    #   zip を上書きしても消えません（README と 引き継ぎメモ.md の約束）。
+    #   入れてしまうと、受けわたしのたびに何十MBにもなってしまいます。
+    #
+    #   入れるのは「しくみのファイル」だけです。
+    #     ・config.js / list.js（設定と一覧）
+    #     ・README.md（置きかたの説明）
+    #     ・assets/chara/_template/（置き場所を分かりやすくするための見本）
+    ART_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".avif",
+               ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".opus",
+               ".mp4", ".webm", ".ttf", ".otf", ".woff", ".woff2"}
+    skipped = []
     adir = os.path.join(HERE, "assets")
     for root, _, names in os.walk(adir):
         for n in names:
             if n.startswith("."): continue
             rel = os.path.relpath(os.path.join(root, n), HERE).replace(os.sep, "/")
+            ext = os.path.splitext(n)[1].lower()
+            # 素材（絵・音・書体）は入れない。見本のテンプレートだけは入れる
+            if ext in ART_EXT and not rel.startswith("assets/chara/_template/"):
+                skipped.append(rel)
+                continue
             if rel not in files: files.append(rel)
     for e in EXTRA:
         if e not in files: files.append(e)
@@ -123,6 +143,9 @@ def main():
         say("\n  素材の置き場所（空のフォルダとして入れました）:")
         for d in edirs:
             say("    " + d)
+    if skipped:
+        say(f"\n  ※ あなたが置いた素材 {len(skipped)} 個は、zip に入れていません"
+            "（あなたの assets フォルダにそのまま残ります）")
 
 if __name__ == "__main__":
     main()

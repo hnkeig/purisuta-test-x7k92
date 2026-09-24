@@ -18,6 +18,29 @@ const VNFS_SCALE=0.70;
 const GAME_TITLE="スターメイト";
 try{ document.title=GAME_TITLE; }catch(e){}
 
+/* ---- ブラウザのタブに出る小さな絵（ファビコン）------------------------
+   ★ 置いていないと、ブラウザが favicon.ico を探しにいって見つからず、
+     開発者ツールに**エラーが1件**出ます（動きには関係ありませんが、
+     お客さんが開いたときに赤いしるしが付くので、出しておきます）。
+   ★ 外部ファイルは使いません。下の星をその場で描いて使います。
+     assets/ui/favicon.png を置けば、そちらが優先されます。 */
+const FAVICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+  + '<rect width="64" height="64" rx="14" fill="#fff6fa"/>'
+  + '<path d="M32 10l6.6 13.4 14.8 2.2-10.7 10.4 2.5 14.7L32 43.8 18.8 50.7l2.5-14.7L10.6 25.6l14.8-2.2z"'
+  + ' fill="#e5486f"/></svg>';
+function setFavicon(){
+  try{
+    let href = (typeof uiArt==="function" && uiArt("favicon")) || null;
+    if(!href) href = "data:image/svg+xml;base64," +
+      btoa(unescape(encodeURIComponent(FAVICON_SVG)));
+    let el = document.querySelector('link[rel~="icon"]');
+    if(!el){ el = document.createElement("link"); el.rel = "icon";
+             (document.head||document.documentElement).appendChild(el); }
+    el.href = href;
+  }catch(e){}
+}
+
 function insets(){
   const el=document.getElementById("safe");
   if(!el)return {t:0,r:0,b:0,l:0};
@@ -100,7 +123,7 @@ function artAspect2(src,varName){
 /* メッセージ枠の「よこ÷たて」。新しい枠を置くと、その絵の形にそろえます */
 const VNPANEL={ar:960/218, def:960/218};
 /* 顔の写真枠の「よこ÷たて」。ui_photo_frame.png を置くと、その絵の形になります */
-const VNPHOTO={ar:402/505, def:402/505, maskOK:false};
+const VNPHOTO={ar:402/505, def:402/505, maskOK:false, inimg:false};
 
 function fit(){
   const st=document.getElementById("stage"), ft=document.getElementById("fit");
@@ -123,6 +146,12 @@ function fit(){
   if(mob&&!portrait){ W=Math.min(vw,1000); H=Math.round(W*vh/vw); }
   else { W=1200; H=675; }
   st.style.width=W+"px"; st.style.height=H+"px";
+  /* ★ 舞台（stage）の実さい の大きさを、CSS からも使えるようにしておきます。
+     **vh / vw は使わないでください。** vh はブラウザの窓の高さで、
+     舞台の高さとは別ものです（広告よけや拡大で食いちがいます）。
+     高さの何割、を書きたいときは calc(var(--sth) * 0.26) のようにします。 */
+  st.style.setProperty("--stw", W+"px");
+  st.style.setProperty("--sth", H+"px");
   /* メッセージ枠の文字サイズ。
      まず「帯いっぱいに3行が入るギリギリの大きさ」を枠の実寸から逆算し、
      そこに VNFS_SCALE を掛けたものを本文サイズにする。
@@ -150,7 +179,7 @@ function fit(){
   st.style.setProperty("--vnar", VNPANEL.ar.toFixed(4));
   /* 本文が入る帯（枠の高さに対する割合）。新しい枠のときは VN_UI の値を使う */
   const bTop=(typeof V0.bodyTop==="number")?V0.bodyTop:0.36;
-  const bH  =(typeof V0.bodyH  ==="number")?V0.bodyH  :(1-0.36-0.035);
+  const bH  =(typeof V0.bodyH  ==="number")?V0.bodyH  :(1-bTop-0.035);
   const bodyH=frameH*bH;            /* 本文が入る帯の高さ */
   const full=Math.max(11,Math.min(40,(bodyH-4)/(3*1.45)));   /* 帯いっぱいの大きさ */
   /* 本文の大きさ。新しい枠のときは VN_UI の bodyScale（帯いっぱい＝1）を使います */
@@ -191,7 +220,11 @@ function fit(){
   let pfw=Math.round(W*(mob?qv("photoWMb",0.225):qv("photoW",0.250)));
   /* 写真枠は横はばから高さが決まるので、画面が低いと上へ伸びすぎます。
      高さが画面の photoMaxH をこえたら、そのぶん横はばを縮めます */
-  const pfar0=(V0.photoInImage===true)?VNPHOTO.def:(VNPHOTO.ar||VNPHOTO.def);
+  /* ★ 「枠を絵に描きこむ」作りに切りかわるのは、bust/ の絵が1枚でもあるときだけです
+     （applyVnArt() の anyBust）。ここもその条件をそろえておかないと、
+     設定だけ true にして絵をまだ置いていないあいだ、
+     横はばと高さの計算が食いちがって、顔が枠の中でずれます。 */
+  const pfar0=(V0.photoInImage===true && VNPHOTO.inimg===true)?VNPHOTO.def:(VNPHOTO.ar||VNPHOTO.def);
   const pfmax=Math.round(H*qv("photoMaxH",0.62));
   if(pfw/pfar0 > pfmax) pfw=Math.round(pfmax*pfar0);
   const pfx=Math.round(W*qv("photoX",0.008));
@@ -375,8 +408,12 @@ function auSyncVol(){
   if(AUFILE.bgm)AUFILE.bgm.volume=AU.on?Math.min(1,AU.bgmVol):0;
 }
 
+/* 合成の曲を鳴らしはじめるまでの待ち（0.52秒）を、あとから取り消すための札 */
+let BGMWAIT=null, BGMGEN=0;
 function bgm(name){
   if(AU.cur===name)return;
+  /* ファイルの曲に切りかえるときも、合成の曲の予約は取り消しておく */
+  BGMGEN++; if(BGMWAIT){ clearTimeout(BGMWAIT); BGMWAIT=null; }
   if(auPlayFile("bgm",name,true)){ AU.cur=name; AU.tr=null;
     if(AU.ctx&&AU.mus){const n=AU.ctx.currentTime;AU.mus.gain.cancelScheduledValues(n);
       AU.mus.gain.setValueAtTime(0.0001,n);}
@@ -387,7 +424,15 @@ function bgm(name){
   const T=TRACKS[name]; if(!T)return;
   const g=AU.mus.gain, now=AU.ctx.currentTime;
   g.cancelScheduledValues(now); g.setValueAtTime(g.value,now); g.linearRampToValueAtTime(0.0001,now+0.5);
-  setTimeout(()=>{
+  /* ★ 0.52秒あとに鳴らしはじめます。
+     そのあいだに止めたり別の曲にしたりできるよう、待ち札（BGMWAIT）を控えて、
+     鳴らす直前に「まだ自分の番か」を確かめます。
+     これが無いと、押してすぐ止めた曲が **0.5秒あとに鳴りだして止まらなく**なります。 */
+  if(BGMWAIT)clearTimeout(BGMWAIT);
+  const mine=++BGMGEN;
+  BGMWAIT=setTimeout(()=>{
+    BGMWAIT=null;
+    if(mine!==BGMGEN)return;               /* 待っているあいだに、別の曲か停止がきた */
     AU.tr=T; AU.step=0; AU.next=AU.ctx.currentTime+0.06;
     if(!AU.timer)AU.timer=setInterval(seqTick,40);
     const n=AU.ctx.currentTime;
@@ -396,6 +441,211 @@ function bgm(name){
     AU.mus.gain.linearRampToValueAtTime(AU.on?0.85*AU.bgmVol:0.0001,n+0.9);
   },520);
 }
+/* 曲を止める。
+   ★ bgm(null) では止まりません。TRACKS[null] が無いところで return するので、
+     合成の曲を並べるのをやめないまま抜けてしまいます。 */
+function bgmStop(){
+  auStopFile();
+  AU.cur=null;
+  /* 鳴らす予約が残っていたら、それも取り消す（でないと0.5秒後に鳴りだします） */
+  BGMGEN++;
+  if(BGMWAIT){ clearTimeout(BGMWAIT); BGMWAIT=null; }
+  if(!AU.ctx)return;
+  AU.tr=null;                                   /* 音を並べるのをやめる */
+  const n=AU.ctx.currentTime;
+  AU.mus.gain.cancelScheduledValues(n);
+  AU.mus.gain.linearRampToValueAtTime(0.0001,n+0.25);
+}
+
+/* =======================================================================
+   場面ごとのBGM（assets/config.js の BGM_RULE）
+
+   ★ ふだんの曲は「その日の季節」で決まり、drawDate() が日づけを描くたびに
+     bgm() を呼びなおしています。ですから、場面の曲をただ bgm() で鳴らしても
+     **次に画面が描かれた瞬間に、季節の曲へ戻されてしまいます**。
+     そこで「いまは場面の曲」という札（BGMOV）を立てて、
+     曲を決めるところは全部 bgmNow() を通すようにしてあります。
+   ★ 曲を置いていない（または名前が空の）ところは null を返すので、
+     その場面はいままでどおり季節の曲のままです。
+   ======================================================================= */
+let BGMOV=null;                      /* 場面のあいだだけ鳴らす曲。null＝ふだんどおり */
+/* BGM_RULE のキーから、実際に鳴らせる曲の名前を返す（無ければ null） */
+function bgmRule(k){
+  const R=(typeof BGM_RULE!=="undefined")?BGM_RULE:null;
+  let n=R?R[k]:"";
+  /* ★ "-" と書いたときだけ「この場面は曲を変えない」です */
+  if(n==="-")return null;
+  /* ★ 何も書いていないときは、場面と同じ名前のファイル
+       （entrance.mp3 / gallery.mp3 など）を置いてあれば、それだけで鳴らします。
+       「置いたのに鳴らない」でつまずかないように、こうしています。 */
+  if(!n) n = auPath("bgm",k) ? k : "";
+  if(!n) return null;
+  /* ファイルを置いてあるか、合成の曲（TRACKS）の名前なら使えます */
+  return (auPath("bgm",n)||TRACKS[n]) ? n : null;
+}
+/* いま鳴らすべき曲 */
+function bgmNow(){
+  if(BGMOV)return BGMOV;
+  return S.inGame ? bgmFor(S.t) : titleBgmName();
+}
+/* 場面の曲に切りかえる。曲を置いていなければ、なにもしません */
+function bgmScene(k){
+  const n=bgmRule(k); if(!n)return false;
+  BGMOV=n; if(AU.ctx)bgm(n);
+  return true;
+}
+/* 場面が終わったので、ふだんの曲にもどす */
+function bgmSceneEnd(){
+  if(!BGMOV)return;
+  BGMOV=null; if(AU.ctx)bgm(bgmNow());
+}
+/* ---- おまけの「🎵 BGM」に並べる曲 --------------------------------------
+   ★ 合成の曲（TRACKS の7曲）だけでなく、**assets/bgm に置いた曲もぜんぶ**
+     並べます。置いただけで一覧に出るので、鳴らして確かめられます。
+   ★ 同じ名前でファイルを置いてあるときは、ファイルのほうが鳴ります
+     （bgm() がそういう作りです）。一覧では「差しかえ」と出します。 */
+const BGMNAME={ title:"タイトル", gallery:"おまけ画面",
+                entrance:"入学式", graduation:"卒業式", date:"おでかけ",
+                trip:"修学旅行", sports:"体育祭", culture:"文化祭",
+                exam:"テスト", match:"練習試合", valen:"バレンタイン",
+                newyear:"お正月", bday:"誕生日" };
+function bgmAll(){
+  const out=[], seen={};
+  /* ① 合成の曲（季節と長期休み） */
+  for(const k in TRACKS){
+    const f=!!auPath("bgm",k);
+    out.push({k, n:TRACKS[k].n, file:f,
+              sub:f?"差しかえ":(TRACKS[k].bpm+" BPM")});
+    seen[k.toLowerCase()]=1;
+  }
+  /* ② assets/bgm に置いてあるファイル（①に無いもの） */
+  const L=(typeof ART_LIST!=="undefined"&&ART_LIST.bgm)||[];
+  for(const f of L){
+    const k=String(f).replace(/\.[^.]+$/,"");
+    if(seen[k.toLowerCase()])continue;
+    seen[k.toLowerCase()]=1;
+    out.push({k, n:BGMNAME[k]||k, file:true,
+              sub:BGMNAME[k]?k:"ファイル"});
+  }
+  return out;
+}
+
+/* =======================================================================
+   おまけの「🎵 BGM」画面
+
+   ★ 左に曲のならび、右にプレイヤー。**絵が1枚も無くても動きます。**
+     絵を置いたぶんだけ、仮の見た目から本物に差しかわります。
+
+       assets/ui/ui_bgm_art_<曲の名前>.png    その曲の絵（1024×1024）
+         → 左の小さいサムネと、右の大きな写真の**両方**に使われます
+       assets/ui/ui_bgm_photo_frame.png       写真の枠（ポラロイド風）
+       assets/ui/ui_bgm_tape.png              写真をとめるマスキングテープ
+       assets/ui/ui_bgm_memo.png              手書きメモの紙
+       assets/ui/ui_bgm_label.png             「Background Music」の飾り文字
+       assets/ui/ui_bgm_play.png / _pause.png / _prev.png / _next.png
+       assets/ui/ui_bgm_row.png               ならびの1行の下じき
+
+     置いていないものは、style.css が描く仮の見た目になります。
+     必要な素材の一覧は assets/README.md の「3.8」にあります。
+   ======================================================================= */
+const BGMUI=(typeof BGM_UI!=="undefined")?BGM_UI:{};
+const bgmUiArt=n=>uiArt("ui_bgm_"+n);
+
+/* 曲ごとの「どこで流れるか」。曲名の下に小さく出ます */
+const BGMWHERE={
+  spring:"3月〜5月に流れます",   summer:"6月〜8月に流れます",
+  autumn:"9月〜11月に流れます",  winter:"12月〜2月に流れます",
+  vspring:"春休みのあいだ流れます", vsummer:"夏休みのあいだ流れます",
+  vwinter:"冬休みのあいだ流れます",
+  title:"タイトル画面で流れます", gallery:"このおまけ画面で流れます",
+  entrance:"入学式の場面で流れます", graduation:"卒業式の場面で流れます",
+  date:"おでかけの場面で流れます",   trip:"修学旅行で流れます",
+  sports:"体育祭で流れます",         culture:"文化祭で流れます",
+  exam:"テストの場面で流れます",     match:"練習試合で流れます",
+  valen:"バレンタイン・ホワイトデーで流れます",
+  newyear:"お正月で流れます",        bday:"誕生日で流れます"};
+/* 曲の絵を置いていないときに、代わりに出す背景 */
+const BGMBG={ spring:"sakura", summer:"sea",   autumn:"momiji", winter:"illum",
+  vspring:"park", vsummer:"fest", vwinter:"shrine",
+  title:"sunset", gallery:"room", entrance:"school", graduation:"sakura",
+  date:"town",   trip:"town",  sports:"ground", culture:"fest",
+  exam:"klass",  match:"ground", valen:"klass", newyear:"shrine", bday:"cafe" };
+
+function bgmWhere(k){ return BGMWHERE[k] || (BGMNAME[k]?"":"assets/bgm に置いた曲"); }
+/* その曲の絵。無ければ背景の絵（さらに無ければ、ゲームが描くSVG）で代わりにします */
+function bgmArtHTML(k,cls){
+  const a=bgmUiArt("art_"+k);
+  return a ? `<img class="${cls}" src="${a}" alt="">`
+           : `<div class="${cls} ph">${bgHTML(BGMBG[k]||"school")}</div>`;
+}
+/* 飾りの波形。曲の名前から作るので、**開くたびに形は変わりません**。
+   再生中の行だけ、CSS のほうで揺れます。 */
+function bgmWaveHTML(k,n){
+  let h=2166136261;
+  for(let i=0;i<k.length;i++){ h^=k.charCodeAt(i); h=Math.imul(h,16777619)>>>0; }
+  let out="";
+  for(let i=0;i<n;i++){
+    h=(Math.imul(h,1103515245)+12345)>>>0;
+    const v=24+((h>>>17)%72);
+    out+=`<i style="height:${v}%;animation-delay:${((i*37)%11)*0.07}s"></i>`;
+  }
+  return out;
+}
+/* ---- 曲の長さ --------------------------------------------------------
+   ★ 合成の曲（TRACKS）は**終わりなくループする**ので、長さがありません。
+     ファイルを置いた曲だけ、読めたものから秒数を覚えて出します。 */
+const BGMLEN={};                      /* 曲 → 秒（-1 は読めなかった） */
+const bgmTime=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+function bgmLenText(k){
+  const src=auPath("bgm",k);
+  if(!src)return BGMUI.loopText||"∞ ループ";
+  const v=BGMLEN[k];
+  if(v>0)return bgmTime(v);
+  return v===-1 ? "—" : "‥";
+}
+/* ---- 再生位置のバー --------------------------------------------------
+   ★ **動かせるのは、assets/bgm にファイルを置いた曲だけ**です。
+     ゲーム内蔵の合成曲（TRACKS）は、その場で音を並べて**終わりなくループ**
+     しているので、「いま何秒めか」という場所そのものがありません。
+     そのときは、バーを押せなくして「∞ ループ」と出します。
+   ★ BGMTICK（位置を追いかける時計）は、**画面を離れるとき必ず止めます**。
+     止めわすれると、おまけを閉じたあともずっと回りつづけます。 */
+let BGMSEEK=null;                     /* つまみを動かしている最中の値。時計で上書きしないため */
+let BGMTICK=null;                     /* 位置を追いかける時計 */
+function bgmSeekStop(){
+  if(BGMTICK){ clearInterval(BGMTICK); BGMTICK=null; }
+  BGMSEEK=null;
+}
+/* その曲が「いま鳴っているファイルの曲」なら、その <audio> を返します */
+function bgmAudioOf(k){
+  const a=AUFILE.bgm;
+  return (a && AU.cur===k && isFinite(a.duration) && a.duration>0) ? a : null;
+}
+/* まだ読んでいない曲の長さを、そっと読みにいきます（読めたら描きなおし） */
+function bgmLenLoad(list,after){
+  let waiting=0;
+  for(const x of list){
+    const src=auPath("bgm",x.k);
+    if(!src || BGMLEN[x.k]!==undefined) continue;
+    BGMLEN[x.k]=0; waiting++;
+    try{
+      const a=new Audio(); a.preload="metadata";
+      const done=v=>{ BGMLEN[x.k]=v; if(--waiting<=0 && after)after(); };
+      a.onloadedmetadata=()=>done(isFinite(a.duration)&&a.duration>0?a.duration:-1);
+      a.onerror=()=>done(-1);
+      setTimeout(()=>{ if(BGMLEN[x.k]===0)done(-1); },6000);
+      a.src=src;
+    }catch(e){ BGMLEN[x.k]=-1; waiting--; }
+  }
+  return waiting;
+}
+
+/* 行事（FIXED の id）→ BGM_RULE のキー */
+const BGMEV={ trip:"trip", trip2:"trip", trip3:"trip",
+              sports:"sports", culture:"culture", exam:"exam", match:"match",
+              valen:"valen", white:"valen", newyear:"newyear",
+              bday:"bday", mybday:"bday" };
+
 /* 音を置いていないときに、代わりに鳴らす音。
    assets/se/title.mp3 を置くと称号の音がそれになり、
    置いていなければ、いままでどおり pinpon（正解音）が鳴ります。 */
@@ -450,7 +700,7 @@ function audioWake(){
   applyVol();
   /* 差しかえBGM（音源ファイル）が自動再生をはねられて止まっていたら、鳴らしなおす */
   if(AUFILE.bgm&&AUFILE.bgm.paused){ try{ AUFILE.bgm.play().catch(()=>{}); }catch(e){} }
-  if(!AU.cur) bgm(S.inGame?bgmFor(S.t):titleBgmName());
+  if(!AU.cur) bgm(bgmNow());
   sndHint(); setTimeout(sndHint,400);
 }
 let AUARMED=false;
@@ -618,6 +868,13 @@ function topGirl(list){
   return (list||[]).slice()
     .sort((a,b)=>(b.aff-a.aff)||(pr(a.id)-pr(b.id)))[0]||null;
 }
+/* ★ 記録（セーブ）の中から「いちばんの子」をさがすとき用。
+   いまこのゲームに**いない子は飛ばします**（DLCを外したときなど）。
+   飛ばさないと、きろく画面のカードが「いちばんの子：—」になってしまいます。 */
+function topGirlHere(list){
+  return topGirl((list||[]).filter(v=>v&&v.id&&
+    (typeof ALLG==="undefined"||ALLG.some(x=>x.id===v.id))));
+}
 
 /* =======================================================================
    部活熟練度
@@ -648,16 +905,19 @@ function profRank(v){
 }
 function cmdList(){ return S.club==="none" ? CMDKEYS : ["club"].concat(CMDKEYS); }
 function cmdOf(k){
-  if(k==="club"){const c=CLUBS[S.club];
+  /* ★ ここは予定表（drawWeek）とアイコン（drawIcons）が毎回通る道です。
+     知らない名前（古い記録や、手で書きかえた記録）が来ても、
+     **画面ごと出なくなってしまわない**ように、必ず何かを返します。 */
+  if(k==="club"){const c=CLUBS[S.club]||CLUBS.none||{n:"部活",g:"\ud83c\udfab",gain:{},st:0};
     return {n:c.n,g:c.g,p:null,gain:c.gain,club:true,s:c.st,tx:c.n+"の活動に打ちこんだ"};}
   if(k==="job"){
     /* バイト先をまだ決めていないうちは、店の名前を出さない
        （押したときに jobMenu() で選んでもらう） */
     if(!S.job){const J=JOBS.conv;
       return {n:"バイト",g:"\ud83d\udcbc",p:null,gain:J.gain,job:true,s:J.st,tx:"バイトのシフトに入った"};}
-    const J=JOBS[S.job];
+    const J=JOBS[S.job]||JOBS.conv;
     return {n:J.n.length>5?"バイト":J.n,g:J.g,p:null,gain:J.gain,job:true,s:J.st,tx:J.n+"のシフトに入った"};}
-  return CMD[k];
+  return CMD[k]||{n:"みてい",g:"\uff0b",p:null,gain:{},s:0,tx:""};
 }
 
 
@@ -933,7 +1193,9 @@ function fixedAt(t){
   const c=CAL[t]; if(!c)return null;
   const f=fixedFind(c.y,c.m,c.d);
   if(f)return f;
-  if(S.bd&&c.m===S.bd.m&&c.d===S.bd.d)return {m:c.m,d:c.d,id:"mybday",n:"あなたの誕生日",c:"bd",bg:"klass"};
+  /* g（絵文字）は、下の eventOn() と同じものを付けます。
+     付けわすれると、予定表だけ ✨ になってカレンダーの 🎉 と食いちがいます */
+  if(S.bd&&c.m===S.bd.m&&c.d===S.bd.d)return {m:c.m,d:c.d,id:"mybday",n:"あなたの誕生日",g:"🎉",c:"bd",bg:"klass"};
   return null;
 }
 function eventOn(y,m,d){
@@ -958,7 +1220,12 @@ const S={name:"桜坂 優",t:0,
        古いセーブには入っていないので、そのときは "m" になります。 */
   sex:"m",
   p:{study:8,sport:8,art:6,charm:10,care:10,trend:6,rich:30},
-  stress:0,girls:[],plan:new Array(6).fill(null),cur:0,pick:null,res:new Array(6).fill(null),
+  stress:0,girls:[],
+  /* いまこのゲームに「いない子」の好感度の避難先（→ restore / snapshot）。
+     追加キャラ（DLC）を外したときに、その子の好感度が消えないようにするためのものです。
+     ゲーム中はどこからも使いません。 */
+  lost:[],
+  plan:new Array(6).fill(null),cur:0,pick:null,res:new Array(6).fill(null),
   sel:null,sei:"桜坂",mei:"優",ev:{},evseen:{},log:[],gen:0,speed:2,tspeed:2,bgfade:2,job:null,club:"none",blood:"A",bd:{m:5,d:5},sunPick:null,
   prof:{}, rec:{cmd:{},date:{},tel:{},great:0,match:[0,0,0],cult:[0,0],cold:0}};
 /* 3年間の記録。エピローグのふりかえりで使う */
@@ -1056,9 +1323,44 @@ function evMigrate(){
    ======================================================================= */
 const ARTDIR="assets/";
 /* 素材ファイルが取りこまれていれば、その中身（データURL）を返す。
-   1ファイル版では ART_DATA に base64 が入っている。フォルダ版ではパスをそのまま使う。 */
+   1ファイル版では ART_DATA に base64 が入っている。フォルダ版ではパスをそのまま使う。
+
+   ★ `python3 build.py --lock` で作ったときは、ART_DATA の中身が
+     そのままの画像ではなくなります（ART_LOCK が true）。
+     そのときは、**はじめて使うときに1回だけ**もどして、blob: のURLを作ります。
+     ・もどしたものは ART_URLC に取っておくので、2回目からは作り直しません
+     ・使う絵だけを、使うときにもどすので、起動は遅くなりません
+     ・`file://` でも blob: は使えます（確認ずみ）
+
+   ★ これは「守り」ではなく「うっかり見られるのを減らす」ためのものです。
+     もどしかたはこのファイルの中に書いてあるので、本気で読む人には効きません
+     （課金の仕様書.md の 3-5.5）。 */
+/* ★ 覚えておく目じるしは「場所（path）」ではなく「中身そのもの」にします。
+   場所で覚えると、あとから ART_DATA の中身を差しかえたとき
+   （検査やDLCで差しこむとき）に、**古いほうを返しつづけます**。 */
+const ART_URLC = new Map();
+function artUnlock(v){
+  const i = v.indexOf("\t");
+  if(i < 0) return v;                       /* 昔の形（データURL）なら、そのまま */
+  const mime = v.slice(0, i), b = atob(v.slice(i + 1)), n = b.length;
+  const a = new Uint8Array(n), k = ART_KEY, kn = k.length;
+  for(let j = 0; j < n; j++) a[j] = b.charCodeAt(j) ^ k[j % kn];
+  try{ return URL.createObjectURL(new Blob([a], {type: mime})); }
+  catch(e){                                  /* blob が使えない場所のための逃げ道 */
+    let t = ""; for(let j = 0; j < n; j++) t += String.fromCharCode(a[j]);
+    return "data:" + mime + ";base64," + btoa(t);
+  }
+}
 function artURL(path){
-  if(typeof ART_DATA!=="undefined" && ART_DATA[path]) return ART_DATA[path];
+  if(typeof ART_DATA!=="undefined" && ART_DATA[path]){
+    const v = ART_DATA[path];
+    if(typeof ART_LOCK!=="undefined" && ART_LOCK){
+      let u = ART_URLC.get(v);
+      if(!u){ u = artUnlock(v); ART_URLC.set(v, u); }
+      return u;
+    }
+    return v;
+  }
   return ARTDIR+path;
 }
 /* その素材に、ほんとうに手が届くか。
@@ -1130,6 +1432,11 @@ function fontArtSet(){
 const TBTN_LABEL={new:"はじめから",load:"つづきから",omake:"おまけ",opt:"オプション"};
 /* タイトルのBGM。assets/bgm/title.* があればそれ、無ければ春の合成音 */
 function titleBgmName(){
+  /* ★ タイトルの曲は BGM_RULE.title を先に見ます
+     （場面ごとのBGMと同じところにまとめて書けるように）。
+     書いていなければ、いままでどおり UI_RULE.bgm です。 */
+  const r=(typeof bgmRule==="function")?bgmRule("title"):null;
+  if(r)return r;
   const n=UIRULE.bgm||"title";
   return auPath("bgm",n)?n:"spring";
 }
@@ -1152,6 +1459,11 @@ function titleBgmName(){
    ------------------------------------------------------------------- */
 const SEASONJA={spring:"春",summer:"夏",autumn:"秋",winter:"冬"};
 const SEASONS=["spring","summer","autumn","winter"];
+/* ★ 🛠️デバッグ画面を出すかどうか。
+   **`python3 build.py --nodebug` を付けると、ここが false になり、
+   デバッグ画面のコードそのものも 1ファイル版から取りのぞかれます。**
+   お客さんに渡すもの（売るもの）は、--nodebug で作ってください。 */
+const DEBUG_ON = true;
 let DBG_TSEASON=null;      /* 🛠️デバッグから、季節を決めうちで見るときに使います */
 function lastSaveSeason(){
   if(DBG_TSEASON)return DBG_TSEASON;
@@ -1516,7 +1828,10 @@ function portrait(g,exp,mode){
           <ellipse cx="62" cy="176" rx="15" ry="10" fill="${g.ribbon}"/>
           <ellipse cx="238" cy="176" rx="15" ry="10" fill="${g.ribbon}"/>`;
   }
-  const uid=g.id+(mode||"f");
+  /* ★ ここも、背景と同じ理由で**1枚ごとにちがう名前**にします。
+     同じ子の顔が同じ画面に何枚も出ること（きろく画面のタイルなど）があり、
+     id がぶつかると、片方が消えたときにもう片方の色が抜けます。 */
+  const uid=g.id+(mode||"f")+"_"+(++SVGN);
   const eye=cx=>{
     if(closed)return `<path d="M${cx-15},166 Q${cx},150 ${cx+15},166" stroke="#4a3a35" stroke-width="4.5" fill="none" stroke-linecap="round"/>`;
     const ry=exp==="angry"?14:(exp==="sad"||exp==="worry")?16:19;
@@ -1694,7 +2009,29 @@ fontArtSet();     /* assets/font/ に置いた書体があれば、それを使�
 const sky=(a,b)=>`<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>
   <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fc47a"/><stop offset="1" stop-color="#5f9a55"/></linearGradient></defs>
   <rect width="1200" height="675" fill="url(#sk)"/>`;
-const svgw=inner=>`<svg viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+/* ★★ 背景の絵（SVG）の中の id は、**1枚ごとにちがう名前**に付けかえます ★★
+
+   SVG の id は「書類ぜんたいでひとつ」でなければいけません。
+   ところが背景の絵は、**同じ画面にいくつも出ることがあります**。
+     ・きろく画面のタイル（9枚ぶん）
+     ・部活をえらぶ画面の写真
+     ・おまけの BGM 画面のサムネと大きな写真
+     ・会話の背景（切りかえのあいだは2枚かさなります）
+   どれも sky() の中で `id="sk"`（空のグラデーション）を作っているので、
+   そのままだと名前がぶつかります。すると `fill="url(#sk)"` が
+   **いちばん先にある1枚**を指してしまい、そちらが消えた（または display:none の
+   中にある）とたんに、**あとの絵の空が透明になります**。
+
+   実際に「部活に入ると、空のところだけ自分の部屋が透けて見える」という形で出ました。
+   ★ ここを外すと、また同じことが起きます。 */
+let SVGN=0;
+const svgw=inner=>{
+  const u="_"+(++SVGN);
+  inner=String(inner)
+    .replace(/id="([A-Za-z][\w-]*)"/g, (m,id)=>`id="${id}${u}"`)
+    .replace(/url\(#([A-Za-z][\w-]*)\)/g, (m,id)=>`url(#${id}${u})`);
+  return `<svg viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+};
 const petals=(n,c)=>Array.from({length:n},(_,i)=>{const x=(i*137)%1200,y=(i*211)%560;
   return `<ellipse cx="${x}" cy="${y}" rx="7" ry="4.5" fill="${c}" opacity=".75" transform="rotate(${(i*37)%180} ${x} ${y})"/>`;}).join("");
 const BG={
@@ -1962,6 +2299,11 @@ function flowAbort(){
   const list=PENDCH; PENDCH=[];
   list.forEach(e=>{ try{ if(e.cleanup)e.cleanup(); }catch(_){}});
   vnStopAuto();
+  /* ★ 場面の曲の札（BGMOV）をおろします。
+     途中でロードされると、その場面の bgmSceneEnd() は二度と走りません。
+     おろしておかないと、おでかけや修学旅行の曲が
+     **読みこんだゲームのあいだ、ずっと鳴りつづけます。** */
+  BGMOV=null;
 }
 const AUTO_BASE=900, AUTO_PER_CHAR=42;   /* AUTOの待ち時間（ms） */
 
@@ -1977,6 +2319,7 @@ function vnImgInit(){
 const VNBAR=[
   ["save", "SAVE",  "きろく画面をひらく"],
   ["load", "LOAD",  "きろく画面をひらく"],
+  ["log",  "LOG",   "これまでの文章を読み返します"],
   ["auto", "AUTO",  "文章が自動で進みます"],
   ["skip", "SKIP",  "文章を早送りします"],
   ["menu", "MENU",  "くわしく画面をひらく"],
@@ -2027,8 +2370,12 @@ function drawVnBar(){
         ${a?`style="background-image:url('${a}');--h:url('${h}')"`:""}
         >${a?"":`<b>${n}</b>`}</div>`;
     }
+    /* ★ 絵の無いボタンで url('undefined') を読みにいかないように、かならず見ます。
+       （ボタンを足したのに assets.js に絵を入れわすれたとき、ここで気づけます） */
+    const g=IMG[k], gh=IMG[k+"H"]||g;
+    if(!g)return `<div class="sb ph2${on?" on":""}" data-vb="${k}" title="${t}"><b>${n}</b></div>`;
     return `<div class="sb${on?" on":""}" data-vb="${k}" title="${t}"
-       style="background-image:url('${IMG[k]}');--h:url('${IMG[k+"H"]}')"></div>`;
+       style="background-image:url('${g}');--h:url('${gh}')"></div>`;
   }).join("");
   bar.querySelectorAll("[data-vb]").forEach(el=>{
     el.onpointerdown=e=>e.stopPropagation();
@@ -2081,6 +2428,8 @@ function applyVnArt(){
       if(b)for(const d in b) if(b[d]&&b[d].length) return true; }
     return false; })();
   const inimg=(VNUI.photoInImage===true)&&anyBust;
+  /* fit() もこの答えを見て、写真枠の縦横比を決めます（食いちがうとずれます） */
+  VNPHOTO.inimg=inimg;
   document.body.classList.toggle("photoin",inimg);
   /* ★ 枠の絵があれば、「絵に描きこむ作り」でも photo は付けたままにします。
      枠つきの絵をまだ描いていない子には、こちらの枠が使われます
@@ -2128,7 +2477,8 @@ async function vnBarClick(k){
   if(k==="auto"){ se("click"); setAuto(!AUTOON); return; }
   if(k==="skip"){ se("click"); setSkip(!SKIPON); return; }
   vnStopAuto();
-  if(k==="save"||k==="load"){ se("click"); await openSaveMenu(false); return; }
+  if(k==="save"||k==="load"){ se("click"); await openSaveMenu(false,k); return; }
+  if(k==="log"){  se("click"); await logMenu(); return; }
   if(k==="menu"){ se("click"); await showInfo(); return; }
   if(k==="config"){ se("click"); await settingsMenu(); return; }
   if(k==="title"){
@@ -2140,6 +2490,19 @@ async function vnBarClick(k){
     await goTitle();
   }
 }
+/* ---- マウスのホイールを上に回すと、バックログが開きます ----------------
+   ノベルゲームでいちばんよく使われる操作です。
+   ★ 会話画面が出ているあいだだけ。窓（きろく・おまけなど）が開いていたら
+     そちらのスクロールをじゃましないよう、なにもしません。 */
+addEventListener("wheel",e=>{
+  if(!S.vnOn||LOGOPEN)return;
+  if(e.deltaY>=0)return;                                   /* 下向きは、なにもしない */
+  const M=$("modal");
+  if(M&&getComputedStyle(M).display!=="none")return;        /* 窓が開いているときは、そっとしておく */
+  if(e.target&&e.target.closest&&e.target.closest("#modal"))return;
+  vnStopAuto(); se("click"); logMenu();
+},{passive:true});
+
 /* ×でウィンドウを隠す／画面のどこかを押すと戻る */
 function vnHide(v){
   $("vnWin").classList.toggle("hide",v);
@@ -2333,7 +2696,19 @@ function vnOpen(bg){
   $("vnName").classList.remove("on");
   VNFACEOFF=false;
   vnHide(false); drawVnBar();
-  if(already)fadeStop("vn"); else fadeIn("vn");
+  if(already)fadeStop("vn");
+  else{
+    fadeIn("vn");
+    /* ★ 場面を「ひらく」ときも、立ち絵と顔は背景のあとから出します。
+       ここが無いと、**入部のように開いてすぐ人が話しだす場面**で、
+       背景と立ち絵が同時にフェードしてきます（おでかけのように、
+       すでに会話画面が出ていて背景だけ変わるときは、
+       vnBGset がクロスフェードするので、もともと待てていました）。
+       ここでは会話画面ごと fadeIn("vn") で出るので、その時間を
+       「背景が出きるまで」として BGF に入れ、bgWaitMs() に見てもらいます。 */
+    const ms=scrMs();
+    if(ms>0 && !BGF.ms){ BGF.t0=Date.now(); BGF.ms=ms; }
+  }
 }
 /* 会話画面を閉じる。うすくしながら消すので、下のコマンド画面がすっと出てきます。
    now=true なら、待たずにすぐ消します（タイトルへ戻るときなど）。 */
@@ -2546,7 +2921,7 @@ function drawDate(){
   const cls=(w===6||hol)?"sun":w===5?"sat":"";
   /* BGMは季節で切りかわる。ただしタイトル画面のあいだは、
      タイトルのBGM（assets/bgm/title.*）を上書きしないようにする */
-  if(AU.ctx&&S.inGame)bgm(bgmFor(S.t));
+  if(AU.ctx&&S.inGame)bgm(bgmNow());   /* 場面の曲（BGMOV）が立っていれば、そちら */
   const nx=nextEvent(ti);
   const nxt = nx
     ? `<span class="nx">${nx.e.g||"\u2726"} ${nx.e.n}<i>（${nx.c.m}月${nx.c.d}日）</i></span>`
@@ -2706,7 +3081,9 @@ function drawIcons(){
      うすくするだけの dim にしています。 */
   h+=icHTML(`o ${canSave()?"":"dim"}`,`data-act="save"`,"💾","きろく","save");
   h+=icHTML(`o`,`data-act="cfg"`,"⚙️","せってい","cfg");
-  h+=icHTML(`o dbg`,`data-act="dbg"`,"🛠️","デバッグ","dbg");
+  /* 🛠️デバッグのボタン。お客さんに渡すものでは出しません
+     （python3 build.py --nodebug で DEBUG_ON が false になります） */
+  if(DEBUG_ON) h+=icHTML(`o dbg`,`data-act="dbg"`,"🛠️","デバッグ","dbg");
   $("icons").innerHTML=h;
   $("icons").querySelectorAll(".ic").forEach(el=>el.onclick=()=>iconClick(el));
 }
@@ -2824,6 +3201,41 @@ function htmlFit(h,b,p){
   p.innerHTML=cut[0];
   return cut;
 }
+/* =======================================================================
+   バックログ（読み返し）
+
+   ★ 覚えるのは msgShowNext()（＝文章を画面に出す、ただ1か所）だけです。
+     どの場面の文章もかならずここを通るので、ここに1つひっかけておけば
+     取りこぼしません。**あちこちに書き足さないでください。**
+
+   ★ セーブには入れません。きろくは100スロットあるので、1スロットに
+     何百行も抱えると localStorage（数MB）をすぐ使い切ります。
+     遊んでいるあいだだけ覚えて、行数で上限を切ります（VN_UI.logMax）。
+     はじめから／よみこむ のときに消します（別の筋の文章がまざらないように）。
+
+   ★ 「その行までもどる」機能はありません。もどすには1行ごとに
+     ゲームの状態（好感度・日付・フラグ）を丸ごと覚えておく必要があり、
+     育成シミュレーションでは「もどれること」自体が遊びを壊します。
+     **読み返すだけ**です。
+   ======================================================================= */
+let VNLOG=[];
+const logMax=()=>{ const v=(typeof VNUI!=="undefined")&&VNUI.logMax;
+                   return (typeof v==="number"&&v>0)?v:200; };
+function logClear(){ VNLOG=[]; }
+/* 1行ぶん覚える。kind は "say"（文章）か "choice"（自分が選んだもの）
+   ★ html は say() の中でもう nm() を通してあるので、ここでは通しません
+     （二度通すと {{名前}} の置きかえが二重になります）。 */
+function logPush(kind,html,who,cls){
+  const h=String(html==null?"":html).trim();
+  if(!h)return;
+  const L=(typeof LAST!=="undefined")?LAST:0;
+  const c=(typeof CAL!=="undefined")&&CAL[Math.min(S.t,L)];
+  VNLOG.push({k:kind, h, nm:who||"", c:cls||"",
+              d:(c&&S.inGame)?`${c.y}年目 ${c.m}月${c.d}日`:""});
+  const mx=logMax();
+  if(VNLOG.length>mx) VNLOG.splice(0, VNLOG.length-mx);
+}
+
 /* 次の1ページを表示する。何も出すものが無ければ false */
 function msgShowNext(){
   const b=bodyEl(); if(!b||!MSGQ.length)return false;
@@ -2836,7 +3248,7 @@ function msgShowNext(){
   let fresh = PGBRK || PGQUOTE || it.q || !b.firstChild;
   if(fresh){ b.innerHTML=""; PGQUOTE=false; }
   PGBRK=false;
-  const added=[];
+  const added=[], addedNm=[];      /* addedNm はバックログ用。行ごとの話し手 */
   let p=mkP(it);
   if(!fits()){
     if(!fresh){                       /* 追記であふれたら、ページを改める */
@@ -2847,17 +3259,24 @@ function msgShowNext(){
       if(cut[1]) MSGQ.unshift({h:cut[1],c:it.c,q:false,nm:it.nm});
     }
   }
-  added.push(p);
+  added.push(p); addedNm.push(it.nm||"");
   if(it.q) PGQUOTE=true;
   if(!PGQUOTE){                       /* セリフでなければ、収まるかぎり続けて出す */
     while(MSGQ.length && !MSGQ[0].q){
       const p2=mkP(MSGQ[0]);
       if(!fits()){ b.removeChild(p2); break; }
       if(!pgNm && MSGQ[0].nm) pgNm=MSGQ[0].nm;   /* 見出しに地の文が続いたら、地の文の名前を出す */
+      addedNm.push(MSGQ[0].nm||"");
       MSGQ.shift(); added.push(p2);
     }
   }
   if(S.vnOn && pgNm!==undefined) setSpeaker(pgNm);
+  /* ★ バックログは typeEnqueue より先に。
+     typeEnqueue は「1文字ずつ出す」ために中の文字をいったん空にするので、
+     あとから読むと、からっぽの行を覚えてしまいます。 */
+  /* ★ 名前は「そのページの名前」ではなく、**その行そのものの話し手**を使います。
+     ページの名前だと、見出し（✦ 行事名）にまで地の文の名前が付いてしまいます。 */
+  added.forEach((x,i)=>logPush("say", x.innerHTML, addedNm[i]||"", x.className));
   added.forEach(x=>typeEnqueue(x));
   b.scrollTop=0;
   return true;
@@ -2994,7 +3413,11 @@ function choose(opts,anywhere,bare){
       else if(opts.length>=5)box.classList.add("many2");
       opts.forEach(o=>{const b2=document.createElement("button");
         b2.className="btn "+(o.pk?"pk":o.gy?"gy":"");b2.innerHTML=nm(o.t);
-        b2.onclick=e=>{e.stopPropagation();finish(o.v);};box.appendChild(b2);});
+        b2.onclick=e=>{e.stopPropagation();
+          /* ほんとうの選択肢だけ覚えます（「▶ 次の日へ」のような
+             送りボタンは1つしかないので、ログに残しても雑音になります） */
+          if(opts.length>1)logPush("choice", b2.innerHTML, "");
+          finish(o.v);};box.appendChild(b2);});
     };
     const step=()=>{                       /* 進めるものがあれば1つ進める */
       disarm();
@@ -3031,9 +3454,15 @@ function choose(opts,anywhere,bare){
 const next=async(t)=>{ const v=await choose([{t:t||"",v:null,pk:true}],true,true); pageBreak(); return v; };
 
 /* 全画面モーダルの付け外し。full=画面いっぱい、zoom=中身ごと拡大、cal=カレンダー専用 */
+/* 窓の「出しかた」の名前。**ここに足しわすれると、前の出しかたが居すわります。**
+   ★ 実際にそうなりました：きろく画面（data）を開いたあとに「くわしく」や
+     「おまけ」を開くと、data の見た目（見出しなし・ボタンなし・スクロールなし）が
+     残ったままになり、閉じられなくなりました。
+     新しい出しかたを作ったら、かならずこの一覧に足してください。 */
+const MODALMODE=["zoom","cal","gal","log","data","bgtab","tttab","club","cgbig"];
 function modalFull(on,mode){
   const M=$("modal");
-  M.classList.remove("full","zoom","cal");
+  M.classList.remove("full",...MODALMODE);
   if(on)M.classList.add("full",mode||"zoom");
 }
 /* 窓を出す。**すでに出ているときは、フェードせず中身だけ入れかえます。**
@@ -3184,16 +3613,22 @@ async function iconClick(el){
     if(S.club!=="none")return;
     const k=await clubMenu();
     if(!k)return;
-    S.club=k; evMark("sys_joinclub"); redraw();
+    /* ★ ここへ来た時点で、部室の背景はもう出ています（clubMenu の close）。
+       redraw() や toast() を先に入れると、そのぶん間があいて
+       「自分の部屋」が見えてしまうので、**まっすぐ場面へ**入ります。 */
+    S.club=k; evMark("sys_joinclub");
     S.pre="club";
-    toast(`${CLUBS[k].n} に入部しました`);
     await clubEvent(k);
     S.pre=null;
+    /* ★ clubEvent が場面を出さずに終わることがあります
+       （相手役がいない部・文章が無いとき）。その保険です。 */
+    if(S.vnOn)vnClose();
     redraw();
+    toast(`${CLUBS[k].n} に入部しました`);
     return;
   }
   if(a==="cfg"){await settingsMenu();return;}
-  if(a==="dbg"){await debugMenu();return;}
+  if(a==="dbg"){ if(DEBUG_ON)await debugMenu(); return;}
   if(a==="save"){await openSaveMenu(false);return;}
   if(a==="cal"){ S.calIdx=MIDXof(S.t); await calendarMenu(); return; }
   if(a==="info"){ await showInfo(); return; }
@@ -3590,7 +4025,14 @@ async function weekEnd(){
       const key=g.id+i;
       /* S.ev は昔からのしるし。evSeen（イベントID）と両方見て、どちらかが付いていれば済み扱い */
       if(!S.ev[key]&&!evSeen(`aff_${g.id}_${i+1}`)&&g.aff>=list[i].at){
-        S.ev[key]=true;await affEvent(g,list[i],i);break;}
+        /* ★ 「見た」のしるしは、場面が**終わってから**付けます。
+           先に付けてしまうと、場面のとちゅうでセーブして読みこんだとき、
+           もう見たことになっていて、**その場面が二度と出なくなります。** */
+        const gen0=S.gen;
+        await affEvent(g,list[i],i);
+        if(gen0!==S.gen)return;          /* とちゅうでロードされた */
+        S.ev[key]=true;
+        break;}
     }
   }
 }
@@ -3676,11 +4118,94 @@ function pickVisitor(){
   for(let i=0;i<cand.length;i++){ r-=w[i]; if(r<=0)return cand[i].id; }
   return cand[0].id;
 }
+/* ---- バイト先で会うシーン（1人 16通り）--------------------------------
+   バイト先4種（conv / cafe / book / pet）×　好感度4段階
+   （normal 普通 / friend 友達 / crush 気になる人 / love 好き）。
+
+   story/<キャラid>.js の job: は、次のどの形でも動きます。
+     ① 16通り … job:{ conv:{normal:{...},friend:{...},crush:{...},love:{...}}, cafe:{...}, … }
+     ② 4通り  … job:{ conv:{...}, cafe:{...}, … }        （好感度で変わらない）
+     ③ 1通り  … job:{ ex,b,o }                           （前の形。そのまま動きます）
+   ★ その組み合わせが無いときは、**ひとつ下の好感度 → さらに下**、
+     それも無ければ conv、と落ちていきます。
+     「書きかけでも、とりあえず動く」ようにするためです。 */
+const JOBTIERS=["normal","friend","crush","love"];
+const JOBTIERNAME={normal:"普通",friend:"友達",crush:"気になる人",love:"好き"};
+function jobEv(gid,jk,tier){
+  const E=JOBMEET[gid]; if(!E)return null;
+  if(E.b)return E;                                   /* ③ 前の形 */
+  const J=E[jk]||E.conv||E[Object.keys(E)[0]];
+  if(!J)return null;
+  if(J.b)return J;                                   /* ② バイト先ごとに1本 */
+  let i=JOBTIERS.indexOf(tier); if(i<0)i=0;
+  for(;i>=0;i--){ if(J[JOBTIERS[i]])return J[JOBTIERS[i]]; }
+  for(const k of JOBTIERS){ if(J[k])return J[k]; }
+  return null;
+}
+/* おまけ（回想）や、デバッグから直に見るときの形にそろえます */
+function jobSceneDef(gid,jk,tier){
+  const e=jobEv(gid,jk,tier); if(!e)return null;
+  const J=JOBS[jk]||JOBS.conv;
+  return {title:`${J.n}での再会（${JOBTIERNAME[tier]||""}）`,gid,bg:J.bg,ex:e.ex,body:e.b,opts:e.o};
+}
+/* 16通りそろっているかを、表にして返します（デバッグ画面から見られます） */
+function jobAuditHTML(){
+  const jobs=Object.keys(JOBS);
+  const rows=castGal().map(d=>{
+    const E=JOBMEET[d.id];
+    const cells=[];
+    let have=0;
+    for(const jk of jobs) for(const t of JOBTIERS){
+      const J=E&&!E.b&&E[jk];
+      const ok=!!(J&&!J.b&&J[t]);
+      if(ok)have++;
+      cells.push(`<span class="chip sm ${ok?"on":""}" style="pointer-events:none">${ok?"○":"×"}</span>`);
+    }
+    return {n:d.name, have, html:`<div style="display:flex;align-items:center;gap:6px;margin:3px 0;flex-wrap:wrap">
+      <b style="width:104px;font-size:11.5px">${d.name}</b>
+      <span style="width:46px;font-size:11px;color:${have===16?"#1f7a44":"#c2306a"}">${have}/16</span>
+      ${cells.join("")}</div>`};
+  });
+  const all=rows.reduce((a,b)=>a+b.have,0);
+  return `<div class="dbgbB"><div style="font-size:11.5px;color:#8a7a68;margin-bottom:5px">
+      ならび：${jobs.map(k=>JOBS[k].n).join(" → ")}　各4つが「普通／友達／気になる人／好き」<br>
+      そろっているぶん：<b>${all} / ${rows.length*16}</b></div>
+    ${rows.map(r=>r.html).join("")}</div>`;
+}
+
+/* 誕生日プレゼントが12通りそろっているかを調べる表 */
+function bdayAuditHTML(){
+  const rows=castGal().map(d=>{
+    const B=(typeof BDAYGIFT!=="undefined")?BDAYGIFT[d.id]:null;
+    const cells=[]; let have=0;
+    for(const t of BDAYTIERS) for(const k of BDAYKINDS){
+      const ok=!!(B&&B[t]&&B[t][k]);
+      if(ok)have++;
+      cells.push(`<span class="chip sm ${ok?"on":""}" style="pointer-events:none">${ok?"\u25cb":"\u00d7"}</span>`);
+    }
+    return {have, html:`<div style="display:flex;align-items:center;gap:6px;margin:3px 0;flex-wrap:wrap">
+      <b style="width:104px;font-size:11.5px">${d.name}</b>
+      <span style="width:46px;font-size:11px;color:${have===12?"#1f7a44":"#c2306a"}">${have}/12</span>
+      ${cells.join("")}</div>`};
+  });
+  const all=rows.reduce((a,b)=>a+b.have,0);
+  return `<div class="dbgbB"><div style="font-size:11.5px;color:#8a7a68;margin-bottom:5px">
+      ならび：${BDAYTIERS.map(t=>BDAYTIERNAME[t]).join(" \u2192 ")}　
+      各3つが「${BDAYKINDS.map(k=>BDAYKINDNAME[k]).join("／")}」<br>
+      そろっているぶん：<b>${all} / ${rows.length*12}</b>
+      　<span style="color:#8a7a68">（×のところは、ひとつ下の段か共通の文で動きます）</span></div>
+    ${rows.map(r=>r.html).join("")}</div>`;
+}
+
 async function jobVisit(gid){
   const g=G(gid); if(!g)return;
-  const J=JOBS[S.job]||JOBS.conv;
-  const E=JOBMEET[gid]; if(!E)return;
-  galMark("job:"+gid, S.job||"conv"); evMark("job_"+gid);
+  const jk=S.job||"conv";
+  const J=JOBS[jk]||JOBS.conv;
+  const tier=affTier(g);
+  const E=jobEv(gid,jk,tier); if(!E)return;
+  /* ★ おまけの回想では、いま見たのと同じ組み合わせを出したいので、
+     バイト先と好感度の両方を覚えます（前の形「conv」だけでも読めます） */
+  galMark("job:"+gid, jk+"/"+tier); evMark("job_"+gid);
   se("heart");
   vnFace(g,E.ex||"normal");
   say(`✦ <b>${J.n}に、見知った顔がやってきた</b>`,"ev");
@@ -3692,6 +4217,52 @@ async function jobVisit(gid){
   addAff(g,E.o[i].d); g.last=S.t;
   redraw(); await next();
 }
+/* ---- 卒業後の進路（1人5通り）--------------------------------------------
+   文章は story/<キャラid>.js の course: にあります。
+
+   ★★ 条件は、まだ仮です。 ★★
+     どれになるかの決めかたは、あとで決めます。
+     いまは「5本を用意して、仮の条件で1本を選ぶ」ところまでです。
+     **まだエピローグには出していません。** 出すときは、ここで選んだ
+     course.b を、いまの after のかわり（または前）に出します。
+
+   見る順番（上から当てはまったもの勝ち。どれも当てはまらなければ main）
+     near … 結ばれて卒業した
+     away … 好感度が「普通」のまま
+     top  … その子の【得意】が 700 以上
+     same … 主人公の【同じ能力】が 700 以上
+     main … それ以外（既定） */
+const COURSEKEYS=["near","away","top","same","main"];
+/* その子の「得意な能力」。
+   ★ ここは **その子じしんの能力（p.stat）** を見ます。
+     `ideal` は「その子が主人公のどこを見ているか」であって、
+     **その子の得意ではありません**。いちど間違えて ideal を見てしまい、
+     かなでだけ「魅力」、葵だけ「気配り」と、対になる2人でずれました。
+   ★ 数字のうえで別の能力が一番になってしまう子は、
+     story/<キャラid>.js の p に `courseStat:"charm"` と書けば、そちらが勝ちます。 */
+function courseStatOf(g){
+  if(g&&g.courseStat)return g.courseStat;
+  const st=(g&&g.stat)||null;
+  if(st){ let k="", v=-1; for(const x in st) if(st[x]>v){ v=st[x]; k=x; } if(k)return k; }
+  const id=(g&&g.ideal)||{};
+  let k2="charm", v2=-1;
+  for(const x in id) if(id[x]>v2){ v2=id[x]; k2=x; }
+  return k2;
+}
+/* lover … 結ばれた相手のid（いなければ null） */
+function courseOf(g, lover){
+  if(!g)return null;
+  const C=(typeof COURSE!=="undefined")?COURSE[g.id]:null;
+  if(!C)return null;
+  const k=courseStatOf(g);
+  let key="main";
+  if(lover && lover===g.id)                 key="near";
+  else if(affTier(g)==="normal")            key="away";
+  else if(girlStat(g,k)>=700)               key="top";
+  else if((S.p&&S.p[k]||0)>=700)            key="same";
+  return C[key] ? {key, ...C[key]} : (C.main?{key:"main",...C.main}:null);
+}
+
 function jobMenu(){
   return new Promise(resolve=>{
     const M=$("modal"); M.style.width="640px";
@@ -3742,36 +4313,175 @@ async function clubEvent(cid){
 }
 
 /* ---- 入部メニュー ---- */
+/* =======================================================================
+   部活をえらぶ画面
+
+   ★ 左に部のならび、まんなかに写真、右に説明のカード。
+     **絵が1枚も無くても動きます。**置いたぶんだけ本物に差しかわります。
+
+       assets/ui/ui_club_photo_<部のキー>.png   まんなかの大きな写真
+       assets/ui/ui_club_icon_<部のキー>.png    まるいアイコン
+       assets/ui/ui_club_frame.png              写真の枠（まん中は透明に）
+       assets/ui/ui_club_card.png               右のカードの下じき
+       assets/ui/ui_club_side.png               左のならびの下じき
+       assets/ui/ui_club_clip.png               右上のクリップ
+       assets/ui/ui_club_join.png               「入る」のボタン
+
+     写真を置いていない部は、その部の**背景の絵**（CLUBS の bg）で代わりにします。
+     文章は story/events.js の CLUBPICK です。
+     一覧は assets/README.md の「3.10」。
+   ======================================================================= */
+const CP=(typeof CLUBPICK!=="undefined")?CLUBPICK:{};
+const cpArt=n=>uiArt("ui_club_"+n);
+/* その部のまるいアイコン。絵が無ければ CLUBS の絵文字 */
+function clubIconHTML(k){
+  const a=cpArt("icon_"+k);
+  return a?`<img src="${a}" alt="">`:`<span>${(CLUBS[k]||{}).g||"✦"}</span>`;
+}
+/* まんなかの写真。絵が無ければ、その部の背景で代わりにします */
+function clubPhotoHTML(k){
+  const a=cpArt("photo_"+k);
+  if(a)return `<img class="cpim" src="${a}" alt="">`;
+  const bg=(CLUBS[k]||{}).bg||"room";
+  return `<div class="cpim ph">${bgHTML(bg)}</div>`;
+}
+/* 右のカードの説明。書いていない部は、CLUBS の d だけで出ます */
+function clubSayHTML(k){
+  const L=(CP.say&&CP.say[k])||null;
+  if(!L||!L.length)return "";
+  return L.map(t=>`<span>${nm(t)}</span>`).join("");
+}
+
+/* ★ まんなかの写真の大きさを、**あまった高さ**から決めます。
+     CSS だけでやろうとすると（aspect-ratio ＋ width:max-content）、
+     幅と高さが互いを参照しあって、たてに細長くつぶれます。実際そうなりました。
+     きろく画面の dtFit() と同じ考えかたです。 */
+const CLUBAR=4/3;                      /* 写真の よこ÷たて */
+function cpFit(){
+  const body=$("modBody"); if(!body)return;
+  const mid=body.querySelector(".cpmid"), ph=body.querySelector(".cpph");
+  if(!mid||!ph)return;
+  ph.style.width="";
+  const H=mid.clientHeight, W=mid.clientWidth;
+  if(H<30||W<30)return;
+  const st=getComputedStyle(ph);
+  const padX=(parseFloat(st.paddingLeft)||0)+(parseFloat(st.paddingRight)||0);
+  const padY=(parseFloat(st.paddingTop)||0)+(parseFloat(st.paddingBottom)||0);
+  /* ★ 写真は少しナナメ（rotate）にしてあるので、そのぶん高さが要ります。
+       ここを引いておかないと、角が上下にはみ出します。 */
+  const byH=(H-padY-14)*CLUBAR+padX;
+  ph.style.width=Math.floor(Math.max(80,Math.min(byH,W)))+"px";
+}
+
 function clubMenu(){
   return new Promise(resolve=>{
-    const M=$("modal"); M.style.width="700px";
-    const close=v=>{ fadeOut(M,()=>{M.style.display="none";M.style.width="640px";}); resolve(v); };
-    $("modTtl").textContent="入部する";
-    $("modBody").innerHTML=
-      `<div style="font-size:12.5px;color:#8a7a68;margin-bottom:8px">
-         一度入ると変えられません。部によって伸びる能力がちがい、その部の子と接点ができます。</div>`+
-      Object.keys(CLUBS).filter(k=>k!=="none").map(k=>{
-        const C=CLUBS[k], mate=C.mate&&G(C.mate);
-        return `<div class="clubrow"><div class="cg2">${C.g}</div>
-          <div class="ci"><b>${C.n}</b><br><span style="font-size:11.5px;color:#8a7a68">${C.d}</span>
-            ${mate?`<br><span style="font-size:11.5px;color:#c2306a">${mate.name} がいるらしい</span>`:""}</div>
-          <button class="btn pk sm" data-j="${k}">入る</button></div>`;}).join("");
-    $("modBtns").innerHTML=`<button class="btn gy" data-j="" style="margin-left:auto">やめる</button>`;
-    M.querySelectorAll("[data-j]").forEach(b=>b.onclick=async()=>{
-      const k=b.dataset.j;
-      if(!k){close(null);return;}
-      const ok=await confirmBox("入部しますか？",
-        `<b>${CLUBS[k].g} ${CLUBS[k].n}</b><br>${CLUBS[k].d}<br><br><span style="color:#c2306a">あとから変えることはできません。</span>`,"入部する");
-      if(!ok)return;
-      close(k);
-    });
-    modalShow(()=>{ M.style.display="flex"; });
+    const M=$("modal");
+    modalFull(true,"club");
+    let off=()=>{};                    /* 窓を閉じるときの後始末 */
+    const keys=Object.keys(CLUBS);
+    /* ★ 帰宅部も選べます。ならびの「いちばん下」に置きます
+       （はじめに目に入るのは、ふつうの部活のほうがよいので）。 */
+    const list=keys.filter(x=>x!=="none").concat(keys.indexOf("none")>=0?["none"]:[]);
+    let sel=list[0];
+    const close=async v=>{
+      off();
+      /* ★ 入部するときは、**窓が消える前に部室の背景を出して**おきます。
+         あとから出すと、そのあいだ うしろのコマンド画面（自分の部屋）が見えて、
+         「部屋が一瞬うつってから部室になる」ことになります。
+         フェードもしません（fadeStop）。窓の下でうすく出しても意味がなく、
+         窓が消えた瞬間に中途半端な濃さで見えてしまうためです。
+         ★ 場面を出さずに終わったときのために、入部のところで vnClose しています。 */
+      if(v){
+        vnOpen((CLUBS[v]&&CLUBS[v].bg)||"klass");
+        fadeStop("vn");
+        M.style.display="none"; modalFull(false); M.style.width="640px";
+        resolve(v); return;
+      }
+      await fadeOut(M,()=>{ M.style.display="none"; modalFull(false); M.style.width="640px"; });
+      resolve(v);
+    };
+    const render=()=>{
+      const C=CLUBS[sel]||{}, mate=C.mate?G(C.mate):null;
+      /* ★ 相手役はいるけれど、まだ出会っていないとき。
+         ここで名前を出すと「これから出会う子」がばれるので、ぼかします。 */
+      const yet=!mate && C.mate && (typeof castAll==="function") &&
+                castAll().some(x=>x.id===C.mate);
+      const u=(v,n)=>v?`--${n}:url('${v}');`:"";
+      const vars=u(cpArt("frame"),"cpfrm")+u(cpArt("card"),"cpcard")
+               + u(cpArt("side"),"cpside")+u(cpArt("clip"),"cpclip")
+               + u(cpArt("join"),"cpjoin")+u(cpArt("bg"),"cpbg");
+      $("modBody").innerHTML=`<div class="cp${cpArt("bg")?" bg":""}" style="${vars}">
+        <div class="cphd">
+          <div class="cpt"><s>${CP.en||"CLUB ACTIVITIES"}</s><b>${CP.ttl||"部活選択"}</b></div>
+          <div class="cpn"><b>${CP.head||"入部する部を選んでください。"}</b>
+            <span>${CP.note||""}</span></div>
+          <div class="cpclip${cpArt("clip")?" im":""}"></div>
+        </div>
+        <div class="cpbody">
+          <div class="cpside${cpArt("side")?" im":""}">${list.map(k=>`
+            <div class="cprow${k===sel?" on":""}" data-c="pick:${k}">
+              <div class="cpic${cpArt("icon_"+k)?" im":""}">${clubIconHTML(k)}</div>
+              <b>${CLUBS[k].n}</b></div>`).join("")}
+          </div>
+          <div class="cpmid">
+            <div class="cpph${cpArt("frame")?" im":""}">
+              ${clubPhotoHTML(sel)}
+              <div class="cpwd">${(CP.word&&CP.word[sel])||""}</div>
+            </div>
+          </div>
+          <div class="cpcd${cpArt("card")?" im":""}">
+            <div class="cpch">
+              <div class="cpic big${cpArt("icon_"+sel)?" im":""}">${clubIconHTML(sel)}</div>
+              <b>${C.n}</b></div>
+            <div class="cpd">${C.d||""}</div>
+            <div class="cpsay">${clubSayHTML(sel)}</div>
+            <div class="cpmb">
+              <s>${CP.member||"MEMBER"}</s>
+              ${mate?`<b>${fmt(CP.isThere||"{名前} がいるらしい",{名前:mate.name})}</b>`
+                : yet?`<i>${CP.unknown||"まだ知らない誰かが、いるらしい。"}</i>`
+                    :`<i>${CP.noMember||"知っている子は、まだいないみたい。"}</i>`}
+            </div>
+            <button class="cpjoin${cpArt("join")?" im":""}" data-c="join:${sel}">
+              ${CP.join||"入る"}<span>›</span></button>
+          </div>
+        </div>
+        <button class="cpx" data-c="close" title="やめる">✕</button>
+      </div>`;
+      $("modBtns").innerHTML="";
+      M.querySelectorAll("[data-c]").forEach(b=>b.onclick=e=>{e.stopPropagation();handle(b.dataset.c);});
+      cpFit();
+    };
+    /* 画面の大きさが変わっても、写真が切れないように合わせなおします */
+    const onres=()=>{ if(getComputedStyle(M).display!=="none")cpFit(); };
+    addEventListener("resize",onres);
+    off=()=>removeEventListener("resize",onres);
+    const handle=async a=>{
+      const [cmd,k]=a.split(":");
+      if(cmd==="close"){ se("cancel"); close(null); return; }
+      if(cmd==="pick"){ if(sel!==k){ sel=k; se("click"); render(); } return; }
+      if(cmd==="join"){
+        const C=CLUBS[k];
+        const ok=await confirmBox("入部しますか？",
+          `<b>${C.g} ${C.n}</b><br>${C.d}<br><br><span style="color:#c2306a">あとから変えることはできません。</span>`,
+          CP.join||"入る");
+        if(!ok)return;
+        se("ok"); close(k);
+      }
+    };
+    modalShow(()=>{ M.style.display="flex"; render(); });
   });
 }
 
 async function introScene(g){
   const E=INTRO[g.id];
-  galMark("intro:"+g.id); evMark("meet_"+g.id);
+  /* ★ intro: を書いていない子（追加のとちゅう）でも、ゲームが止まらないように。
+     書いていなければ、出会いの場面を飛ばして仲間に加わるだけにします。 */
+  if(!E || !E.b || !E.o || !E.o.length){
+    galMark("intro:"+g.id); evMark("meet_"+g.id);
+    toast(`${g.name} と知り合いになりました`);
+    return;
+  }
+  const gen0=S.gen;
   await scene(E.bg,async()=>{
     openMsg("出会い");
     se("heart");
@@ -3787,6 +4497,8 @@ async function introScene(g){
     say(`<span class="sys">${g.role}</span>`);
     redraw(); await next();
   });
+  /* しるしは最後まで進んだときだけ（とちゅうでロードされたら、また出せるように） */
+  if(gen0===S.gen){ galMark("intro:"+g.id); evMark("meet_"+g.id); }
 }
 
 /* =======================================================================
@@ -3875,6 +4587,7 @@ async function dateFlow(){
   /* 行き先が決まって、はじめて自室を出る。ここで背景を入れる
      （vnBGset が「自室のまま」モードを外すので、アイコンとステータスも元に戻ります） */
   se("page");
+  bgmScene("date");                 /* おでかけの曲（置いていなければ、そのまま） */
   const pbg=placeBG[pid]||"park";
   if(S.vnOn) vnBGset(pbg);
   else { $("msg").style.display="none"; vnOpen(pbg); }
@@ -3919,14 +4632,18 @@ async function dateFlow(){
   say(TXT.datePlay.res[rank], rank==="great"?"ev":(rank==="bad"||rank==="worst")?"dn":null);
   if(rank==="great"||rank==="good")line(g,g.q.ok,ex);
   else if(rank==="bad"||rank==="worst")line(g,g.q.bad,"sad");
-  if(rank==="great")await stamp("great");
-  else if(rank==="worst")await stamp("fail");
+  /* ★ stamp() は「待っているあいだにロードされた」と true を返します。
+     そのまま進むと、**読みこんだばかりの記録**に、いま終わった
+     おでかけの結果（好感度・ストレス・リッチ度）を書きこんでしまいます。 */
+  if(rank==="great"){ if(await stamp("great"))return false; }
+  else if(rank==="worst"){ if(await stamp("fail"))return false; }
   rec("date",g.id); if(rank==="great")rec("great");
   addAff(g,v);g.last=S.t;
   S.stress=clamp(S.stress+(v>=60?-10:6),0,100);
   S.p.rich=Math.max(0,S.p.rich-rnd(5,9));
   S.p.charm=clamp(S.p.charm+1.2,0,999);
   redraw();await next();
+  bgmSceneEnd();                    /* おでかけが終わったので、季節の曲にもどす */
   return true;
 }
 
@@ -3955,7 +4672,7 @@ async function telFlow(){
    13. イベント
    ======================================================================= */
 async function affEvent(g,e,idx){
-  if(idx!==undefined){ galMark(`aff:${g.id}:${idx}`); evMark(`aff_${g.id}_${idx+1}`); }
+  const gen0=S.gen;
   await scene(e.bg||"klass",async()=>{
     openMsg(e.t);
     vnFace(g,e.ex||"normal");
@@ -3971,6 +4688,11 @@ async function affEvent(g,e,idx){
     if(e.o[i].d>=60)se("heart");
     redraw();await next();
   });
+  /* ★ 「見た」のしるしと回想への登録は、最後まで進んだときだけ。
+     とちゅうでロードされたときは付けません（また出せるように） */
+  if(idx!==undefined && gen0===S.gen){
+    galMark(`aff:${g.id}:${idx}`); evMark(`aff_${g.id}_${idx+1}`);
+  }
 }
 
 /* その行事のイベントID（誕生日はキャラごと、ほかは「行事の名前＋月日」） */
@@ -3983,8 +4705,14 @@ function fixedEvId(ev){
 }
 async function runFixed(ev){
   evMark(fixedEvId(ev));
-  /* 追加シナリオは、自分で run を持っています */
-  if(typeof ev.run==="function"){ await ev.run(ev); return; }
+  /* ★ 行事ごとのBGM（assets/config.js の BGM_RULE）。
+     曲を置いていない行事では、なにも起きません。
+     修学旅行のように次の日も同じ曲の行事が続くときは、鳴らしっぱなしにします
+     （でないと、1日目と2日目のあいだで曲が行ったり来たりします）。 */
+  const bk=BGMEV[ev.id]||null;
+  if(bk)bgmScene(bk);
+  try{
+  if(typeof ev.run==="function"){ await ev.run(ev); return; }   /* 追加シナリオ */
   if(ev.id==="exam")       await evExam(ev);
   else if(ev.id==="invite")await evInvite(ev);
   else if(ev.id==="culture")await evCulture(ev);
@@ -3999,6 +4727,12 @@ async function runFixed(ev){
   else if(ev.id==="newyear")await evNewYear();
   else if(ev.id==="white") await evWhite();
   else if(ev.id==="vacs")  await evVac(ev);
+  } finally {
+    if(bk){
+      const nx=fixedAt(S.t+1);
+      if(!nx || BGMEV[nx.id]!==bk) bgmSceneEnd();
+    }
+  }
 }
 
 /* -------- テストの成績表 --------------------------------------------
@@ -4213,7 +4947,9 @@ async function evMatch(ev){
   say(E.optNarr[i]);
   const res=matchJudge(prof,idx,S.p.sport,i);
   rec("match",res==="win"?0:res==="draw"?1:2);
-  await stamp(res==="win"?"great":res==="draw"?"ok":"fail");
+  /* 待っているあいだにロードされたら、ここで終わりにします
+     （そのまま進むと、読みこんだ記録に熟練度を足してしまいます） */
+  if(await stamp(res==="win"?"great":res==="draw"?"ok":"fail"))return;
   E[res].forEach(t=>say(t));
   const gain=res==="win"?6:res==="draw"?3:1.5;
   if(!S.prof)S.prof={};
@@ -4248,7 +4984,8 @@ async function evCulture(ev){
     say(fmt(R.intro,{熟練度:profName(),熟練値:prof}));
     const res=cultJudge(prof,c.y,S.p.art);
     rec("cult",res==="bad"?1:0);
-    await stamp(res==="great"?"great":res==="ok"?"ok":"fail");
+    /* 待っているあいだにロードされたら、ここで終わりにします */
+    if(await stamp(res==="great"?"great":res==="ok"?"ok":"fail"))return;
     ((res==="bad"&&c.y===3)?R.badLast:R[res]).forEach(t=>say(t));
     const gain=res==="great"?5:res==="ok"?3:1;
     if(!S.prof)S.prof={};
@@ -4516,39 +5253,93 @@ async function evTrip3(){
 }
 
 
+/* ===== 誕生日プレゼント ==================================================
+   ★ **好感度4段階 × 贈りもの3種類 ＝ 12通り**の受けとりかたがあります。
+     文章は `story/<キャラid>.js` の `bdayGift` に書きます。
+
+       bdayGift:{
+         normal:{ hand:{line:"セリフ",say:"地の文",ex:"表情",d:0}, buy:{…}, word:{…} },
+         friend:{…}, crush:{…}, love:{…}
+       }
+
+   ★ 「ほぼ他人（normal）」でも贈れます。**好感度で断られることはありません。**
+   ★ 書いていない段は、**ひとつ下の段**→さらに下、と探します。
+     1つも書いていない子は、みんな共通の文（`TXT.bday`）で動きます。
+     **つまり、書かなくてもこわれません。**
+   ======================================================================= */
+const BDAYKINDS=["hand","buy","word"];
+const BDAYKINDNAME={hand:"手作り",buy:"しっかりしたプレゼント",word:"言葉だけ"};
+/* 好感度の段は、バイト先イベントと同じ並び（JOBTIERS）を使います */
+const BDAYTIERS=(typeof JOBTIERS!=="undefined")?JOBTIERS:["normal","friend","crush","love"];
+const BDAYTIERNAME=(typeof JOBTIERNAME!=="undefined")?JOBTIERNAME
+                  :{normal:"普通",friend:"友達",crush:"気になる人",love:"好き"};
+
+function bdayGiftOf(gid,kind,tier){
+  const B=(typeof BDAYGIFT!=="undefined")?BDAYGIFT[gid]:null;
+  if(B){
+    let i=BDAYTIERS.indexOf(tier); if(i<0)i=0;
+    for(;i>=0;i--){ const r=B[BDAYTIERS[i]]&&B[BDAYTIERS[i]][kind]; if(r)return r; }
+    for(const k of BDAYTIERS){ const r=B[k]&&B[k][kind]; if(r)return r; }
+  }
+  /* ★ 何も書いていない子のための、みんな共通の文 */
+  const E=TXT.bday;
+  return {hand:{line:E.handLineGood,poor:{line:E.handLinePoor}},
+          buy :{line:E.buyLine},
+          word:{line:E.wordLine}}[kind]||null;
+}
+/* デバッグと仕様書のための、1人ぶんの一覧（12通り） */
+function bdayGiftDef(gid,kind,tier){
+  const r=bdayGiftOf(gid,kind,tier);
+  if(!r)return null;
+  return {gid, kind, tier, 贈りもの:BDAYKINDNAME[kind], 間柄:BDAYTIERNAME[tier],
+          line:r.line||"", say:r.say||"", d:r.d||0,
+          専用:!!((typeof BDAYGIFT!=="undefined")&&BDAYGIFT[gid]&&
+                  BDAYGIFT[gid][tier]&&BDAYGIFT[gid][tier][kind])};
+}
+
 async function evBday(ev){
-  const g=G(ev.who), E=TXT.bday;
+  const g=G(ev.who), E=TXT.bday, tier=affTier(g);
   say(fmt(E.head,{名前:g.name}),"ev");
-  if(g.aff<150){say(fmt(E.far,{名前:g.name}));
-    await next("▶ 次の日へ");return;}
   se("heart");
-  say(fmt(E.ask,{名前:g.name}));
+  /* 話しかけるときの地の文は、間柄で変わります（askTier が無ければ ask） */
+  say(fmt((E.askTier&&E.askTier[tier])||E.ask,{名前:g.name}));
   const opts=[{t:E.opts[0],v:"hand"},
               {t:E.opts[1],v:"buy"},
               {t:E.opts[2],v:"word"},
               {t:E.opts[3],v:null,gy:true}];
   const k=await choose(opts);
+  if(k===null){
+    say(E.nothing,"dn"); addAff(g,-40);
+    g.last=S.t; redraw(); await next("▶ 次の日へ"); return;
+  }
+  /* ---- ① 贈りものそのもので決まるぶん（ここは今までと同じ） ---- */
+  let base=0, lead="", poor=false;
   if(k==="hand"){
     const q=S.p.care+S.p.art;
-    const d=q>=200?140:q>=120?100:q>=60?60:20;
-    say(q>=120?E.handGood:E.handPoor);
-    line(g,q>=120?E.handLineGood:E.handLinePoor);
-    addAff(g,d);
+    poor = q<120;
+    base = q>=200?140:q>=120?100:q>=60?60:20;
+    lead = poor?E.handPoor:E.handGood;
   }else if(k==="buy"){
-    if(S.p.rich<30){say(E.buyPoor,"dn");addAff(g,-10);}
-    else{S.p.rich-=30;
-      const d=80+Math.min(80,S.p.trend/3);
-      say(E.buyOk);
-      line(g,E.buyLine);
-      addAff(g,d);}
-  }else if(k==="word"){
-    say(E.word);
-    line(g,E.wordLine);
-    addAff(g,40);
+    if(S.p.rich<30){
+      /* 買えなかったので、そもそも渡せていません（受けとりかたは出しません） */
+      say(E.buyPoor,"dn"); addAff(g,-10);
+      g.last=S.t; redraw(); await next("▶ 次の日へ"); return;
+    }
+    S.p.rich-=30;
+    base = 80+Math.min(80,S.p.trend/3);
+    lead = E.buyOk;
   }else{
-    say(E.nothing,"dn");
-    addAff(g,-40);
+    base = 40; lead = E.word;
   }
+  /* ---- ② 受けとりかた（好感度4段階 × 贈りもの3種類） ---- */
+  const R0=bdayGiftOf(g.id,k,tier)||{};
+  /* 手作りの出来がよくないときは、poor があればそちらを使います */
+  const R=(poor&&R0.poor)?Object.assign({},R0,R0.poor):R0;
+  if(lead)say(fmt(lead,{名前:g.name}));
+  if(R.line)line(g,fmt(R.line,{名前:g.name}),R.ex||null);
+  if(R.say) say(fmt(R.say,{名前:g.name}));
+  /* d は「その受けとりかたのぶんの上乗せ」です（無ければ0） */
+  addAff(g, Math.round(base+(+R.d||0)));
   g.last=S.t;
   redraw();await next("▶ 次の日へ");
 }
@@ -4687,7 +5478,9 @@ async function evVac(ev){
    14. エンディング
    ======================================================================= */
 async function ending(){
-  await scene("sakura",endingScene);
+  bgmScene("graduation");          /* 卒業式の曲（置いていなければ、そのまま） */
+  try{ await scene("sakura",endingScene); }
+  finally{ bgmSceneEnd(); }
 }
 async function endingScene(){
   const E=TXT.ending;
@@ -4802,6 +5595,86 @@ async function epilogue(lover){
   E.last.forEach(t=>say(t));
   await next("▶ 結果を見る");
 }
+/* =======================================================================
+   アフターストーリー（結ばれて卒業したあと）
+
+   ・出るのは **トゥルーエンド**（好感度 780 以上で告白が成立）のときだけ
+   ・卒業から何か月／何年後かは、相手ごとにちがいます（afterStory.when）
+   ・立ち絵と顔アイコンは **大人の絵**（full/after・bust/after）に差しかわります。
+     置いていなければ、いままでの絵がそのまま出ます
+   ・さいごに **ご褒美スチル**（cg/30.png）が出て END、タイトルへもどります
+   ・一度見ると、おまけの「シーン鑑賞」から読みかえせます
+
+   ★ 途中の選択肢は、**返事が変わるだけ**です。行き着く先は変わりません。
+     （好感度も動きません。もう卒業しているので） */
+const AFTRULE=(typeof AFTER_RULE!=="undefined")?AFTER_RULE:{};
+const afterOn =()=>AFTRULE.on!==false;
+function afterOf(gid){
+  if(!afterOn())return null;
+  return (typeof AFTERSTORY!=="undefined"&&AFTERSTORY[gid])||null;
+}
+/* その子のアフターストーリーが見られるか（トゥルーエンドかどうか） */
+function afterOK(g){ return !!(g && g.aff>=780 && afterOf(g.id)); }
+/* ご褒美スチルの番号 */
+const afterCg=A=>(A&&A.cg)||AFTRULE.cg||30;
+
+/* 本編を再生します。replay=true なら、おまけからの読みかえし */
+async function afterPlay(g, replay){
+  const A=afterOf(g.id); if(!A)return;
+  const gd=castAll().find(x=>x.id===g.id)||g;
+  if(!replay){ evMark("after_"+g.id); galMark("after:"+g.id, 1); }
+  /* 回想のあいだは、{彼}／{くん} をこの子に合わせます */
+  SEXWHO=g.id;
+  try{
+    await scene(A.bg||"town", async()=>{
+      openMsg(replay?"回想":"アフターストーリー");
+      vnOutfit(AFTRULE.outfit||"after");        /* ★ 大人の絵に差しかえる */
+      vnFace(gd, A.ex||"smile");
+      say(`✦ <b>${A.when||"卒業したあと"}</b>`+(replay?`　<span class="sys">（回想）</span>`:""),"ev");
+      (A.b||[]).forEach(t=>say(fmt(t,{名前:gd.name})));
+      /* 選択肢（返事が変わるだけ。行き着く先は同じ） */
+      if(A.o&&A.o.length){
+        const i=await choose(A.o.map((o,idx)=>({t:o.t,v:idx})));
+        const o=A.o[i]||A.o[0];
+        se("page");
+        vnFace(gd,o.ex||"blush");
+        (Array.isArray(o.r)?o.r:[o.r]).forEach(t=>say(fmt(t,{名前:gd.name})));
+        await next();
+      }
+      (A.b2||[]).forEach(t=>say(fmt(t,{名前:gd.name})));
+      await next();
+      /* ---- ご褒美スチル ---- */
+      const n=afterCg(A);
+      const got=vnStill(g.id, n);
+      if(got)se("heart");
+      (A.cgb||[]).forEach(t=>say(fmt(t,{名前:gd.name})));
+      await next(replay?"▶ 回想を終わる":"▶ END");
+      vnStill(null);
+    });
+  } finally { SEXWHO=null; vnOutfit(null); }
+}
+
+/* 結果画面の「つづきを見る」から呼ばれます。終わったらタイトルへ */
+async function afterGo(gid){
+  const g=G(gid)||((S.girls||[]).find(x=>x.id===gid));
+  if(!g)return;
+  $("ending").style.display="none";
+  await afterPlay(g,false);
+  await afterEnd(g);
+}
+/* END の札を出して、タイトルへ */
+async function afterEnd(g){
+  const A=afterOf(g.id)||{};
+  $("ending").innerHTML=`
+    <div style="font-size:13px;letter-spacing:.3em;color:#a98ac4">${A.when||""}</div>
+    <div style="font-size:44px;font-weight:900;letter-spacing:.2em;color:#c2306a;
+      text-shadow:2px 2px 0 #fff,0 3px 10px rgba(0,0,0,.15);margin:6px 0 2px">END</div>
+    <div style="font-size:15px;font-weight:800;color:#8a6076">${g.name}</div>
+    <button class="btn pk" style="font-size:15px;padding:11px 26px;margin-top:14px"
+      onclick="S.gen++;S.inGame=false;goTitle();">タイトルへ</button>`;
+  await fadeIn("ending", ()=>{ $("ending").style.display="flex"; });
+}
+
 function finish(g){
   const E=TXT.ending, para=a=>a.map(x=>`<p>${x}</p>`).join("");
   let ttl,exp="normal",body;
@@ -4829,6 +5702,8 @@ function finish(g){
         <div style="margin-top:6px;font-size:12.5px;color:#8a7a68">最終パラメータ：${Object.keys(P).map(k=>P[k].replace(/\s/g,"")+" "+Math.round(S.p[k])).join(" / ")}${S.club==="none"?"":" / "+profName()+" "+profOf()}</div>
       </div>
     </div>
+    ${afterOK(g)?`<button class="btn pk" style="font-size:16px;padding:12px 30px;margin-bottom:4px"
+        onclick="afterGo('${g.id}')">▶ つづきを見る（アフターストーリー）</button><br>`:""}
     <button class="btn pk" style="font-size:16px;padding:11px 26px" onclick="location.reload()">もう一度、入学する</button>
     <button class="btn gy" style="font-size:15px;padding:11px 22px;margin-left:8px" onclick="S.gen++;S.inGame=false;goTitle();">タイトルへ</button>`;
   $("ending").style.display="flex";
@@ -4907,6 +5782,82 @@ function alertBox(title,html){
 }
 
 /* ---- デバッグ ---- */
+/* ---- デバッグを楽にするための小道具 --------------------------------------
+   ★ ここにあるものは、遊ぶ人には見えません。作るときだけのものです。 */
+
+/* 行事のチップ（ボタンぽちで飛ぶところ）。分類ごとに並べます */
+const DBGEVCAT=[
+  {n:"🎀 恋愛",   ids:["valen","white","invite","bday","mybday"]},
+  {n:"🏫 学校",   ids:["sports","culture","trip","trip2","trip3","match","exam"]},
+  {n:"🎍 季節",   ids:["newyear","vacs","vacw","vacspr","term"]}
+];
+function dbgEvChips(){
+  const used={}, box=[];
+  for(const c of DBGEVCAT){
+    const list=FIXED.map((e,i)=>({e,i})).filter(x=>c.ids.indexOf(x.e.id)>=0);
+    list.forEach(x=>{used[x.i]=1;});
+    if(!list.length)continue;
+    box.push({n:c.n,list});
+  }
+  const rest=FIXED.map((e,i)=>({e,i})).filter(x=>!used[x.i]);
+  if(rest.length)box.push({n:"✦ そのほか",list:rest});
+  return box.map(b=>`<div class="dbgline" style="margin-top:3px">
+      <span style="font-size:11.5px;color:#8a7a68;width:58px;flex:0 0 auto">${b.n}</span>
+      ${b.list.map(x=>`<span class="chip sm" data-d="ev:${x.i}" title="${x.e.m}/${x.e.d}${x.e.y?`（${x.e.y}年目）`:""}">${x.e.g||"✦"} ${x.e.n}</span>`).join("")}
+    </div>`).join("");
+}
+
+/* 「すぐ試す」のプリセット。上から順に、よく使うものです */
+const DBGPRESET=[
+  {n:"① はじまり", d:"1年目4月・まっさら・はじめの3人",
+   f:()=>{ S.t=0; S.girls.forEach(g=>g.aff=0); dbgGirls(3); dbgP(null); S.stress=0; }},
+  {n:"② 2年目・気になる人", d:"2年目11月・全員「気になる人」・能力ふつう",
+   f:()=>{ dbgJump(2,11,1); dbgGirls(99); dbgAff("crush"); dbgP(400); S.stress=20; }},
+  {n:"③ 3年目・全員好き", d:"3年目1月・全員「好き」・能力高め",
+   f:()=>{ dbgJump(3,1,10); dbgGirls(99); dbgAff("love"); dbgP(800); S.stress=10; }},
+  {n:"④ 卒業直前", d:"最後の週・1人だけ満タン・ほかは友達",
+   f:()=>{ S.t=LAST-(LAST%7); dbgGirls(99); dbgAff("friend");
+           if(S.girls[0])S.girls[0].aff=MAXAFF; dbgP(900); S.stress=0; }}
+];
+/* 好感度を、その間柄のちょうど境目に合わせます */
+function affOfTier(gid,tier){
+  if(tier==="max")return MAXAFF;
+  if(tier==="zero"||tier==="normal")return tier==="zero"?0:Math.round(MAXAFF*0.05);
+  const t=(typeof AFFTIERS!=="undefined"&&AFFTIERS[gid])||AFFTIER_DEF;
+  const p=t[tier]; if(p===undefined)return 0;
+  return Math.min(MAXAFF, Math.round((p+15)*MAXAFF/AFFSCALE));
+}
+function dbgAff(tier){ S.girls.forEach(g=>{ g.aff=affOfTier(g.id,tier); }); }
+function dbgP(v){ const b=startStats(S.bd);
+  Object.keys(P).forEach(k=>{ S.p[k]=(v===null)?b[k]:clamp(v,0,999); }); }
+function dbgGirls(n){
+  /* 入れかたは、デバッグの「全員出す」と同じにそろえます */
+  const add=d=>({...d,ideal:{...d.ideal},aff:d.aff,last:S.t});
+  const want=(n>=99)?castOfSex():castNow();
+  if(n<99)S.girls=S.girls.filter(x=>want.some(y=>y.id===x.id));
+  want.forEach(d=>{ if(!G(d.id))S.girls.push(add(d)); });
+}
+function dbgJump(y,m,d){ const i=gidx(y,m,d)-4; S.t=clamp(i<0?0:i,0,LAST); S.t-=S.t%7; }
+/* いまの状態を、1枚の紙にまとめます（不具合を知らせるときに貼れます） */
+function dbgDump(){
+  const c=CAL[Math.min(S.t,LAST)];
+  const L=[];
+  L.push(`スターメイト の状態（${new Date().toLocaleString()}）`);
+  L.push(`日づけ : ${c.y}年目 ${c.m}月${c.d}日（${DOW[S.t%7]}）　S.t=${S.t}`);
+  L.push(`主人公 : ${S.name}／${S.sex==="f"?"女性":"男性"}／${S.blood}型／${S.bd.m}月${S.bd.d}日（${zodiacOf(S.bd.m,S.bd.d).n}）`);
+  L.push(`部活   : ${(CLUBS[S.club]||CLUBS.none).n}　バイト : ${S.job?(JOBS[S.job]||{n:"?"}).n:"まだ"}`);
+  L.push(`能力   : ${Object.keys(P).map(k=>`${P[k].replace(/\s/g,"")}${Math.round(S.p[k])}`).join(" ")}　ストレス${Math.round(S.stress)}`);
+  L.push(`好感度 : ${S.girls.map(g=>`${g.name.split(" ")[1]}${Math.round(g.aff)}(${affTierName(g)})`).join(" ")||"—"}`);
+  L.push(`称号   : ${TITLES.filter(t=>GAL.tt[t.id]).length}/${TITLES.length}　校内評価 ${ttName(titleNow())}`);
+  L.push(`おまけ : シーン${Object.keys(GAL.sc).length}／エンド${Object.keys(GAL.end).length}`);
+  L.push(`画面   : ${$("stage").clientWidth}×${$("stage").clientHeight}　[${document.body.className}]`);
+  L.push(`速さ   : 文字${S.speed} 場面${S.tspeed} 背景${S.bgfade}`);
+  return L.join("\n");
+}
+
+/* DEBUG_BEGIN ── ここから下は 🛠️デバッグ画面です。
+   python3 build.py --nodebug を付けると、ここが丸ごと外れます
+   （お客さんに渡すものには入りません）。 */
 function debugMenu(){
   return new Promise(resolve=>{
     const M=$("modal"); M.style.width="720px";
@@ -4924,16 +5875,37 @@ function debugMenu(){
             <button class="btn gy sm" data-d="jump">飛ぶ</button>
             <button class="btn gy sm" data-d="w1">＋1週</button>
             <button class="btn gy sm" data-d="w4">＋4週</button>
-            <button class="btn gy sm" data-d="end">卒業直前へ</button>
+            <button class="btn gy sm" data-d="lastw">最後の週へ</button>
+            <button class="btn gy sm" data-d="end">卒業式へ</button>
           </div></div>
+        <div class="dbgsec"><b>すぐ試す</b>
+          <span style="color:#8a7a68;font-size:11.5px">よく使う状態を、ひと押しで作ります</span>
+          <div class="dbgline">
+            ${DBGPRESET.map((x,i)=>`<button class="btn pk sm" data-d="pre:${i}" title="${x.d}">${x.n}</button>`).join("")}
+          </div>
+          <div class="dbgline">
+            <button class="btn gy sm" data-d="fast">演出を最速にする</button>
+            <button class="btn gy sm" data-d="slow">演出をふつうに戻す</button>
+            <button class="btn gy sm" data-d="copy">いまの状態を書き出す</button>
+          </div></div>
+
         <div class="dbgsec"><b>パラメータ</b>
           <div class="dbgline">
             ${Object.keys(P).map(k=>`<label class="dbgp">${P[k].replace(/\s/g,"")}<input type="number" id="dp_${k}" value="${Math.round(S.p[k])}" min="0" max="999"></label>`).join("")}
             <label class="dbgp">ストレス<input type="number" id="dp_stress" value="${Math.round(S.stress)}" min="0" max="100"></label>
           </div></div>
         <div class="dbgsec"><b>好感度</b>
+          <span style="color:#8a7a68;font-size:11.5px">
+            いまの間柄：${S.girls.map(g=>`${g.name.split(" ")[1]}=<b>${affTierName(g)}</b>`).join("　")||"—"}</span>
           <div class="dbgline">
             ${S.girls.map(g=>`<label class="dbgp">${g.name.split(" ")[1]}<input type="number" id="da_${g.id}" value="${Math.round(g.aff)}" min="0" max="${MAXAFF}" step="10"></label>`).join("")}
+          </div>
+          <div class="dbgline">
+            <span style="font-size:11.5px;color:#8a7a68">全員まとめて</span>
+            ${[["normal","普通"],["friend","友達"],["crush","気になる人"],["love","好き"]].map(
+              ([k,n])=>`<button class="btn gy sm" data-d="afall:${k}">${n}</button>`).join("")}
+            <button class="btn gy sm" data-d="afall:max">満タン</button>
+            <button class="btn gy sm" data-d="afall:zero">0にする</button>
           </div></div>
         <div class="dbgsec"><b>設定変更</b>
           <div class="dbgline">
@@ -4984,6 +5956,37 @@ function debugMenu(){
             <button class="btn gy sm" data-d="ttlist">いま取れるものを見る</button>
           </div></div>
 
+        <div class="dbgsec"><b>バイト先で会うシーンを見る</b>
+          <span style="color:#8a7a68;font-size:11.5px">
+            1人につき <b>バイト先4種 × 好感度4段階＝16通り</b>あります。
+            好感度は変えずに、その組み合わせだけを見ます。</span>
+          <div class="dbgline">
+            <label class="dbgp" style="width:150px">だれ<select id="dJg">
+              ${castOfSex().map(x=>`<option value="${x.id}">${x.name}</option>`).join("")}</select></label>
+            <label class="dbgp" style="width:150px">バイト先<select id="dJj">
+              ${Object.keys(JOBS).map(k=>`<option value="${k}" ${S.job===k?"selected":""}>${JOBS[k].n}</option>`).join("")}</select></label>
+            <label class="dbgp" style="width:130px">好感度<select id="dJt">
+              ${[["normal","普通"],["friend","友達"],["crush","気になる人"],["love","好き"]].map(
+                ([k,n])=>`<option value="${k}">${n}</option>`).join("")}</select></label>
+            <button class="btn pk sm" data-d="jobsee">この組み合わせを見る</button>
+            <button class="btn gy sm" data-d="joblist">16通りそろっているか調べる</button>
+          </div></div>
+
+        <div class="dbgsec"><b>誕生日プレゼントの受けとりかたを見る</b>
+          <span style="color:#8a7a68;font-size:11.5px">
+            1人につき <b>好感度4段階 \u00d7 贈りもの3種類＝12通り</b>あります。
+            好感度は変えずに、その組み合わせの文だけを出します。</span>
+          <div class="dbgline">
+            <label class="dbgp" style="width:150px">だれ<select id="dBg">
+              ${castOfSex().map(x=>`<option value="${x.id}">${x.name}</option>`).join("")}</select></label>
+            <label class="dbgp" style="width:130px">好感度<select id="dBt">
+              ${BDAYTIERS.map(k=>`<option value="${k}">${BDAYTIERNAME[k]}</option>`).join("")}</select></label>
+            <label class="dbgp" style="width:170px">贈りもの<select id="dBk">
+              ${BDAYKINDS.map(k=>`<option value="${k}">${BDAYKINDNAME[k]}</option>`).join("")}</select></label>
+            <button class="btn pk sm" data-d="bdsee">この組み合わせを見る</button>
+            <button class="btn gy sm" data-d="bdlist">12通りそろっているか調べる</button>
+          </div></div>
+
         <div class="dbgsec"><b>イベントID</b>
           <span style="color:#8a7a68;font-size:11.5px">
             イベントひとつずつに固有のIDが付いています（一覧は <b>イベント一覧.md</b>）。
@@ -4996,15 +5999,20 @@ function debugMenu(){
             <button class="btn gy sm" data-d="evidnone">「見た」の記録を消す</button>
           </div></div>
 
-        <div class="dbgsec"><b>イベントをその場で見る</b>
-          <div class="dbgline">
-            <label class="dbgp" style="width:210px">固定イベント<select id="dEv">
-              ${FIXED.map((e,i)=>`<option value="${i}">${e.m}/${e.d}${e.y?`（${e.y}年目）`:""}　${e.n}</option>`).join("")}
-            </select></label>
-            <button class="btn pk sm" data-d="evnow">このイベントを見る</button>
+        <div class="dbgsec"><b>行事へ飛ぶ</b>
+          <span style="color:#8a7a68;font-size:11.5px">
+            押すと、その行事を<b>その場で見られます</b>（日づけは動きません）。
+            足りない条件は、こちらで勝手にそろえます（運動部にする・その子を出す）。</span>
+          ${dbgEvChips()}
+          <div class="dbgline" style="margin-top:5px">
+            <button class="btn gy sm" data-d="nextev">▶ 次の行事の週へ</button>
             <button class="btn gy sm" data-d="datenow">おでかけに誘う</button>
             <button class="btn gy sm" data-d="telnow">電話する</button>
             <button class="btn gy sm" data-d="boardnow">テストの掲示板だけ出す</button>
+            <label class="dbgp" style="width:186px">一覧から選ぶ<select id="dEv">
+              ${FIXED.map((e,i)=>`<option value="${i}">${e.m}/${e.d}${e.y?`（${e.y}年目）`:""}　${e.n}</option>`).join("")}
+            </select></label>
+            <button class="btn gy sm" data-d="evnow">これを見る</button>
           </div>
           <div style="color:#8a7a68;font-size:11.5px;margin-top:4px">
             テストの点は学年で変わります。いまは<b>${examYear()}年目</b>（同じ順位に必要な学力 ${examBar().toFixed(2)}倍）。
@@ -5059,7 +6067,7 @@ function debugMenu(){
           <span style="color:#8a7a68;font-size:11.5px">ふだんはバイト1回につき ${(JOBVISIT_DEF*100).toFixed(0)}%</span>
           <div class="dbgline">
             <label class="dbgp" style="width:92px">来客率（％）<input type="number" id="dJv" value="${+(JOBVISIT*100).toFixed(1)}" min="0" max="100" step="0.5"></label>
-            <label class="dbgp" style="width:146px">来る子<select id="dJg">
+            <label class="dbgp" style="width:146px">来る子<select id="dJv2">
               <option value="">ランダム（抽選）</option>
               ${S.girls.map(g=>`<option value="${g.id}">${g.name}</option>`).join("")}
             </select></label>
@@ -5195,6 +6203,108 @@ function debugMenu(){
         toast("画面を押すと閉じます");
         return;
       }
+      /* ---- すぐ試す ---- */
+      if(a.indexOf("pre:")===0){
+        const x=DBGPRESET[+a.split(":")[1]]; if(!x)return;
+        readAll(); x.f(); linkCast(); redraw(); render();
+        se("ok"); toast(x.n.replace(/^[①-⑨]\s*/,"")+" にしました");
+        return;
+      }
+      if(a==="fast"){ S.speed=0; S.tspeed=0; S.bgfade=0; saveOpt&&saveOpt();
+        toast("演出を最速にしました"); render(); return; }
+      if(a==="slow"){ S.speed=1; S.tspeed=1; S.bgfade=1; saveOpt&&saveOpt();
+        toast("演出をふつうに戻しました"); render(); return; }
+      if(a==="copy"){
+        readAll();
+        const t=dbgDump();
+        let done=false;
+        try{ navigator.clipboard.writeText(t); done=true; }catch(e){}
+        alertBox("いまの状態",`<div class="dbgbB"><pre style="white-space:pre-wrap;margin:0;font-size:11.5px;line-height:1.6">${esc1(t)}</pre></div>`
+          +`<div style="font-size:11px;color:#8a7a68;margin-top:6px">${done?"コピーもしました。":"えらんでコピーしてください。"}</div>`);
+        return;
+      }
+      /* ---- 好感度をまとめて ---- */
+      if(a.indexOf("afall:")===0){
+        readAll(); dbgAff(a.split(":")[1]); redraw(); render();
+        se("ok"); toast("好感度をまとめて変えました"); return;
+      }
+      /* ---- 次の行事の週へ ---- */
+      if(a==="nextev"){
+        readAll();
+        let t=-1;
+        for(let i=S.t+1;i<=LAST;i++){ if(fixedAt(i)){ t=i; break; } }
+        if(t<0){ toast("この先に行事はありません"); return; }
+        const ev=fixedAt(t), c=CAL[t];
+        S.t=clamp(t-(t%7),0,LAST);
+        close(); flowAbort(); S.busy=false;
+        $("planner").style.display="none"; $("sunHint").style.display="none";
+        closeMsg(); vnClose(true); redraw();
+        toast(`${c.y}年目${c.m}月${c.d}日「${ev.n}」の週へ`);
+        main(true);
+        return;
+      }
+      /* ---- バイト先で会うシーンを直に見る ---- */
+      if(a==="jobsee"){
+        readAll();
+        const gid=$("dJg").value, jk=$("dJj").value, tier=$("dJt").value;
+        const def=jobSceneDef(gid,jk,tier);
+        if(!def){ toast("その組み合わせの文章がまだありません"); return; }
+        se("ok"); M.style.display="none";
+        (async()=>{
+          try{ await replayScene(def); }catch(e){ toast("途中で止まりました"); }
+          redraw(); M.style.display="flex"; M.style.width="720px"; render();
+          toast(`${(JOBS[jk]||{}).n}・${JOBTIERNAME[tier]} を見おわりました`);
+        })();
+        return;
+      }
+      if(a==="joblist"){ alertBox("バイト先で会うシーン（16通り × 人数）",jobAuditHTML()); return; }
+      /* ---- 誕生日プレゼントの受けとりかたを、その場で読む ---- */
+      if(a==="bdsee"){
+        readAll();
+        const gid=$("dBg").value, tier=$("dBt").value, kind=$("dBk").value;
+        const g=G(gid);
+        if(!g){ toast("その子は、まだ登場していません"); return; }
+        const R=bdayGiftOf(gid,kind,tier);
+        if(!R){ toast("その組み合わせの文章がまだありません"); return; }
+        se("ok"); M.style.display="none";
+        (async()=>{
+          try{
+            const bg=(typeof STORY!=="undefined"&&STORY[gid]&&STORY[gid].p&&STORY[gid].p.bdBg)||"klass";
+            await scene(bg,async()=>{
+              openMsg("誕生日プレゼント");
+              say(`\u2726 <b>${g.name}の誕生日</b>　<span class="sys">（${BDAYTIERNAME[tier]}・${BDAYKINDNAME[kind]}／好感度は変わりません）</span>`,"ev");
+              if(R.line)line(g,fmt(R.line,{名前:g.name}),R.ex||null);
+              if(R.say) say(fmt(R.say,{名前:g.name}));
+              say(`<span class="sys">好感度の上乗せ：${(+R.d||0)>=0?"+":""}${+R.d||0}</span>`,"sys");
+              await next("\u25b6 見おわる");
+            });
+          }catch(e){ toast("途中で止まりました"); }
+          redraw(); M.style.display="flex"; M.style.width="720px"; render();
+        })();
+        return;
+      }
+      if(a==="bdlist"){ alertBox("誕生日プレゼントの受けとりかた（12通り × 人数）",bdayAuditHTML()); return; }
+      /* ---- 行事チップ ---- */
+      if(a.indexOf("ev:")===0){
+        readAll();
+        const ev=FIXED[+a.split(":")[1]];
+        if(!ev){ toast("イベントが見つかりません"); return; }
+        /* ★ 足りない条件は、ここでそろえます（断らずに見せる） */
+        const fixed=[];
+        if(ev.id==="bday"&&!G(ev.who)){
+          const d=castOfSex().find(x=>x.id===ev.who);
+          if(d){ S.girls.push({...d,ideal:{...d.ideal},aff:d.aff,last:S.t}); fixed.push(`${d.name}を出しました`); }
+        }
+        if(ev.id==="match"&&!isSportsClub()){ S.club="base"; fixed.push("野球部にしました"); }
+        if(fixed.length){ redraw(); toast(fixed.join("／")); }
+        se("ok"); M.style.display="none";
+        (async()=>{
+          try{ await scene(evBg(ev),async()=>{ await runFixed(ev); }); }catch(e){ toast("途中で止まりました"); }
+          redraw(); M.style.display="flex"; M.style.width="720px"; render();
+          toast(ev.n+" を見おわりました");
+        })();
+        return;
+      }
       if(a==="evnow"||a==="datenow"||a==="telnow"){
         readAll(); redraw();
         let fn=null, bg="klass", label="";
@@ -5218,7 +6328,11 @@ function debugMenu(){
       if(a==="jv100"){ readAll(); JOBVISIT=1; render(); toast("バイトのたびに必ず来ます"); return; }
       if(a==="jvdef"){ readAll(); JOBVISIT=JOBVISIT_DEF; render(); return; }
       if(a==="jvnow"){
-        const sel=$("dJg").value;
+        /* ★ id は画面にひとつだけ。上の「バイト先で会うシーン」にも
+           id="dJg" があったので、ここは dJv2 にしてあります。
+           同じ id にすると、上の欄がそのまま読まれて
+           「ランダム（抽選）」が**一度も選べなく**なります。 */
+        const selEl=$("dJv2"); const sel=selEl?selEl.value:"";
         readAll();
         const gid=sel||pickVisitor();
         if(!gid||!G(gid)){ toast("来られる子がいません（好感度50以上の子が必要）"); return; }
@@ -5238,7 +6352,21 @@ function debugMenu(){
         if(g<0||g>LAST){ toast("その日は範囲外です"); return; } t=g; }
       else if(a==="w1") t=S.t+7;
       else if(a==="w4") t=S.t+28;
-      else if(a==="end") t=LAST-13;
+      else if(a==="lastw") t=LAST;          /* 卒業式のある週の月曜へ */
+      else if(a==="end"){
+        /* ★ 卒業式そのものを始めます。
+           日づけを飛ばすだけでは、まだ最後の週が残っていて
+           卒業式にたどりつきません（前は3年目2月12日に飛んでいました）。 */
+        S.t=LAST;
+        close();
+        flowAbort();                        /* いま動いている週の流れを止める */
+        S.busy=false;
+        $("planner").style.display="none"; $("sunHint").style.display="none";
+        closeMsg(); vnClose(true); AU.cur=null; redraw();
+        toast("卒業式へ");
+        ending();
+        return;
+      }
       t=clamp(t,0,LAST); t=t-(t%7);
       S.t=t;
       close();
@@ -5252,6 +6380,7 @@ function debugMenu(){
     modalShow(()=>{ M.style.display="flex"; render(); });
   });
 }
+/* DEBUG_END */
 
 /* =======================================================================
    16. セーブ／ロード
@@ -5373,6 +6502,26 @@ function artSet(el,html,key,hide){
   artStop(el);                 /* 待っていたものがあれば、取り消す */
   artSetNow(el,html,key,hide);
 }
+/* 立ち絵の「絵の形」（縦横の比）を、いま出している絵そのものからはかって
+   --charar に入れます。#vnChar は高さだけが決まっていて、横はばはこの比で決まります。
+
+   ★ ここを 400:627 に決めうちしていたころは、**1024×1536 の絵**
+     （AIの画像生成で作ると、ふつうこの形になります）を入れると、
+     絵の上下に余白がついた状態で枠に収まり、**下が浮いて途切れて見えました**。
+   ★ 絵を置いていないとき（SVGの仮の立ち絵）は、既定の 400/627 にもどします。
+   ★ 入れかえの途中は「幽霊」（ひとつ前の絵）も中にいるので、
+     :scope > .chara で**新しいほうの絵だけ**を見ます。 */
+const CHARAR_DEF="400/627";
+function charAR(){
+  const el=$("vnChar"), st=$("stage");
+  if(!el||!st)return;
+  const put=v=>st.style.setProperty("--charar", v);
+  const im=el.querySelector(":scope > .chara img");
+  if(!im){ put(CHARAR_DEF); return; }
+  const go=()=>{ if(im.naturalWidth>0&&im.naturalHeight>0)
+                   put(im.naturalWidth+"/"+im.naturalHeight); };
+  if(im.complete) go(); else im.addEventListener("load",go,{once:true});
+}
 function artSetNow(el,html,key,hide){
   const now=el.dataset.artk||"";
   key=key||"";
@@ -5383,8 +6532,9 @@ function artSetNow(el,html,key,hide){
   if(!key){                                  /* 消す */
     if(ms<=0||!had||unseen){
       fadeStop(el); el.innerHTML=""; ARTPEND.set(el,false);
+      if(el.id==="vnChar")charAR();
       if(hide)hide(); return; }
-    fadeOut(el,()=>{ el.innerHTML=""; if(hide)hide(); });
+    fadeOut(el,()=>{ el.innerHTML=""; if(el.id==="vnChar")charAR(); if(hide)hide(); });
     return;
   }
   if(unseen){
@@ -5393,15 +6543,16 @@ function artSetNow(el,html,key,hide){
     const g0=el.querySelector(".ghost");
     el.innerHTML=html;
     if(g0)el.appendChild(g0);
+    if(el.id==="vnChar")charAR();
     artSeen(el);
     return;
   }
   if(!had){                                  /* はじめて出す */
-    el.innerHTML=html; artSeen(el);
+    el.innerHTML=html; if(el.id==="vnChar")charAR(); artSeen(el);
     if(ms>0)fadeIn(el); else fadeStop(el);
     return;
   }
-  if(ms<=0){ fadeStop(el); el.innerHTML=html; return; }
+  if(ms<=0){ fadeStop(el); el.innerHTML=html; if(el.id==="vnChar")charAR(); return; }
   /* 入れかえ。古い中身を「幽霊」にして、新しい絵の上に重ねる。
      ★ 幽霊は position:absolute で重ねるだけなので、
        絵の見た目の指定（CSS）は、いままでどおり効きます。 */
@@ -5409,6 +6560,7 @@ function artSetNow(el,html,key,hide){
   const g=document.createElement("div");
   g.className="ghost"; g.innerHTML=el.innerHTML;
   el.innerHTML=html; el.appendChild(g);
+  if(el.id==="vnChar")charAR();
   artSeen(el);
   g.style.transition="opacity "+ms+"ms linear";
   raf2().then(()=>{ g.style.opacity="0"; });
@@ -5467,7 +6619,13 @@ function storeSet(o){
 }
 function snapshot(){
   return {v:2, ts:Date.now(), name:S.name, sei:S.sei, mei:S.mei, sex:(S.sex==="f"?"f":"m"), t:S.t, p:{...S.p}, stress:S.stress,
-    girls:S.girls.map(g=>({id:g.id,aff:g.aff,last:g.last})),
+    /* ★ 避難させてある子（いまこのゲームにいない子）も、いっしょに書きもどします。
+       こうしておくと、追加キャラを外して遊んだあとで入れなおしても、
+       好感度がそのまま残っています。 */
+    girls:S.girls.map(g=>({id:g.id,aff:g.aff,last:g.last}))
+                 .concat((S.lost||[])
+                   .filter(g=>g&&g.id&&!S.girls.some(x=>x.id===g.id))   /* 念のため重なりを外す */
+                   .map(g=>({id:g.id,aff:g.aff,last:g.last}))),
     club:S.club, job:S.job, blood:S.blood, bd:{...S.bd}, ev:{...S.ev}, evseen:{...(S.evseen||{})},
     valen:(S.valen||[]).slice(), lastPlan:(S.lastPlan||null), lastM:S.lastM,
     prof:{...(S.prof||{})}, trip:(S.trip?{...S.trip}:null), visit:{...(S.visit||{})},
@@ -5496,6 +6654,21 @@ function saneSave(d){
   o.res      = fix6(d.res);
   o.valen    = Array.isArray(d.valen)?d.valen.slice():[];
   o.lastPlan = Array.isArray(d.lastPlan)?d.lastPlan.slice():null;
+  /* 避難させてある子（いまこのゲームにいない子の好感度）。
+     形がちがえば、無かったことにします */
+  o.lost     = Array.isArray(d.lost)?d.lost.filter(isObj):[];
+  /* ★ 何日目か（t）は、きろく画面が日付を出すのに必ず使います。
+     マイナス・小数・文字が入っていると CAL[t] が無くなって画面ごと落ち、
+     **閉じるボタンも出ないので、その記録を消すこともできなくなります。**
+     ここで 0〜LAST の整数に必ず直しておきます。 */
+  o.t = clamp(Math.floor(Number(d.t))||0, 0, (typeof LAST==="number"?LAST:0));
+  /* 部活とバイト先も、知らない名前なら既定にもどす
+     （cmdOf() が中身をそのまま見るので、知らない名前だと予定表が出せなくなります） */
+  if(typeof CLUBS!=="undefined" && !CLUBS[o.club]) o.club="none";
+  if(typeof JOBS !=="undefined" && o.job && !JOBS[o.job]) o.job=null;
+  /* 予定に入っている知らないコマンドも、「みてい」にもどす */
+  if(typeof CMD!=="undefined")
+    o.plan=o.plan.map(k=>(k===null||k==="club"||k==="job"||CMD[k])?k:null);
   /* ここは「ものの入れもの」なので、object 以外なら無かったことにする */
   ["p","ev","bd","prof","visit","said","rec","trip","pre"].forEach(k=>{
     if(d[k]!==undefined && d[k]!==null && !isObj(d[k])) delete o[k];
@@ -5516,9 +6689,14 @@ function restore(d){
   d=migrateSave(d)||{};                /* 読めない形でも、初期値で始められるようにする */
   CEVN=0;                              /* 誕生日が変わると行事の行数も変わるので測りなおす */
   S.name=d.name||"桜坂 優";
-  S.sei=d.sei||S.name.split(" ")[0]||"桜坂"; S.mei=d.mei||S.name.split(" ")[1]||"優"; S.t=clamp(d.t|0,0,LAST); S.p={...S.p,...(d.p||{})};
+  S.sei=d.sei||S.name.split(" ")[0]||"桜坂"; S.mei=d.mei||S.name.split(" ")[1]||"優"; S.t=clamp(d.t|0,0,LAST);
+  S.bd=d.bd?{...d.bd}:{m:5,d:5};
+  /* ★ 能力は「いまの S.p」ではなく、**はじめの数字**に重ねます。
+     いまの S.p に重ねると、前に遊んでいたデータの数字が
+     （読みこんだ記録に書かれていない項目だけ）そのまま残ってしまいます。 */
+  S.p={...startStats(S.bd),...(d.p||{})};
   S.stress=d.stress||0; S.club=d.club||"none"; S.job=d.job||null; S.blood=d.blood||"A";
-  S.bd=d.bd?{...d.bd}:{m:5,d:5}; S.ev={...(d.ev||{})};
+  S.ev={...(d.ev||{})};
   S.evseen=(d.evseen&&typeof d.evseen==="object"&&!Array.isArray(d.evseen))?{...d.evseen}:{};
   S.prof={...(d.prof||{})}; S.trip=d.trip?{...d.trip}:null; S.visit={...(d.visit||{})};
   S.said={...(d.said||{})};
@@ -5534,10 +6712,20 @@ function restore(d){
   /* 主人公の性別。古いセーブには入っていないので、そのときは男性です */
   S.sex=(d.sex==="f")?"f":"m";
   linkCast();                /* その性別に合わせて、部活とバイトの相手役を決めなおす */
+  /* ★ いまこのゲームに「いない子」を、捨てずに避難させておきます。
+     追加キャラ（DLC）を外した記録や、いまと別のキャストで作られた記録を
+     読みこんだときに通ります。
+     避難させておかないと、そのまま上書きセーブした瞬間に
+     **その子の好感度が永久に消えます**（入れなおしても戻りません）。
+     S.lost は snapshot() でいっしょに書きもどすだけで、
+     ゲーム中はどこからも使いません。 */
+  S.lost=(d.girls||[]).filter(v=>v&&v.id&&!castAll().some(x=>x.id===v.id))
+                      .map(v=>({id:v.id, aff:v.aff, last:v.last}));
   S.girls=(d.girls||[]).map(v=>{const t=castAll().find(x=>x.id===v.id); if(!t)return null;
     return {...t, ideal:{...t.ideal}, aff:(v.aff!==undefined?v.aff:t.aff),
             last:(v.last!==undefined?v.last:0)};}).filter(Boolean);
   if(!S.girls.length)S.girls=castNow().map(g=>({...g,ideal:{...g.ideal}}));
+  logClear();                    /* 別の筋の文章がまざらないように、読みこんだら消します */
   /* 週の状態（plan/res/weekStart/dayIdx）は上で入れなおしているので、ここでは消さない。
      古いセーブには入っていないため、その場合は上の既定値（未定・すべて空）になる */
   S.busy=false; S.vnOn=false; S.sunResolve=null; S.lastToast=0;
@@ -5582,7 +6770,7 @@ function slotInfo(d){
   d=migrateSave(d);
   if(!d)return null;                    /* 読めない形のデータだった */
   const c=CAL[Math.min(d.t||0,LAST)];
-  const g=topGirl(d.girls||[]);
+  const g=topGirlHere(d.girls||[]);
   const gd=g&&ALLG.find(x=>x.id===g.id);
   /* 「友達」以上になっている子がいれば、その子の顔をカードに出す
      （どこから顔を出すかは assets/config.js の SAVE_FACE.min） */
@@ -5612,24 +6800,443 @@ function confirmBox(title,msg,okLabel,danger){
   });
 }
 
+/* メモに書ける長さ。ここを変えれば、入力欄も残り文字数も追いつきます */
+const MEMOMAX=100;
 function promptBox(title,msg,value,okLabel){
   return new Promise(res=>{
     const el=document.createElement("div"); el.className="confirm";
     el.innerHTML=`<div class="cbox"><div class="ct">${title}</div><div class="cm">${msg}</div>
-      <input type="text" class="memoin" maxlength="30" placeholder="メモ（30文字まで・空でもOK）">
+      <textarea class="memoin" rows="3" maxlength="${MEMOMAX}" placeholder="メモ（${MEMOMAX}文字まで・空でもOK）"></textarea>
+      <div class="memoct"><span></span>/${MEMOMAX}</div>
       <div class="cb"><button class="btn pk">${okLabel||"きめる"}</button><button class="btn gy">やめる</button></div></div>`;
     $("stage").appendChild(el);
-    const inp=el.querySelector("input"); inp.value=value||"";
+    const inp=el.querySelector(".memoin"); inp.value=(value||"").slice(0,MEMOMAX);
+    const ct=el.querySelector(".memoct span");
+    const count=()=>{
+      if(inp.value.length>MEMOMAX)inp.value=inp.value.slice(0,MEMOMAX);  /* はりつけ対策 */
+      ct.textContent=inp.value.length;};
+    count(); inp.oninput=count;
     setTimeout(()=>{try{inp.focus();inp.select();}catch(e){}},60);
     const b=el.querySelectorAll("button");
-    const ok=()=>{const v=inp.value.trim();el.remove();se("ok");res(v);};
+    const ok=()=>{const v=inp.value.trim().slice(0,MEMOMAX);el.remove();se("ok");res(v);};
     b[0].onclick=ok;
     b[1].onclick=()=>{el.remove();se("cancel");res(null);};
-    inp.onkeydown=e=>{e.stopPropagation();if(e.key==="Enter")ok();};
+    /* ★ 改行で決定します（Shift＋Enter は、そのまま改行）。
+       長いメモを書けるようにしたので、入力中のキーはゲームに渡しません。 */
+    inp.onkeydown=e=>{e.stopPropagation();
+      if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ok();}};
   });
 }
 
-function saveMenu(fromTitle){
+/* =======================================================================
+   17.4 セーブ／ロード／データ管理（タイルの画面）
+
+   ★ 素材が無くても動きます。assets/ui/ に絵を置いた部品から、
+     順番に本物の見た目に切りかわります（置いていないところは仮の絵）。
+   ★ 配置の数字は assets/config.js の DATA_UI にまとめてあります。
+   ======================================================================= */
+const DUI=(typeof DATA_UI!=="undefined")?DATA_UI:{};
+const duiOn  =()=>DUI.on!==false;
+const duiArt =n=>uiArt("ui_data_"+n);
+/* タイルの枠は A / B の2種類。その見た目ぶんが無ければ、名前なしのほうを使います */
+function duiSlot(kind){
+  const s=(DUI.skin==="B")?"B":"A";
+  return duiArt("slot_"+kind+"_"+s) || duiArt("slot_"+kind) || null;
+}
+/* タイルの大きな絵（assets/chara/<id>/slot/<間柄>.png）。
+   その間柄が無ければ、ひとつ下の間柄 → さらに下、と探します。 */
+function slotBigArt(gid,tier){
+  const a=artOf(gid), set=a&&a.slot;
+  if(!set||!set.length)return null;
+  const order=(typeof SAVEFACE!=="undefined"&&SAVEFACE.tiers)||["friend","crush","love"];
+  let i=order.indexOf(tier); if(i<0)i=order.length-1;
+  for(;i>=0;i--){ const f=artName(set,order[i]); if(f)return artURL("chara/"+gid+"/slot/"+f); }
+  const n=artName(set,"normal");
+  return n?artURL("chara/"+gid+"/slot/"+n):null;
+}
+/* タイルのサムネの中身。大きな絵 → 無ければ背景の絵で代用します */
+function slotThumbHTML(d,gd,tier){
+  const big=gd?slotBigArt(gd.id,tier):null;
+  if(big)return `<img class="dtbig" src="${big}" alt="">`;
+  const k=(CLUBS[d&&d.club]||CLUBS.none).bg||"school";
+  return `<div class="dtbig ph">${bgHTML(k)}</div>`;
+}
+
+/* ---- 置いてある素材を、CSS の変数にまとめます ----------------------------
+   ★ 絵が無いところは変数を出しません。そのとき style.css の「仮の絵」が出ます。 */
+function duiVars(){
+  /* ★ style="..." の中に入れるので、URL は**シングルクォート**で囲みます。
+     ダブルクォートだと、そこで style 属性が終わってしまい、
+     以降の指定がぜんぶ消えます（実際にそうなりました）。 */
+  const u=(v,n)=>v?`--${n}:url('${v}');`:"";
+  const F=duiSlot("border_normal"), FO=duiSlot("focus_overlay"), SE=duiSlot("selected_overlay");
+  return u(F,"dtframe")+u(FO,"dtfocus")+u(SE,"dtsel")
+       + u(duiArt("slot_thumbnail_mask"),"dtmask")
+       + u(duiArt("slot_avatar_border"),"dtavb")
+       + u(duiArt("slot_avatar_mask"),"dtavm")
+       + u(duiArt("slot_empty"),"dtempty")
+       + u(duiArt("tab_base_normal"),"dttab")+u(duiArt("tab_base_on"),"dttabon")
+       + u(duiArt("side_panel"),"dtside")+u(duiArt("detail_panel"),"dtdetp")
+       + u(duiArt("pager_prev"),"dtpgp")+u(duiArt("pager_next"),"dtpgn")
+       + u(duiArt("close_normal"),"dtcx")+u(duiArt("close_hover"),"dtcxh")
+       + u(duiArt("slot_note_base"),"dtnote")
+       + u(duiArt("icon_note"),"dtinote")
+       + u(duiArt("more_base_normal"),"dtmore")
+       + u(duiArt("more_focus_overlay"),"dtmoreh")
+       + u(duiArt("icon_more"),"dtimore")
+       + u(duiArt("slot_auto_badge_base"),"dtauto")
+       + u(duiArt("icon_save"),"dtisave")+u(duiArt("icon_load"),"dtiload")+u(duiArt("icon_data"),"dtidata")
+       + u(duiArt("bg"),"dtbg");
+}
+/* ---- タイルの大きさを、画面に合わせます --------------------------------
+   ★ タイルは「よこ幅から高さが決まる」形なので、そのままだと
+     背の低い画面でいちばん下の段が切れます。
+     そこで、**高さからも大きさを出して、小さいほうを使います**。 */
+function dtFit(){
+  const g=$("modBody").querySelector(".dtgrid"); if(!g)return;
+  g.style.maxWidth="";                                  /* いったん元にもどして測ります */
+  const st=getComputedStyle(g);
+  const cols=parseFloat(st.getPropertyValue("--dtc"))||3;
+  const rows=parseFloat(g.dataset.rows)||3;
+  const gap =parseFloat(st.rowGap||st.gap)||9;
+  const ar  =parseFloat(st.getPropertyValue("--dtar"))||(632/292);
+  const H=g.clientHeight, W=g.clientWidth;
+  if(H<20||W<20)return;
+  const byH=((H-(rows-1)*gap)/rows)*ar;
+  const byW=(W-(cols-1)*gap)/cols;
+  const tw=Math.max(60,Math.min(byH,byW));
+  g.style.maxWidth=Math.floor(cols*tw+(cols-1)*gap)+"px";
+}
+
+/* 絵を置いたところは、仮の文字（🖊 や …）を消します */
+const duiIm=n=>duiArt(n)?" im":"";
+
+/* 詳細に出す中身。slotInfo に足りないぶんを、ここで作ります */
+function slotDetail(d){
+  if(!d)return null;
+  d=migrateSave(d); if(!d)return null;
+  const c=CAL[Math.min(d.t||0,LAST)];
+  const z=zodiacOf((d.bd&&d.bd.m)||5,(d.bd&&d.bd.d)||5);
+  const gs=(d.girls||[]).map(g=>({g,gd:castAll().find(x=>x.id===g.id)}))
+            .filter(x=>x.gd).sort((a,b)=>(b.g.aff||0)-(a.g.aff||0));
+  return {
+    name:d.name||"？",
+    sex:(d.sex==="f"?"女性":"男性"),
+    date:`${c.y}年目 ${c.m}月${c.d}日（${DOW[(d.t||0)%7]}）`,
+    club:(CLUBS[d.club]||CLUBS.none).n,
+    job :d.job?(JOBS[d.job]||{n:"？"}).n:"まだ決めていない",
+    blood:(d.blood||"A")+"型",
+    bd  :`${(d.bd&&d.bd.m)||"?"}月${(d.bd&&d.bd.d)||"?"}日`,
+    zod :`${z.g||"✦"} ${z.n}`,
+    stress:Math.round(d.stress||0),
+    p   :d.p||{},
+    memo:d.memo||"",
+    girls:gs.slice(0,6)
+  };
+}
+
+/* ---- 画面ぜんたい ------------------------------------------------------
+   fromTitle … タイトルから開いたとき（セーブは押せません）
+   tab0      … 最初に開くタブ（"save" / "load" / "data"）        */
+function dataMenu(fromTitle,tab0){
+  return new Promise(resolve=>{
+    const M=$("modal");
+    modalFull(true,"data");
+    if(S.page===undefined)S.page=0;
+    let tab = tab0 || (fromTitle?"load":"save");
+    /* ★ 右の「くわしく」は、**いつも出しっぱなし**です。
+         curId … いま右に出しているスロット
+                 （PC＝カーソルを合わせた先／スマホ＝1回めのタップ）
+         pinId … 「…」で留めたスロット。留めているあいだ、カーソルでは変わりません。
+       ★ カーソルが使える機械かどうかは canHover() で見ます。
+         ここを消すと、スマホで「タップしたら即セーブ」に戻ってしまいます。 */
+    let curId = null, pinId = null;
+    const canHover = ()=>matchMedia("(hover:hover)").matches;
+    const showId   = ()=>pinId||curId;
+    let off=()=>{};                          /* 窓を閉じるときの後始末（下で入れます） */
+
+    /* ★ 画面の大きさで、並べる数を決めます。
+       せまい画面で数を減らさないと、いちばん下の段が切れて見えます。
+         ・よこが 740px より せまい … 2列
+         ・たてが 378px より 低い  … 2段（body.sh のとき）
+       ★ よこが 620px より せまいときは、右の「くわしく」を並べる場所が無いので、
+         タップしたときだけ画面いっぱいに出します（narrow）。 */
+    const B=document.body.classList;
+    const stW=$("stage").clientWidth;
+    const narrow=stW<620;
+    const cols=Math.min(Math.max(2,DUI.cols||3), (stW<740)?2:9);
+    const rows=B.contains("sh") ? 2 : Math.max(2,DUI.rows||3);
+    const useAuto = DUI.auto!==false;
+    const per = cols*rows - (useAuto?1:0);   /* 1ページに出すスロットの数 */
+    const pages=Math.max(1,Math.ceil(SLOTS/per));
+    /* ★ 1ページに入る数は、画面の大きさで変わります（せまいと少なくなる）。
+       前に開いたときのページ番号がそのまま残っていると、
+       いまの画面には無いページを指してしまい、**スロットが1つも出なくなります。**
+       開くたびに、いまのページ数の中へ入れなおします。 */
+    S.page=clamp(Math.floor(Number(S.page))||0, 0, pages-1);
+
+    const close=async v=>{
+      off();
+      if(typeof v==="string" && v.indexOf("load:")===0){ resolve(v); return; }
+      await fadeOut(M,()=>{ M.style.display="none"; modalFull(false); M.style.width="640px"; });
+      resolve(v);
+    };
+
+    const TABN={save:{n:"セーブ",e:"SAVE",  s:"この時間を、とっておく"},
+                load:{n:"ロード",e:"LOAD",  s:"つづきから、あの時間をもう一度"},
+                data:{n:"データ管理",e:"DATA",s:"きろくを整理する"}};
+
+    /* ---- タイル1枚 ---- */
+    const tile=(k,label,isAuto)=>{
+      const d=storeGet()[k], i=slotInfo(d);
+      if(!i){
+        /* ★ 「中身はあるのに読めない」データも、ここで消せるようにします。
+           （手で書きかえたファイルを読みこんだときなど。消せないと詰みます） */
+        if(d)return `<div class="dtile empty broken" data-k="${k}">
+            <div class="dtno">${label}</div>
+            <div class="dtnone"><b>⚠</b>読めないデータ<span>BROKEN</span></div>
+            <button class="btn gy sm dtdel" data-dt="del:${k}">消す</button></div>`;
+        return `<div class="dtile empty${duiArt("slot_empty")?" im":""}" data-dt="pick:${k}" data-k="${k}">
+          <div class="dtno">${label}</div>
+          <div class="dtnone"><b>✦</b>データなし<span>No Data</span></div>
+          <div class="dtadd"><b>＋</b>ここに きろくする</div></div>`;
+      }
+      const dd=migrateSave(d);
+      const g=topGirlHere((dd&&dd.girls)||[]);   /* いまいない子は飛ばす */
+      const gd=g&&castAll().find(x=>x.id===g.id);
+      const tier=g?affTier(g):"friend";
+      const show=gd&&affAtLeast(g,(typeof SAVEFACE!=="undefined"&&SAVEFACE.min)||"friend");
+      return `<div class="dtile${isAuto?" auto":""}${showId()===k?" on":""}" data-dt="pick:${k}" data-k="${k}">
+        <div class="dtthumb">${slotThumbHTML(dd,show?gd:null,tier)}</div>
+        ${show?`<div class="dtface${duiArt("slot_avatar_border")?" bd":""}${duiArt("slot_avatar_mask")?" mk":""}">${saveFaceHTML(gd,tier)}</div>`:""}
+        <div class="dtno">${label}</div>
+        <div class="dtwhen">${i.when}</div>
+        <div class="dtinfo"><b>${i.date}</b><span>${i.club}</span></div>
+        <div class="dtname">${i.name}</div>
+        ${i.memo?`<div class="dtmemo"><i class="${duiIm("icon_note").trim()}"></i><span>${esc1(i.memo)}</span></div>`:""}
+        <button class="dtmore${duiIm("more_base_normal")}" data-dt="more:${k}" title="このスロットを右に留める"><i class="${duiIm("icon_more").trim()}"></i></button>
+        ${isAuto?`<div class="dtauto"><span>オートセーブ</span></div>`:""}
+      </div>`;
+    };
+
+    /* ---- 右の詳細（いつも出しっぱなし） ----------------------------------
+       ★ 中身だけを作ります。入れもの（.dtdet）は render が置いて、
+         paint() がここの中身だけを差しかえます。
+         （カーソルを動かすたびに画面ごと作りなおすと、
+           カーソルの下のタイルが入れかわってちらつきます） */
+    const canSaveNow=()=>!fromTitle&&canSave();
+    const detailHTML=()=>{
+      const k=showId();
+      /* 頭の帯。せまい画面（narrow）では「×」、
+         広い画面では「留める」のボタンを出します。 */
+      const head=(t)=>`<div class="dtdh"><b>${t}</b>${
+        !k?"":(narrow
+          ? `<button class="dtdx" data-dt="unpin">×</button>`
+          : `<button class="dtdx pin${pinId===k?" on":""}" data-dt="more:${k}"
+               title="${pinId===k?"留めるのをやめる":"このスロットに留める"}">✦</button>`)}</div>`;
+      /* ★ ボタンは **.dtdb の外**に出します。中に入れると、
+         出会った子の人数やメモの長さで**上下に動いて**しまいます。
+         外に出しておけば、いつも帯のいちばん下の同じ場所です。 */
+      if(!k)return head("くわしく")+`<div class="dtdb"><div class="dthint">${
+        canHover()?"スロットにカーソルを合わせると、<br>ここに中身が出ます。"
+                   :"スロットをタップすると、<br>ここに中身が出ます。"}</div></div>`
+        +`<div class="dtdbtn empty"></div>`;
+      const raw=storeGet()[k], dt=slotDetail(raw);
+      if(!dt)return head(slotLabel(k))+`<div class="dtdb"><div class="dthint">${
+        raw?`<span class="warn">読めないデータです。</span>`
+           :"まだ何も きろくしていません。"}</div></div>`
+        +((tab==="save"&&canSaveNow()&&!raw&&k!=="a")
+          ? `<div class="dtdbtn"><button class="btn pk sm" data-dt="save:${k}">ここに きろくする</button></div>`
+          : (raw?`<div class="dtdbtn"><button class="btn gy sm" data-dt="del:${k}">消す</button></div>`
+                :`<div class="dtdbtn empty"></div>`));
+      const bar=(x)=>{const v=Math.round(dt.p[x]||0);
+        return `<div class="dtp"><span>${P[x]}</span>
+          <i><b style="width:${clamp(v/999*100,0,100)}%"></b></i><em>${v}</em></div>`;};
+      return head(slotLabel(k))+`<div class="dtdb">
+          <div class="dtdname">${dt.name}<span>${dt.sex}主人公</span></div>
+          <div class="dtdrow"><span>日づけ</span><b>${dt.date}</b></div>
+          <div class="dtdrow"><span>部活</span><b>${dt.club}</b></div>
+          <div class="dtdrow"><span>バイト</span><b>${dt.job}</b></div>
+          <div class="dtdrow"><span>誕生日</span><b>${dt.bd}　${dt.zod}</b></div>
+          <div class="dtdrow"><span>血液型</span><b>${dt.blood}</b></div>
+          <div class="dtdsec">ステータス</div>
+          ${Object.keys(P).map(bar).join("")}
+          <div class="dtdrow"><span>ストレス</span><b>${dt.stress}</b></div>
+          ${dt.girls.length?`<div class="dtdsec">好感度</div>
+            ${dt.girls.map(x=>`<div class="dtdrow aff"><span>${x.gd.name}</span>
+               <b><i class="dtdhs">${hearts(x.g.aff)}　</i>${affTierName(x.g)}</b></div>`).join("")}`:""}
+          <div class="dtdsec">メモ</div>
+          <div class="dtdmemo">${dt.memo?esc1(dt.memo):"（なし）"}</div>
+        </div>
+        <div class="dtdbtn">
+          ${(tab==="save"&&canSaveNow()&&k!=="a")
+            ? `<button class="btn pk sm" data-dt="save:${k}">上書き</button>`
+            : `<button class="btn pk sm" data-dt="load:${k}">よみこむ</button>`}
+          <button class="btn gy sm" data-dt="memo:${k}">メモ</button>
+          <button class="btn gy sm" data-dt="del:${k}">消す</button>
+        </div>`;
+    };
+    /* 右の帯だけを塗りなおします（タイルはそのまま） */
+    const paint=()=>{
+      const el=M.querySelector(".dtdet"); if(!el)return;
+      const k=showId();
+      el.className="dtdet open"+(duiArt("detail_panel")?" im":"")+((narrow&&k)?" show":"");
+      el.innerHTML=detailHTML();
+      el.querySelectorAll("[data-dt]").forEach(b=>b.onclick=e=>{e.stopPropagation();handle(b.dataset.dt);});
+      M.querySelectorAll(".dtile").forEach(t=>t.classList.toggle("on", !!k && t.dataset.k===k));
+    };
+
+    const render=()=>{
+      const T=TABN[tab], from=S.page*per+1;
+      /* ★ 開いたとき、右が空っぽだとさみしいので、
+         このページの「中身のあるいちばん最初のスロット」を出しておきます。
+         （せまい画面＝narrow では、勝手に画面を覆ってしまうのでしません） */
+      if(!narrow && !curId){
+        const d0=storeGet();
+        const ks=(useAuto?["a"]:[]).concat([...Array(per)].map((_,x)=>String(from+x)));
+        curId=ks.find(x=>x==="a"||+x<=SLOTS ? slotInfo(d0[x]) : false)||null;
+      }
+      let tiles = useAuto ? tile("a","オートセーブ",true) : "";
+      for(let n=from;n<from+per && n<=SLOTS;n++) tiles+=tile(String(n),"スロット "+n,false);
+      const logo=uiArt(UIRULE.logo||"logo");
+      $("modTtl").textContent=T.n;
+      $("modBody").innerHTML=`<div class="dt${duiArt("bg")?" bg":""}${(fromTitle||!canSave())?" nosave":""}${narrow?" narrow":""}" data-tab="${tab}" style="--dtc:${cols};--dtar:${DUI.tileAR||(632/292)};--dttar:${DUI.thumbAR||(324/160)};--dtz:${DUI.zoom||1.12};${duiVars()}">
+        <div class="dtside${duiArt("side_panel")?" im":""}">
+          <div class="dtlogo">${logo?`<img src="${logo}" alt="">`:`<b>PRISM</b><s>STARDOM</s>`}</div>
+          <div class="dttabs">
+            ${["save","load","data"].map(k=>`
+              <div class="dttab${duiArt("tab_base_normal")?" im":""}${k===tab?" on":""}${(k==="save"&&(fromTitle||!canSave()))?" off":""}" data-dt="tab:${k}">
+                <i class="ic ${k}"></i><b>${TABN[k].n}</b><s>${TABN[k].e}</s></div>`).join("")}
+          </div>
+          ${tab==="data"?`<div class="dtsub">
+             <button class="btn gy sm" data-dt="export">ファイルに書き出す</button>
+             <button class="btn gy sm" data-dt="import">ファイルから読み込む</button></div>`:""}
+          <div class="dtcopy">あのときの、わたしに、<br>また会いにいこう。</div>
+        </div>
+        <div class="dtmain">
+          <div class="dthead">${duiArt("title_"+tab)
+            ? `<h2 class="im"><img src="${duiArt("title_"+tab)}" alt="${T.n}"></h2>`
+            : `<h2>✦ ${T.n}</h2>`}<span>── ${T.s} ──</span></div>
+          <div class="dtbar">
+            <button class="dtpg p${duiIm("pager_prev")}" data-dt="pg:-1">◀</button>
+            <select id="dtSel">${[...Array(pages)].map((_,x)=>
+              `<option value="${x}" ${x===S.page?"selected":""}>${x*per+1} 〜 ${Math.min(x*per+per,SLOTS)}</option>`).join("")}</select>
+            <button class="dtpg n${duiIm("pager_next")}" data-dt="pg:1">▶</button>
+            <em>スロットは1〜${SLOTS}まであります</em>
+            ${STORE_OK?"":`<em class="warn">⚠ このブラウザでは保存できません。ファイルに書き出してください</em>`}
+            ${(!fromTitle&&!canSave()&&tab==="save")?`<em class="warn">※ セーブは月曜の予定画面か、日曜の画面でだけできます</em>`:""}
+          </div>
+          <div class="dtgrid" data-rows="${rows}">${tiles}</div>
+        </div>
+        <div class="dtdet"></div>
+        <button class="dtx${duiIm("close_normal")}" data-dt="close" title="閉じる">✕</button>
+      </div>`;
+      $("modBtns").innerHTML="";
+      M.querySelectorAll("[data-dt]").forEach(b=>b.onclick=e=>{e.stopPropagation();handle(b.dataset.dt);});
+      /* ★ PC（カーソルのある機械）だけ、合わせたタイルの中身を右に出します。
+         留めている（pinId）あいだは変わりません。 */
+      if(canHover())M.querySelectorAll(".dtile").forEach(el=>{
+        const k=el.dataset.k; if(!k)return;
+        el.onmouseenter=()=>{ if(pinId||curId===k)return; curId=k; paint(); };
+      });
+      const sel=$("dtSel"); if(sel)sel.onchange=()=>{S.page=+sel.value;curId=null;pinId=null;render();};
+      paint();
+      dtFit();
+    };
+    /* 画面の大きさが変わっても、切れないように合わせなおします */
+    const onres=()=>{ if(getComputedStyle(M).display!=="none")dtFit(); };
+    addEventListener("resize",onres);
+    off=()=>removeEventListener("resize",onres);
+
+    const handle=async a=>{
+      const [cmd,k]=a.split(":");
+      const d=storeGet();
+      if(cmd==="close"){ se("cancel"); close(null); return; }
+      if(cmd==="tab"){ se("click"); tab=k; curId=null; pinId=null; render(); return; }
+      if(cmd==="pg"){ se("click"); S.page=(S.page+ +k+pages)%pages; curId=null; pinId=null; render(); return; }
+      /* 「✦」（もとの「…」）は、そのスロットに右の帯を留めるボタンです */
+      if(cmd==="more"){ se("click"); curId=k; pinId=(pinId===k)?null:k; paint(); return; }
+      if(cmd==="unpin"){ se("cancel"); curId=null; pinId=null; paint(); return; }
+      if(cmd==="pick"){
+        /* ★ カーソルの無い機械（スマホ）では、
+             **1回めのタップで右に中身を出し**、2回めで実行します。
+             （中身を見ずに上書きしてしまう事故を防ぐためです）
+             からのスロットは見る中身が無いので、そのまま進みます。 */
+        if(!canHover() && showId()!==k && slotInfo(d[k])){
+          se("click"); curId=k; pinId=null; paint(); return; }
+        if(canHover()){ curId=k; }
+        if(tab==="save"){ if(k==="a")return; return handle("save:"+k); }
+        if(tab==="load"){ return slotInfo(d[k])?handle("load:"+k):void 0; }
+        return slotInfo(d[k])?handle("more:"+k):void 0;
+      }
+      if(cmd==="save"){
+        if(fromTitle||!canSave()){ toast("いまはセーブできません"); return; }
+        const i=slotInfo(d[k]);
+        const memo=await promptBox("セーブしますか？",
+          i?`<b>${slotLabel(k)}</b> には既にデータがあります。<br>${i.date}　${i.name}<br><span style="color:#c2306a">上書きされます。</span>`
+           :`<b>${slotLabel(k)}</b> に、いまの状態をきろくします。`,
+          (d[k]&&d[k].memo)||"", i?"上書きする":"きろくする");
+        if(memo===null)return;
+        d[k]=snapshot(); d[k].memo=memo;
+        const done=storeSet(d); render(); toast(done?"きろくしました":"一時的に保存しました");
+      }
+      else if(cmd==="memo"){
+        const i=slotInfo(d[k]); if(!i)return;
+        const memo=await promptBox("メモを書きかえる",`<b>${slotLabel(k)}</b><br>${i.date}　${i.name}`,
+          d[k].memo||"", "きめる");
+        if(memo===null)return;
+        d[k].memo=memo; storeSet(d); render(); toast("メモを変えました");
+      }
+      else if(cmd==="del"){
+        if(!d[k])return;
+        const i=slotInfo(d[k]);
+        const ok=await confirmBox("消しますか？",
+          `<b>${slotLabel(k)}</b>`+(i?`<br>${i.date}　${i.name}`:"<br><span style='color:#c2306a'>読めないデータ</span>")
+          +"<br><br>この記録を消します。もとに戻せません。","消す",true);
+        if(!ok)return;
+        delete d[k]; storeSet(d); curId=null; pinId=null; render(); toast("消しました");
+      }
+      else if(cmd==="load"){
+        const i=slotInfo(d[k]); if(!i)return;
+        const ok=await confirmBox("よみこみますか？",
+          `<b>${slotLabel(k)}</b><br>${i.date}　${i.name}<br>${i.top}`+
+          (fromTitle?"":"<br><br><span style='color:#c2306a'>いま遊んでいる内容は失われます。</span>"),"よみこむ");
+        if(!ok)return;
+        close("load:"+k);
+      }
+      else if(cmd==="export"){
+        const blob=new Blob([JSON.stringify(storeGet(),null,1)],{type:"application/json"});
+        const a2=document.createElement("a");
+        a2.href=URL.createObjectURL(blob); a2.download="starmate_save.json"; a2.click();
+        setTimeout(()=>URL.revokeObjectURL(a2.href),4000);
+        toast("ファイルを書き出しました");
+      }
+      else if(cmd==="import"){
+        const inp=document.createElement("input"); inp.type="file"; inp.accept=".json,application/json";
+        inp.onchange=()=>{ const f=inp.files[0]; if(!f)return;
+          const r=new FileReader();
+          r.onload=async()=>{ try{ const o=JSON.parse(r.result);
+              /* null と配列は typeof が "object" になってしまうので、はじく
+                 （配列だと 0,1,2… がスロット名になり、1件目が消えて残りがずれます） */
+              if(!o || typeof o!=="object" || Array.isArray(o))throw 0;
+              const n=Object.keys(o).length;
+              const ok=await confirmBox("よみこみますか？",`ファイルから <b>${n}件</b> の記録を読み込み、同じ番号のスロットに上書きします。`,"読み込む");
+              if(!ok)return;
+              storeSet(Object.assign(storeGet(),o)); curId=null; pinId=null; render(); toast("読み込みました");
+            }catch(e){ toast("ファイルを読めませんでした"); } };
+          r.readAsText(f); };
+        inp.click();
+      }
+    };
+    modalShow(()=>{ M.style.display="flex"; render(); });
+  });
+}
+/* 文字をそのまま出すための、ごく小さなお守り（メモはプレイヤーが書くため） */
+function esc1(t){ return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function saveMenu(fromTitle,tab){
+  /* ★ 新しいタイルの画面。DATA_UI.on を false にすると、下の古い画面になります */
+  if(duiOn())return dataMenu(fromTitle,tab);
   return new Promise(resolve=>{
     const M=$("modal"); M.style.width="760px"; modalFull(true);
     if(S.page===undefined)S.page=0;
@@ -5664,7 +7271,11 @@ function saveMenu(fromTitle){
         </div></div>`;
     };
     const render=()=>{
-      const per=10, pages=SLOTS/per, from=S.page*per+1;
+      const per=10, pages=Math.max(1,Math.ceil(SLOTS/per));
+      /* こちらは1ページ10個で固定ですが、きろく画面とページ番号を
+         いっしょに使っているので、ここでも念のため入れなおします */
+      S.page=clamp(Math.floor(Number(S.page))||0, 0, pages-1);
+      const from=S.page*per+1;
       let rows=row("a","オートセーブ");
       for(let n=from;n<from+per;n++) rows+=row(String(n),"スロット "+n);
       $("modTtl").textContent="きろく";
@@ -5735,7 +7346,9 @@ function saveMenu(fromTitle){
         inp.onchange=()=>{ const f=inp.files[0]; if(!f)return;
           const r=new FileReader();
           r.onload=async()=>{ try{ const o=JSON.parse(r.result);
-              if(typeof o!=="object")throw 0;
+              /* null と配列は typeof が "object" になってしまうので、はじく
+                 （配列だと 0,1,2… がスロット名になり、1件目が消えて残りがずれます） */
+              if(!o || typeof o!=="object" || Array.isArray(o))throw 0;
               const n=Object.keys(o).length;
               const ok=await confirmBox("よみこみますか？",`ファイルから <b>${n}件</b> の記録を読み込み、同じ番号のスロットに上書きします。`,"読み込む");
               if(!ok)return;
@@ -5751,8 +7364,8 @@ function saveMenu(fromTitle){
   });
 }
 
-async function openSaveMenu(fromTitle){
-  const r=await saveMenu(fromTitle);
+async function openSaveMenu(fromTitle,tab){
+  const r=await saveMenu(fromTitle,tab);
   if(r&&r.startsWith("load:")){
     const d=storeGet()[r.split(":")[1]];
     if(!d)return;
@@ -5825,6 +7438,10 @@ function galList(){
   });
   Object.keys(JOBMEET).forEach(g=>{ if(!use(g))return;
     out.push({k:`job:${g}`,cat:"バイト",gid:g,t:"バイト先での再会"});});
+  /* アフターストーリー（結ばれて卒業したあと） */
+  if(typeof AFTERSTORY!=="undefined")Object.keys(AFTERSTORY).forEach(g=>{ if(!use(g))return;
+    out.push({k:`after:${g}`,cat:"アフター",gid:g,
+      t:(AFTERSTORY[g].when||"卒業したあと")});});
   return out;
 }
 function sceneDef(k){
@@ -5838,12 +7455,29 @@ function sceneDef(k){
     const ck=clubOfMate(a[1]);
     return {title:(CLUBS[ck]||{}).n+(a[0]==="club"?"に入部":"で出会う"),gid:a[1],
             bg:(CLUBS[ck]||{}).bg||"klass",ex:src.ex,body:src.b,opts:src.o};}
-  if(a[0]==="job"){const e=JOBMEET[a[1]]; if(!e)return null;
-    const j=JOBS[GAL.sc["job:"+a[1]]]||JOBS.conv;
-    return {title:j.n+"での再会",gid:a[1],bg:j.bg,ex:e.ex,body:e.b,opts:e.o};}
+  if(a[0]==="job"){
+    /* 覚えかたは「バイト先/好感度」。前の形（バイト先だけ）でも読めます */
+    const v=String(GAL.sc["job:"+a[1]]||"conv").split("/");
+    return jobSceneDef(a[1], JOBS[v[0]]?v[0]:"conv", v[1]||"normal");}
+  /* ★ アフターストーリーは、スチルまで出す長い場面なので、
+     ここでは形を作らず「afterPlay で再生する」という札だけ返します */
+  if(a[0]==="after"){
+    const A=(typeof AFTERSTORY!=="undefined")?AFTERSTORY[a[1]]:null;
+    if(!A)return null;
+    return {after:true, gid:a[1], title:A.when||"卒業したあと", bg:A.bg||"town"};}
   return null;
 }
 async function replayScene(def){
+  /* アフターストーリーだけは、専用の再生に渡します（スチルまで出すため） */
+  if(def&&def.after){
+    const g=castAll().find(x=>x.id===def.gid); if(!g)return;
+    const tEl=$("title"), tKeep=tEl.style.display;
+    const sEl=$("setup"), sKeep=sEl.style.display;
+    tEl.style.display="none"; sEl.style.display="none";
+    try{ await afterPlay(g,true); }
+    finally{ tEl.style.display=tKeep; sEl.style.display=sKeep; }
+    return;
+  }
   const g=ALLG.find(x=>x.id===def.gid);
   /* 回想のあいだは、{彼}／{くん} をこの子に合わせます（上の SEXWHO） */
   SEXWHO=def.gid||null;
@@ -5867,6 +7501,40 @@ async function replayScene(def){
   } finally { SEXWHO=null; tEl.style.display=tKeep; sEl.style.display=sKeep; }
 }
 
+/* =======================================================================
+   おまけの「🏅 称号」画面
+
+   ★ 分類ごとに1行。その中で、称号が「鎖」のようにつながって出ます。
+   ★ **称号はこれからも増えます。**ですから、
+     ・分類の数も、1つの分類に入る称号の数も、決めうちにしていません
+     ・`assets/config.js` の `TT_CAT` に無い分類が来ても、
+       ✦ と日本語だけで**ふつうに出ます**（こわれません）
+   ★ 絵は1枚も無くても動きます。置いたぶんだけ差しかわります。
+       assets/ui/ui_tt_cat_<分類のk>.png   左まるの分類アイコン
+       assets/ui/ui_tt_medal_1〜4.png      称号のメダル（格ごとに4段）
+       assets/ui/ui_tt_lock.png            まだ取っていないもの
+       assets/ui/ui_tt_now.png             いまの校内評価の下じき
+     一覧は assets/README.md の「3.9」。
+   ======================================================================= */
+const TTCAT=(typeof TT_CAT!=="undefined")?TT_CAT:{};
+const TTUI =(typeof TT_UI !=="undefined")?TT_UI :{};
+const TTCATDEF={k:"other", e:"", i:"✦"};
+function ttCatOf(c){ return TTCAT[c]||TTCATDEF; }
+/* 格（w）から、メダルの段を4つに分けます。称号が増えても、ここは変わりません */
+function ttRank(w){ const v=+w||0; return v>=100?4:v>=70?3:v>=40?2:1; }
+/* 分類アイコン。絵が無ければ、TT_CAT に書いた絵文字を出します */
+function ttCatHTML(c){
+  const C=ttCatOf(c), a=uiArt("ui_tt_cat_"+C.k);
+  return a?`<img src="${a}" alt="">`:`<span>${C.i||"✦"}</span>`;
+}
+/* 称号ひとつぶんのメダル。取っていなければ鍵 */
+function ttMedalHTML(t,got){
+  if(!got){ const l=uiArt("ui_tt_lock");
+    return l?`<img src="${l}" alt="">`:`<b>🔒</b>`; }
+  const r=ttRank(t.w), a=uiArt("ui_tt_medal_"+r);
+  return a?`<img src="${a}" alt="">`:`<b>★</b>`;
+}
+
 /* 称号の一覧で、下の帯に出す説明 */
 let TTHOVER=null;
 /* 称号の名前。{主プリンス} のような差しこみ口が入っていることがあるので、
@@ -5880,8 +7548,56 @@ function ttBarHTML(id){
   const got=!!GAL.tt[t.id];
   return `<span class="ttbn">${got?"🏅":"🔒"} ${ttName(t)}</span>`+
          `<span class="ttbc">${t.c}</span>`+
-         `<span class="ttbd">${nm(t.d)}</span>`+
+         /* ★ 名前は ttbtx。称号一覧の本体（.ttbd）と同じ名前にすると、
+            そちらの「縦スクロール＋余白」が掛かって、
+            この行だけ背が高くなり、まわりの文字とそろわなくなります */
+         `<span class="ttbtx">${nm(t.d)}</span>`+
          `<span class="ttbs ${got?"got":""}">${got?"取得ずみ":"未取得"}</span>`;
+}
+/* ---- バックログの窓 ------------------------------------------------------
+   おまけと同じ「全画面」で出します（中身の量が毎回ちがうので、
+   窓の大きさを中身に合わせると、開くたびに大きさが変わって落ち着きません）。
+   いちばん下＝いちばん新しい文章。開いたときは下にそろえて出します。 */
+let LOGOPEN=false;
+function logMenu(){
+  if(LOGOPEN)return Promise.resolve();
+  LOGOPEN=true;
+  return new Promise(resolve=>{
+    const M=$("modal"); modalFull(true,"log");
+    const close=async()=>{
+      await fadeOut(M,()=>{ M.style.display="none"; modalFull(false); M.style.width="640px"; });
+      LOGOPEN=false; resolve();
+    };
+    const render=()=>{
+      $("modTtl").textContent="ログ";
+      let body="", lastD="";
+      if(!VNLOG.length){
+        body=`<div class="savenote" style="margin:0">まだ読んだ文章がありません。<br>
+          会話が始まると、ここに読み返せるようにたまっていきます。</div>`;
+      }else{
+        body=`<div class="savenote" style="margin:0 0 7px">新しいものほど下です。`
+           + `　いちばん新しい ${VNLOG.length} 行まで残ります。</div><div class="logwrap">`;
+        for(const it of VNLOG){
+          if(it.d&&it.d!==lastD){ lastD=it.d; body+=`<div class="logday"><span>${it.d}</span></div>`; }
+          if(it.k==="choice"){ body+=`<div class="logch">${it.h}</div>`; continue; }
+          body+=`<div class="logrow">`
+              + `<div class="logn">${it.nm||""}</div>`
+              + `<div class="logt ${it.c||""}">${it.h}</div></div>`;
+        }
+        body+=`</div>`;
+      }
+      /* ★ 中身は覚えるときに nm() を通してあるので、ここでは通しません */
+      $("modBody").innerHTML=body;
+      const bb=$("modBtns"); bb.innerHTML="";
+      const b2=document.createElement("button");
+      b2.className="btn"; b2.textContent="閉じる";
+      b2.onclick=()=>{ se("click"); close(); };
+      bb.appendChild(b2);
+      /* いちばん新しいところ（いちばん下）を出しておきます */
+      requestAnimationFrame(()=>{ const mb=$("modBody"); mb.scrollTop=mb.scrollHeight; });
+    };
+    modalShow(()=>{ M.style.display="flex"; render(); });
+  });
 }
 function galleryMenu(){
   return new Promise(resolve=>{
@@ -5893,11 +7609,21 @@ function galleryMenu(){
        （一覧はマス目なので、拡大すると一度に見える数が減ってしまいます）。 */
     const M=$("modal"); modalFull(true,"gal");
     if(!S.galTab)S.galTab="sc";
+    bgmScene("gallery");            /* おまけ画面の曲（置いていなければ、そのまま） */
+    /* ★ この画面が「まだ開いているか」の札。
+       曲の長さを調べるのは時間がかかる（最大6秒）ので、
+       調べ終わったときには、もう閉じていることがあります。
+       そのまま描きなおすと、**いま開いている別の窓（せっていなど）を
+       おまけ画面で塗りつぶして**しまい、止まらない時計も残ります。 */
+    let alive=true;
     /* おまけはタイトルから開くので、閉じるときも幕を下ろします */
     const close=async()=>{
+      alive=false;
       await fadeOut(M,()=>{ M.style.display="none"; modalFull(false); M.style.width="640px"; });
       TTHOVER=null;
-      if(AU.ctx){AU.cur=null;bgm(S.inGame?bgmFor(S.t):titleBgmName());}
+      bgmSeekStop();                /* ★ 位置を追いかける時計を止める（止めわすれ厳禁） */
+      BGMOV=null;                   /* 曲を試し聞きしていても、出るときは元にもどす */
+      if(AU.ctx){AU.cur=null;bgm(bgmNow());}   /* 止めていたときも、ここで鳴りなおします */
       resolve();
     };
     const tabs=()=>`<div class="gtabs">
@@ -5926,8 +7652,13 @@ function galleryMenu(){
         if(S.cgView){
           const {who,n}=S.cgView, d=S.cgView.d||"";
           const ds=cgDiffs(who,n), u=cgURL(who,n,d);
+          /* ★ 絵は .cgstage の中に入れます。
+             こうすると、黒い下じきが**絵のかたちにぴったり**そろいます
+             （絵ちょくせつだと、上下左右に黒い帯が出ます）。 */
           body+=`<div class="cgview">
-            ${u?`<img src="${u}" alt="">`:`<div class="glock" style="height:220px">？</div>`}
+            <div class="cgstage">
+              ${u?`<img src="${u}" alt="">`:`<div class="glock" style="height:220px">？</div>`}
+            </div>
             <div class="cgcap">${cgTitle(who,n,d)}</div>
             ${ds.length?`<div class="chips" style="justify-content:center;margin-top:6px">
               <span class="chip ${d?"":"on"}" data-g="cgd:">もとの絵</span>
@@ -5946,7 +7677,10 @@ function galleryMenu(){
           const nums=Array.from({length:cgSlots()},(_,i)=>i+1);
           const nHave=id=>nums.filter(n=>cgHas(id,n)).length;
           const nGot =id=>nums.filter(n=>cgHas(id,n)&&galCGgot(id,n)).length;
-          const all=cast.length*cgSlots();
+          /* ★ 分母は「枠の数」ではなく「**実際に絵を置いてある数**」です。
+             枠の数（人数 × 枠数）にすると、絵の無い枠まで数えてしまい、
+             ぜんぶ集めても「12 / 90」のように、永久に埋まらない数になります。 */
+          const all=cast.reduce((s,[id])=>s+nHave(id),0);
           const got=cast.reduce((s,[id])=>s+nGot(id),0);
           body+=`<div class="savenote" style="margin:0 0 7px">解放 ${got} / ${all}
             見たことのあるスチルを選ぶと、大きく見られます。</div>`;
@@ -5983,46 +7717,162 @@ function galleryMenu(){
                  :`<div class="pd" style="color:#a08090">エンディングを迎えると、くわしく見られます</div>`}
               </div></div>`;}).join("")}</div>`;
       }else if(S.galTab==="tt"){
-        /* ★ 一覧は「集めたもの」なので、男女ぜんぶを並べます（ttListAll）。
-           TITLES（いまのキャストぶん）にすると、もう片方の主人公で取った
-           「◯◯と好きになる」が消えてしまいます。 */
+        /* ---- 🏅 称号（分類ごとに1行、鎖のようにつながって出ます）----
+           ★ 一覧は「集めたもの」なので、男女ぜんぶを並べます（ttListAll）。
+             TITLES（いまのキャストぶん）にすると、もう片方の主人公で取った
+             「◯◯と好きになる」が消えてしまいます。
+           ★ **称号はこれからも増えます。** 分類の数も、1分類の中の数も
+             決めうちにしていません。分類は出てきた順にならびます。 */
         const list=(typeof ttListAll==="function")?ttListAll():TITLES;
         const got=list.filter(t=>GAL.tt[t.id]).length;
         /* 校内評価は「いま遊んでいる人」のものなので、ゲーム中だけ光らせます */
         const cur=S.inGame?titleNow():null;
-        body+=`<div class="savenote" style="margin:0 0 7px">
-            集めた称号 <b>${got} / ${list.length}</b>　${S.inGame?`いまの校内評価：<b>${ttName(cur)}</b>　`:""}
-            ひとつにカーソルを合わせる（またはタップする）と、下に取りかたが出ます。</div>
-          <div class="ttgrid">${(()=>{
-            let out="", last=null;
-            for(const t of list){
-              if(t.c!==last){
-                last=t.c;
-                const inCat=list.filter(x=>x.c===t.c);
-                const gc=inCat.filter(x=>GAL.tt[x.id]).length;
-                out+=`<div class="tth2"><span>${t.c}</span><i>${gc} / ${inCat.length}</i></div>`;
-              }
-              const open=!!GAL.tt[t.id], now=cur&&cur.id===t.id;
-              out+=`<div class="ttc ${open?"":"lock"} ${now?"now":""}" tabindex="0" data-tt="${t.id}"
-                title="${ttName(t)}／${nm(t.d)}">
-                <span class="ttm">${open?"🏅":"🔒"}</span>
-                <span class="ttn">${ttName(t)}</span></div>`;
-            }
-            return out;})()}</div>`;
+        /* 分類ごとにまとめる（出てきた順） */
+        const cats=[], box={};
+        for(const t of list){ if(!box[t.c]){box[t.c]=[];cats.push(t.c);} box[t.c].push(t); }
+        /* ★ よこに何個ならべるか。せまい画面では減らします。
+             ここを決めうちにすると、スマホで名前がつぶれます。 */
+        const stW=$("stage").clientWidth;
+        const cols = stW<720 ? 4 : stW<980 ? 5 : 8;
+        const u=(v,n)=>v?`--${n}:url('${v}');`:"";
+        const vars=u(uiArt("ui_tt_now"),"ttnow")+u(uiArt("ui_tt_node_base"),"ttnode");
+        body+=`<div class="ttw" style="${vars}">
+          <div class="tthd">
+            <b>取得した称号</b><em>${got} <s>/</s> ${list.length}</em>
+            <span class="tthl">${TTUI.lead||""}</span>
+            ${S.inGame&&cur?`<span class="tthn">いまの校内評価：<b>${ttName(cur)}</b></span>`:""}
+          </div>
+          <div class="ttbd">${cats.map(c=>{
+            const inCat=box[c], gc=inCat.filter(x=>GAL.tt[x.id]).length;
+            const C=ttCatOf(c);
+            return `<div class="ttrow">
+              <div class="ttcat">
+                <div class="ttci ${C.k}${uiArt("ui_tt_cat_"+C.k)?" im":""}">${ttCatHTML(c)}</div>
+                <div class="ttct"><b>${c}</b>${C.e?`<i>${C.e}</i>`:""}<s>${gc} / ${inCat.length}</s></div>
+              </div>
+              <div class="ttchain" data-c="${cols}">${inCat.map(t=>{
+                const open=!!GAL.tt[t.id], now=cur&&cur.id===t.id;
+                return `<div class="ttn${open?" got":" lock"}${now?" now":""} r${ttRank(t.w)}"
+                     tabindex="0" data-tt="${t.id}" title="${ttName(t)}／${nm(t.d)}">
+                  <span class="ttmd">${ttMedalHTML(t,open)}</span>
+                  <span class="ttnm">${ttName(t)}</span></div>`;}).join("")}
+              </div></div>`;}).join("")}
+          </div>
+          ${TTUI.sign?`<div class="ttsg">${TTUI.sign}</div>`:""}
+        </div>`;
       }else{
-        body+=`<div class="savenote" style="margin:0 0 7px">曲を選ぶと再生します。閉じると元のBGMに戻ります。</div>
-          <div class="bgrid">${Object.keys(TRACKS).map(k=>{
-            const t=TRACKS[k], on=(AU.cur===k);
-            return `<div class="bcell ${on?"on":""}" data-g="bgm:${k}">
-              <div class="bico">${on?"♪":"▶"}</div>
-              <div><div class="bn">${t.n}</div><div class="bb">${t.bpm} BPM</div></div></div>`;}).join("")}
-          </div>`;
+        /* ---- 🎵 BGM（左に曲のならび／右にプレイヤー）----
+           ★ 絵が1枚も無くても動きます。置いたぶんだけ本物に差しかわります。 */
+        const all=bgmAll();
+        if(!S.bgmSel||!all.some(x=>x.k===S.bgmSel))S.bgmSel=(all[0]&&all[0].k)||null;
+        bgmLenLoad(all,()=>{ if(alive && S.galTab==="bg")render(); });
+        const sel=all.find(x=>x.k===S.bgmSel)||all[0]||null;
+        const playing=k=>(AU.cur===k);
+        const u=(v,n)=>v?`--${n}:url('${v}');`:"";
+        /* ★ ひろい画面では、曲のならびを **2列** にします。
+             1列のままだと、曲名と時間のあいだに大きな空きができて間のびします。
+             せまい画面で2列にすると、こんどは1行がつぶれるので1列のままです。 */
+        const bgCols = $("stage").clientWidth>=980 ? 2 : 1;
+        const bgBars = bgCols===2 ? 24 : 32;
+        const vars=u(bgmUiArt("row"),"bgrow")+u(bgmUiArt("photo_frame"),"bgfrm")
+                 + u(bgmUiArt("tape"),"bgtape")+u(bgmUiArt("memo"),"bgmemo")
+                 + u(bgmUiArt("label"),"bglabel")+u(bgmUiArt("panel"),"bgpanel")
+                 + u(bgmUiArt("play"),"bgplay")+u(bgmUiArt("pause"),"bgpause")
+                 + u(bgmUiArt("prev"),"bgprev")+u(bgmUiArt("next"),"bgnext");
+        body+=`<div class="bgw" style="${vars}">
+          <div class="bglist" data-c="${bgCols}">${all.map(x=>{
+            const on=playing(x.k);
+            return `<div class="brow${on?" on":""}${S.bgmSel===x.k?" sel":""}${bgmUiArt("row")?" im":""}"
+                 data-g="bgmsel:${x.k}">
+              <div class="bthm">${bgmArtHTML(x.k,"bthi")}</div>
+              <button class="bpl${bgmUiArt("play")?" im":""}" data-g="bgm:${x.k}"
+                 title="${on?"止める":"聞く"}">${on?"❚❚":"▶"}</button>
+              <div class="bnm"><b>${x.n}</b><span>${bgmWhere(x.k)}</span></div>
+              <div class="bwv">${bgmWaveHTML(x.k,bgBars)}</div>
+              <div class="btm">${bgmLenText(x.k)}</div>
+            </div>`;}).join("")}
+          </div>
+          <div class="bgpl${bgmUiArt("panel")?" im":""}">
+            ${sel?`
+            <div class="bgph${bgmUiArt("photo_frame")?" im":""}">
+              <div class="bgtp${bgmUiArt("tape")?" im":""}"></div>
+              ${bgmArtHTML(sel.k,"bgpi")}
+            </div>
+            <div class="bgmm${bgmUiArt("memo")?" im":""}">${BGMUI.memo||"あの日の景色と、<br>あのメロディ。"}</div>
+            <div class="bglb${bgmUiArt("label")?" im":""}">Background Music</div>
+            <div class="bgnow"><b>${sel.n}</b><span>${bgmWhere(sel.k)}</span></div>
+            <div class="bgct">
+              <button class="bgsk p${bgmUiArt("prev")?" im":""}" data-g="bgmstep:-1" title="前の曲">◀◀</button>
+              <button class="bgbig${bgmUiArt("play")?" im":""}${playing(sel.k)?" on":""}"
+                 data-g="bgm:${sel.k}" title="${playing(sel.k)?"止める":"聞く"}">${playing(sel.k)?"❚❚":"▶"}</button>
+              <button class="bgsk n${bgmUiArt("next")?" im":""}" data-g="bgmstep:1" title="次の曲">▶▶</button>
+            </div>
+            <div class="bgsb">
+              <span class="bgt0">0:00</span>
+              <input type="range" id="bgSeek" min="0" max="1000" value="0" step="1" disabled>
+              <span class="bgt1">${bgmLenText(sel.k)}</span>
+            </div>`:`<div class="savenote" style="margin:auto">曲がありません。</div>`}
+          </div>
+        </div>`;
       }
+      /* ★ BGM画面だけ、中身を「上から下へ」の段組みにします。
+         ふつうの当て方（.bgw に height:100%）だと、上のタブのぶんだけ背が高くなり、
+         **いちばん下の音量つまみが画面の外に出ます**。
+         ★ この札は MODALMODE に入れてあるので、窓を閉じるとき自動で外れます。 */
+      M.classList.toggle("bgtab", S.galTab==="bg");
+      M.classList.toggle("tttab", S.galTab==="tt");
+      /* ★ スチルを1枚大きく見ているあいだは、**スクロールさせずに画面いっぱい**に出します。
+         この札が無いと、絵が窓よりも高くなってスクロール状態になります。
+         ★ この札も MODALMODE に入れてあるので、窓を閉じるとき自動で外れます。 */
+      M.classList.toggle("cgbig", S.galTab==="cg" && !!S.cgView);
       $("modBody").innerHTML=body;
       $("modBtns").innerHTML=
         (S.galTab==="tt"?`<div class="ttbar" id="ttBar">${ttBarHTML(null)}</div>`:"")+
         (S.galTab==="cg"&&S.cgView?`<button class="btn gy" data-g="cgback">◀ 一覧へもどる</button>`:"")+
         `<button class="btn pk" data-g="close" style="margin-left:auto">閉じる</button>`;
+      /* ★ BGM画面の「再生位置」のバー。
+         ・動かせるのは **ファイルを置いた曲だけ**です（合成曲に位置はありません）
+         ・つまみを動かしている最中は BGMSEEK に値を入れて、時計に上書きさせません
+         ・ここで render() を呼ぶと、動かしている最中に作りなおされて指が離れるので、
+           **バーと数字だけ**その場で書きかえています
+         ★ 時計（BGMTICK）は、この画面を離れるとき必ず止めます。 */
+      bgmSeekStop();
+      {
+        const sk=$("bgSeek");
+        if(sk){
+          const t0=$("modBody").querySelector(".bgt0");
+          const t1=$("modBody").querySelector(".bgt1");
+          const fill=v=>sk.style.setProperty("--p",(v/10).toFixed(1)+"%");
+          const paint=()=>{
+            const a=bgmAudioOf(S.bgmSel);
+            if(!a){
+              /* 鳴っていない／合成の曲。押せなくしておきます */
+              sk.disabled=true; sk.value=0; fill(0);
+              const loop=!auPath("bgm",S.bgmSel);
+              if(t0)t0.textContent=loop?"∞":"0:00";
+              /* 「∞ ループ」の ∞ は左はしに出しているので、右は「ループ」だけにします */
+              if(t1)t1.textContent=loop?(BGMUI.loopText||"∞ ループ").replace(/^[∞\s]+/,""):bgmLenText(S.bgmSel);
+              return;
+            }
+            sk.disabled=false;
+            const v=(BGMSEEK===null)?Math.round(a.currentTime/a.duration*1000):BGMSEEK;
+            if(BGMSEEK===null)sk.value=v;
+            fill(v);
+            if(t0)t0.textContent=bgmTime(v/1000*a.duration);
+            if(t1)t1.textContent=bgmTime(a.duration);
+          };
+          sk.oninput =()=>{ BGMSEEK=+sk.value; paint(); };
+          const jump=()=>{
+            const a=bgmAudioOf(S.bgmSel);
+            if(a){ try{ a.currentTime=(+sk.value/1000)*a.duration; }catch(e){} }
+            BGMSEEK=null; se("click"); paint();
+          };
+          sk.onchange=jump;
+          sk.onpointerup=jump;               /* スマホで指を離したとき */
+          paint();
+          BGMTICK=setInterval(paint,250);
+        }
+      }
       /* 称号にカーソルを合わせたら、下の帯に取りかたを出す */
       TTHOVER=id=>{const b=$("ttBar"); if(b)b.innerHTML=ttBarHTML(id);};
       M.querySelectorAll("[data-tt]").forEach(el=>{
@@ -6033,7 +7883,9 @@ function galleryMenu(){
       });
       /* 開いたときは、いまの称号のところまでスクロールして説明も出しておく */
       if(S.galTab==="tt"){
-        const now=M.querySelector(".ttc.now");
+        /* ★ 印の名前は .ttn です（作りかえる前は .ttc でした）。
+           ここを直しわすれると、開いた時点の説明とスクロールが効きません。 */
+        const now=M.querySelector(".ttn.now");
         if(now){ TTHOVER(now.dataset.tt);
           try{now.scrollIntoView({block:"center"});}catch(e){} }
       }
@@ -6045,7 +7897,27 @@ function galleryMenu(){
         else if(a==="cg"){const [w,n]=v.split(":");S.cgView={who:w,n:+n,d:""};se("ok");render();}
         else if(a==="cgd"){if(S.cgView){S.cgView.d=v||"";}se("click");render();}
         else if(a==="cgback"){S.cgView=null;se("cancel");render();}
-        else if(a==="bgm"){se("click");if(AU.ctx){AU.cur=null;bgm(v);}setTimeout(render,600);}
+        /* ---- 🎵 BGM ---- */
+        else if(a==="bgmsel"){                 /* 行を押した＝右のプレイヤーに出すだけ */
+          if(S.bgmSel!==v){ S.bgmSel=v; se("click"); render(); }
+        }
+        else if(a==="bgm"){                    /* ▶ を押した＝聞く／もう一度で止める */
+          se("click"); S.bgmSel=v;
+          if(AU.ctx){
+            if(AU.cur===v) bgmStop();
+            else { AU.cur=null; bgm(v); }
+          }
+          setTimeout(render,600);
+        }
+        else if(a==="bgmstep"){                /* ◀◀ ▶▶ 前の曲／次の曲 */
+          const all=bgmAll(); if(!all.length)return;
+          let i=all.findIndex(x=>x.k===S.bgmSel); if(i<0)i=0;
+          i=(i+ +v + all.length)%all.length;
+          S.bgmSel=all[i].k; se("click");
+          /* 鳴っているときは、そのまま次の曲へ。止まっているときは選ぶだけ */
+          if(AU.ctx&&AU.cur){ AU.cur=null; bgm(all[i].k); }
+          setTimeout(render,600);
+        }
         else if(a==="play"){
           const def=sceneDef(v); if(!def)return;
           M.style.display="none";
@@ -6074,6 +7946,8 @@ function proCast(){
 async function prologue(){
   evMark("sys_prologue");
   const T=((typeof TXT!=="undefined")&&TXT.pro)||{};
+  bgmScene("entrance");            /* 入学式の曲（置いていなければ、そのまま） */
+  try{
   await scene("school",async()=>{
   openMsg("入学式");
   say(T.head||"✦ <b>1年目 4月5日（月）── 入学式</b>","ev");
@@ -6089,6 +7963,7 @@ async function prologue(){
   if(T.ask)say(T.ask);
   await next(T.go||"▶ 高校生活を始める");
   });
+  } finally { bgmSceneEnd(); }
 }
 
 async function main(fromLoad){
@@ -6264,6 +8139,7 @@ function showTitle(keep){
   $("titleBg").innerHTML=titleBgHTML();
   applyTitleArt();
   $("title").querySelector('[data-t="load"]').disabled=!hasAnySave();
+  BGMOV=null;
   if(AU.ctx){AU.cur=null;bgm(titleBgmName());}
   sndHint();
 }
@@ -6305,7 +8181,7 @@ $("title").querySelectorAll("[data-t]").forEach(b=>b.onclick=async()=>{
   const k=b.dataset.t;
   if(k==="new"){ await goSetup(); return; }
   const my=++SCRGEN;   /* 窓を開くのも「切りかえ」。古いあとしまつを止めます */
-  if(k==="load")       await openSaveMenu(true);
+  if(k==="load")       await openSaveMenu(true,"load");
   else if(k==="omake") await galleryMenu();
   else                 await optionsMenu(false);
   /* 窓を閉じてタイトルに戻ったら、下に残っている画面を片づけます
@@ -6322,6 +8198,7 @@ function resetGame(){
   S.p=startStats();          /* 星座のぶんだけ、はじまりの値が変わる */
   S.stress=0; S.ev={}; S.evseen={}; S.prof={};
   S.valen=[]; S.visit={}; S.said={}; S.trip=null; S.pre=null; S.rec=recInit();
+  S.lost=[];                 /* 避難させてある子（→ restore）も、はじめから遊ぶときは空に */
   S.lastM=undefined; S.lastPlan=null;
   S.weekStart=undefined; S.dayIdx=null; S.weekStress0=undefined; S.weekP0=null;
   S.plan=new Array(6).fill(null); S.res=new Array(6).fill(null);
@@ -6329,6 +8206,7 @@ function resetGame(){
   S.sunResolve=null; S.lastToast=0;
   linkCast();                /* 主人公の性別に合わせて、部活とバイトの相手役を決めなおす */
   S.girls=castNow().map(g=>({...g,ideal:{...g.ideal}}));
+  logClear();                    /* バックログは、この筋のぶんだけ覚えます */
   CEVN=0;
   flowAbort();                      /* 前のプレイの流れが残っていたら止める */
 }
@@ -6520,6 +8398,7 @@ addEventListener("gamepaddisconnected",()=>{ gpClear(); });
 addEventListener("pointerdown",()=>{ GP.quiet=true; if(GP.focus)gpClear(); },true);
 if(navigator.getGamepads)gpStart();
 
+setFavicon();                /* タブの小さな絵（favicon の404エラーよけも兼ねます） */
 vnImgInit(); drawVnBar();
 $("vnClose").onclick=e=>{ e.stopPropagation(); se("cancel"); vnHide(true); };
 $("vnClose").onpointerdown=e=>e.stopPropagation();

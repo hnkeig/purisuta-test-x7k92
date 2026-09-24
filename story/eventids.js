@@ -193,6 +193,18 @@ function buildEventDefs(){
       cond:()=>{const x=(S.girls||[]).find(y=>y.id===gid); return !!S.job&&!!x&&x.aff>=50;} });
   }
 
+  /* アフターストーリー（結ばれて卒業したあと。トゥルーエンドのときだけ） */
+  if(typeof AFTERSTORY!=="undefined")for(const gid in AFTERSTORY){
+    const g=(typeof ALLG!=="undefined")&&ALLG.find(x=>x.id===gid);
+    const w=(AFTERSTORY[gid]||{}).when||"卒業したあと";
+    out.push({ id:"after_"+gid, n:(g?g.name:gid)+"のアフターストーリー", chara:gid,
+      kind:"アフター", auto:true, sex:evSexOf(gid),
+      when:`トゥルーエンド（好感度780以上で告白が成立）／${w}`,
+      where:(AFTERSTORY[gid]||{}).bg||"town",
+      needs:["sys_ending"],
+      cond:()=>{const x=(S.girls||[]).find(y=>y.id===gid); return !!x&&x.aff>=780;} });
+  }
+
   /* ※ 追加シナリオ（DLC）は FIXED に合流しているので、上の固定行事といっしょに拾われます */
   return out;
 }

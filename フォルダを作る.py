@@ -62,7 +62,8 @@ OUTFITS = ["uniform_s",  # 制服・夏（4〜9月）
            "pajama",     # パジャマ（自室）
            "swim",       # 水着（海・プール）
            "yukata",     # 浴衣（夏祭り・花火大会）
-           "kimono"]     # 晴れ着（神社・初詣）
+           "kimono",     # 晴れ着（神社・初詣）
+           "after"]      # ★ アフターストーリー（卒業後の大人の姿）
 
 
 def wanted():
@@ -76,6 +77,7 @@ def wanted():
         for o in OUTFITS:
             d.append(f"assets/chara/{g}/bust/{o}")
         d.append(f"assets/chara/{g}/save")     # きろく画面の顔
+        d.append(f"assets/chara/{g}/slot")     # セーブ画面の大きな絵
         d.append(f"assets/chara/{g}/cg")       # イベントスチル（1枚絵）
         d.append(f"assets/chara/{g}/face")     # ※重ね絵モード用
         d.append(f"assets/chara/{g}/outfit")   # ※重ね絵モード用

@@ -5,6 +5,31 @@
 
   python3 build.py          … スチルを入れずに作る（ふだんはこちら）
   python3 build.py --cg     … イベントスチルも入れて作る
+  python3 build.py --slim   … 配る用。絵を「画面に出る大きさ」まで小さくして入れる
+  python3 build.py --nodebug … 配る用。🛠️デバッグ画面を丸ごと取りのぞく
+  python3 build.py --lock   … 配る用。絵と音を、そのままの形では置かない
+
+★ お客さんに渡すもの（売るもの）は、まとめてこう作るのがおすすめです。
+
+    python3 build.py --slim --nodebug
+
+★ --slim（配る用）について
+  1ファイル版に埋めこむ絵を、**画面に出る大きさまで縮めて**入れます。
+  元の絵（assets フォルダの中身）は、いっさい変わりません。
+
+  なぜ付けたか：
+    1ファイル版の中の絵は、開発者ツールを使えば取り出せます（防げません）。
+    でも **入っているのが「画面に出る大きさ」なら、取り出せるものは
+    スクリーンショットとほぼ同じ**になります。元の高解像度は出ていきません。
+    ついでに starmate.html がずっと軽くなります。
+
+  使いかた：
+    --slim            … 最大辺 1600px ／ 画質 82
+    --slim=1200       … 最大辺 1200px
+    --slim=1200,70    … 最大辺 1200px ／ 画質 70
+
+  ※ Pillow が要ります（python3 -m pip install pillow）。
+    入っていなければ、縮めずにそのまま入れます（止まりません）。
 
 ★ イベントスチル（assets/chara/*/cg/ と assets/cg/）は、ふだん1ファイル版に
   入れません。全画面の絵なので、200枚もあると starmate.html が数十〜数百MBに
@@ -71,6 +96,48 @@ FNT_EXT = (".woff2", ".woff", ".ttf", ".otf")
 # フォルダ版はそれで絵が出ますし、1ファイル版は「手が届かない絵」を
 # 自分で見わけて、絵なしで進むようになっています（game.js の artHave）。
 EMBED_CG = ("--cg" in sys.argv) or ("--with-cg" in sys.argv)
+
+# --slim … 配る用。1ファイル版に入れる絵を「画面に出る大きさ」まで縮める。
+#          元の絵（assets フォルダ）は、いっさい変わりません。
+SLIM_MAX, SLIM_Q = 0, 82
+for _a in sys.argv[1:]:
+    if _a == "--slim":
+        SLIM_MAX = 1600
+    elif _a.startswith("--slim="):
+        _v = _a.split("=", 1)[1].split(",")
+        try:
+            SLIM_MAX = int(_v[0])
+            if len(_v) > 1:
+                SLIM_Q = max(1, min(100, int(_v[1])))
+        except ValueError:
+            sys.exit("エラー: --slim の書きかたは --slim=1200 か --slim=1200,70 です")
+
+# --nodebug … 🛠️デバッグ画面を、1ファイル版から丸ごと取りのぞく。
+#             お客さんに渡すもの（売るもの）は、これを付けて作ります。
+NODEBUG = "--nodebug" in sys.argv
+
+# --lock … 1ファイル版に入れる素材を、そのままの絵・音の形で置かない。
+#          ゲームは、使うときに1回だけもどします（game.js の artUnlock）。
+#          ★ 守りではなく「うっかり見られるのを減らす」ためのものです。
+#            もどしかたは同じファイルの中にあるので、本気で読む人には効きません。
+LOCK = "--lock" in sys.argv
+
+
+def strip_debug(body, name):
+    """game.js の /* DEBUG_BEGIN */ 〜 /* DEBUG_END */ を取りのぞき、
+       からっぽの debugMenu() に置きかえます。
+       ★ 印で囲ってあるところだけを切るので、まわりの関数は消えません。"""
+    i = body.find("/* DEBUG_BEGIN")
+    if i < 0:
+        return body, 0
+    j = body.find("/* DEBUG_END */", i)
+    if j < 0:
+        sys.exit(f"エラー: {name} に /* DEBUG_END */ がありません（印が片方だけです）")
+    j += len("/* DEBUG_END */")
+    cut = body[i:j]
+    stub = ("/* 🛠️デバッグ画面は入っていません（--nodebug で作りました） */\n"
+            "function debugMenu(){}")
+    return body[:i] + stub + body[j:], len(cut)
 
 
 def read(name):
@@ -151,7 +218,7 @@ def scan_assets():
             # 一覧には「ファイル名（拡張子つき）」を入れます。
             # こうしておくと png でも webp でも jpg でも同じように使えます。
             ent = {"base": "", "front": "", "face": [], "outfit": [],
-                   "full": {}, "bust": {}, "save": [], "cg": []}
+                   "full": {}, "bust": {}, "save": [], "slot": [], "cg": []}
             # ★ この子のファイルは、いったんここに貯めます。
             #    使われない子（下の判定で落ちる子）の絵まで 1ファイル版に
             #    埋めこんでしまわないようにするためです。
@@ -163,9 +230,9 @@ def scan_assets():
                 if f.lower().startswith("front.") and f.lower().endswith(IMG_EXT):
                     ent["front"] = f
                     mine.append(f"chara/{gid}/{f}")
-            # face / outfit（重ね絵用）と save（きろく画面の顔画像）は、
-            # どれも「そのフォルダの直下だけ」を見ます。
-            for sub in ("face", "outfit", "save"):
+            # face / outfit（重ね絵用）、save（丸い顔）、slot（セーブ画面の
+            # 大きな横長の絵）は、どれも「そのフォルダの直下だけ」を見ます。
+            for sub in ("face", "outfit", "save", "slot"):
                 for f in ls(f"chara/{gid}/{sub}", IMG_EXT):
                     ent[sub].append(f)
                     mine.append(f"chara/{gid}/{sub}/{f}")
@@ -253,25 +320,101 @@ def write_list(art):
           f"UI {len(art['ui'])}／書体 {len(art['font'])}")
 
 
+def slim_image(raw, path):
+    """--slim のとき、絵を「画面に出る大きさ」まで縮める。
+       ・縮めたものが元より大きくなってしまったら、元のまま使います
+       ・Pillow が無ければ、何もしません（止まりません）
+       ・SVG はそのまま（文字なので縮めるものがありません）
+       返すのは (バイト列, mimeタイプ) です。"""
+    if not SLIM_MAX or path.lower().endswith(".svg"):
+        return None
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    import io as _io
+    try:
+        im = Image.open(_io.BytesIO(raw))
+        im.load()
+    except Exception:
+        return None                      # 読めない絵は、そのまま
+    w, h = im.size
+    if max(w, h) > SLIM_MAX:
+        k = SLIM_MAX / float(max(w, h))
+        im = im.resize((max(1, int(w * k)), max(1, int(h * k))), Image.LANCZOS)
+    # 透明があるかどうかで、色の持ちかたをそろえる
+    if im.mode not in ("RGB", "RGBA"):
+        im = im.convert("RGBA" if ("A" in im.mode or im.mode == "P") else "RGB")
+    best = None
+    for fmt, mime, kw in (("WEBP", "image/webp", {"quality": SLIM_Q, "method": 4}),
+                          ("PNG",  "image/png",  {"optimize": True})):
+        try:
+            buf = _io.BytesIO()
+            im.save(buf, fmt, **kw)
+            out = buf.getvalue()
+            if best is None or len(out) < len(best[0]):
+                best = (out, mime)
+        except Exception:
+            continue
+    if not best or len(best[0]) >= len(raw):
+        return None                      # 小さくならなかったので、元のまま
+    return best
+
+
 def embed(files):
     """1ファイル版のために、素材を base64 のデータURLにする"""
     # ART_ONEFILE は「いま動いているのは1ファイル版です」という目じるし。
     # 埋めこまれていない素材（ふだんはスチル）に手が届かないことを、
     # game.js の artHave() がこれで見わけます。
     head = "/* ===== assets（埋めこみ） ===== */\nconst ART_ONEFILE = true;\n"
+    key = b""
+    if LOCK:
+        import hashlib
+        # 鍵は作るたびに変えます（同じ絵でも、毎回ちがう見た目になります）
+        key = hashlib.sha256(os.urandom(32)).digest()[:29]
+        head += ("const ART_LOCK = true;\nconst ART_KEY = ["
+                 + ",".join(str(c) for c in key) + "];\n")
     if not files:
         return head + "const ART_DATA = {};\n"
-    data, total = {}, 0
+    data, total, before, nslim, nlock = {}, 0, 0, 0, 0
     for rel in files:
         p = os.path.join(ASSETS, rel)
         if not os.path.exists(p):
             continue
         raw = open(p, "rb").read()
-        total += len(raw)
         mime = mimetypes.guess_type(p)[0] or "application/octet-stream"
-        data[rel] = "data:" + mime + ";base64," + base64.b64encode(raw).decode()
+        before += len(raw)
+        if mime.startswith("image/"):
+            sl = slim_image(raw, p)
+            if sl:
+                raw, mime = sl
+                nslim += 1
+        total += len(raw)
+        if LOCK:
+            # ひと目で絵と分からない形にしてから入れる（mime + タブ + 中身）
+            x = bytes(c ^ key[i % len(key)] for i, c in enumerate(raw))
+            data[rel] = mime + "\t" + base64.b64encode(x).decode()
+            nlock += 1
+        else:
+            data[rel] = "data:" + mime + ";base64," + base64.b64encode(raw).decode()
     mb = total / 1024 / 1024
     say(f"  素材の埋めこみ: {len(data)} ファイル（{mb:.1f} MB）")
+    if nlock:
+        say(f"  --lock: {nlock} ファイルを、そのままの絵・音の形では置きませんでした")
+        say("    ※ ゲームが使うときに、1枚ずつもどします（起動は遅くなりません）。")
+        say("    ※ 「うっかり見られる」のを減らすものです。守りではありません。")
+    if SLIM_MAX:
+        if nslim:
+            say(f"  --slim: 絵 {nslim}枚を 最大辺 {SLIM_MAX}px／画質 {SLIM_Q} に縮めました"
+                f"（{before/1024/1024:.1f} MB → {mb:.1f} MB）")
+            say("    ※ assets フォルダの元の絵は、なにも変わっていません。")
+        else:
+            try:
+                import PIL  # noqa: F401
+                say(f"  --slim: 縮める絵はありませんでした（どれも {SLIM_MAX}px 以下）")
+            except ImportError:
+                say("  ⚠ --slim を付けましたが、Pillow が入っていないので縮めていません。")
+                say("    python3 -m pip install pillow  を実行してください。")
     if mb > 25:
         say("  ⚠ 素材が大きいので、1ファイル版は開くのに時間がかかります。")
         say("    人に渡すときは、フォルダごと渡す方が快適かもしれません。")
@@ -301,11 +444,61 @@ def main():
         name = t.group(1)
         body = read(name)
         body = re.sub(r'^[ \t]*"use strict";[ \t]*\n', "", body, flags=re.M)
+        if NODEBUG:
+            body, ncut = strip_debug(body, name)
+            if ncut:
+                body = body.replace("const DEBUG_ON = true;", "const DEBUG_ON = false;")
+                say(f"  --nodebug: {name} から 🛠️デバッグ画面を外しました（{ncut/1024:.0f} KB）")
+        # ★ JSの中に </script> という文字があると、そこで <script> が
+        #   終わったことになり、**1ファイル版だけが真っ白になります。**
+        #   （コメントの中に書いてあっても同じです。
+        #     たとえば「index.html に <script src="…"></script> を足す」という説明文）
+        #   ブラウザは <\/script> を </script> と同じに読むので、こう書きかえます。
+        #   フォルダ版はもともと平気なので、1ファイル版だけの手当てです。
+        n_esc = body.count("</script")
+        body = body.replace("</script", "<\\/script")
         js.append(f"/* ===== {name} ===== */\n{body.rstrip()}\n")
-        say(f"  取りこみ: {name}  ({len(body.encode())/1024:.1f} KB)")
+        say(f"  取りこみ: {name}  ({len(body.encode())/1024:.1f} KB)"
+            + (f"  ※ </script> を {n_esc} か所、書きかえました" if n_esc else ""))
 
     blob = embed(files)
-    merged = '<script>\n"use strict";\n' + blob + "\n".join(js) + "</script>\n"
+    body_js = '"use strict";\n' + blob + "\n".join(js)
+
+    if LOCK:
+        # ★ シナリオ本文（story/*.js）も、そのままの文字では置きません。
+        #   メモ帳で starmate.html を開いても、セリフが読めなくなります。
+        #
+        #   やっていること：
+        #     ・中身ぜんぶを、鍵で混ぜて base64 にして入れる
+        #     ・開いたときに、もどして <script> として足す
+        #   ★ <script> を足す形にしているのは、**いままでとまったく同じ動き**に
+        #     なるからです（eval だと const や var の届く範囲が変わってしまいます）。
+        #     足した瞬間にその場で動くので、index.html の後ろにある
+        #     「ファイルが足りません」の判定も、いままでどおり動きます。
+        #
+        #   ★ これは「守り」ではありません。もどしかたは、すぐ下に書いてあります。
+        #     開発者ツールを開けば、もどしたあとの中身が見えます。
+        #     効くのは「うっかり見られる回数が減る」ところだけです。
+        import hashlib
+        jk = hashlib.sha256(os.urandom(32)).digest()[:31]
+        raw = body_js.encode("utf-8")
+        x = bytes(c ^ jk[i % len(jk)] for i, c in enumerate(raw))
+        payload = base64.b64encode(x).decode()
+        body_js = (
+            "(function(){\n"
+            "var K=[" + ",".join(str(c) for c in jk) + "];\n"
+            'var D="' + payload + '";\n'
+            "var b=atob(D),n=b.length,a=new Uint8Array(n);\n"
+            "for(var i=0;i<n;i++)a[i]=b.charCodeAt(i)^K[i%K.length];\n"
+            "var s=document.createElement('script');\n"
+            "s.textContent=new TextDecoder().decode(a);\n"
+            "(document.head||document.documentElement).appendChild(s);\n"
+            "s.remove();\n"
+            "})();")
+        say(f"  --lock: ゲームの中身（シナリオ本文をふくむ）も、そのままの文字では置きませんでした"
+            f"（{len(raw)/1024:.0f} KB）")
+
+    merged = '<script>\n' + body_js + "\n</script>\n"
     html = html[:tags[0].start()] + merged + html[tags[-1].end():]
 
     with open(OUT, "w", encoding="utf-8") as f:

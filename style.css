@@ -66,7 +66,7 @@ body.mb .pbar .tip{font-size:9.5px}
 
 body.mb #sunHint{left:5px;right:calc(var(--icw,310px) + 13px);bottom:auto;top:5px}
 body.mb #msg{left:5px;right:calc(var(--icw,310px) + 13px);bottom:auto;top:5px}
-body.mb #msg .body{font-size:12.5px;max-height:26vh;line-height:1.65}
+body.mb #msg .body{font-size:12.5px;max-height:calc(var(--sth,675px) * 0.26);line-height:1.65}
 
 body.mb #vnWin{left:var(--vnwl,5px);right:5px;bottom:var(--vnwb,7px);padding:0;border-radius:0;border-width:0}
 body.mb #vnBody{max-height:none}
@@ -95,20 +95,23 @@ body.mb .clubrow{padding:5px 7px}
 body.mb .cbox{width:min(92%,400px);padding:14px 16px}
 body.mb .cbox .ct{font-size:15px}
 body.mb .cbox .cm{font-size:12.5px}
-body.mb .cwrap{grid-template-columns:repeat(3,1fr);gap:5px}
-body.mb .cd{font-size:9px}
-body.mb .cev{font-size:8px}
 body.mb .dbgp{width:64px}
 body.mb #toast{font-size:12.5px;padding:6px 16px;top:12px}
 
-.mbhint{display:none}
-body.mb .rules{display:none}
-body.mb .mbhint{display:block;background:rgba(255,255,255,.8);border:2px solid #f0b6c9;border-radius:10px;
-  padding:5px 12px;font-size:10.5px;line-height:1.55;color:#5a4650;max-width:100%}
-body.mb .logo{margin-top:2px}
-body.mb .logo{font-size:23px}
-body.mb .tag{font-size:11px}
-body.mb .rules{font-size:9.5px;line-height:1.55;padding:6px 10px;max-width:100%}
+/* あそびかたの一言。★ 前は body.mb（スマホ）のときだけ出ていて、
+   PCでは display:none のまま消えていました。いまは両方で出します。 */
+/* ★ 絵をデスクトップへドラッグして持ち出せないようにします。
+   （右クリックのメニューは game.js の contextmenu で、もともと止めています）
+   ★ これは「うっかり」を防ぐだけのものです。開発者ツールからは、どのみち見えます。
+     本当に守りたいものは、**配るファイルに入れない**のが唯一の方法です
+     （課金の仕様書.md の 3-5.5）。
+   入力欄には掛けません（名前を書くときに困るため）。 */
+#stage img{-webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;user-drag:none}
+#stage img,#title img{user-select:none;-webkit-user-select:none}
+
+.mbhint{display:block;background:rgba(255,255,255,.8);border:2px solid #f0b6c9;border-radius:10px;
+  padding:7px 16px;font-size:12.5px;line-height:1.6;color:#5a4650;max-width:560px;text-align:center}
+body.mb .mbhint{padding:5px 12px;font-size:10.5px;line-height:1.55;max-width:100%}
 body.mb .setup{padding:4px 10px;gap:2px;max-width:100%}
 body.mb .sl{width:46px;font-size:11px}
 body.mb .chip{font-size:10px;padding:2px 6px}
@@ -237,13 +240,16 @@ body.pt #rotate{display:flex}
 .cgcell.none .cgnum,.cgcell.lock .cgnum{background:rgba(0,0,0,.18)}
 /* 1枚を大きく見るとき */
 .cgview{text-align:center}
-.cgview img{width:100%;max-height:56vh;object-fit:contain;border-radius:10px;
+.cgview img{width:100%;max-height:calc(var(--sth,675px) * 0.56);object-fit:contain;border-radius:10px;
   background:#1a1520;display:block}
 .cgcap{margin-top:6px;font-size:13.5px;font-weight:800;color:#4a3a44}
 body.mb .cggrid{grid-template-columns:repeat(4,1fr)}
 body.sh .cggrid{grid-template-columns:repeat(3,1fr)}
 
-.pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+/* ★ カードの高さを、ぜんぶそろえます（grid-auto-rows:1fr）。
+     そろえないと、エンディングを迎えた子と まだの子で高さが違って、
+     段ごとにガタガタに見えます。 */
+.pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;grid-auto-rows:1fr}
 .pcard{display:flex;gap:9px;border:2px solid #e8d9c4;border-radius:10px;padding:7px;background:#fff}
 .pcard.lock{background:#f6f2ee;border-color:#e4ddd4}
 .pface{width:56px;height:66px;border-radius:8px;overflow:hidden;flex:0 0 auto;background:#efe6ee}
@@ -252,13 +258,149 @@ body.sh .cggrid{grid-template-columns:repeat(3,1fr)}
 .pend{font-size:10px;background:linear-gradient(180deg,#ffd479,#f0a83f);color:#5a3a10;border-radius:5px;padding:1px 6px;font-weight:800}
 .pr2{font-size:10.5px;color:#8a7a68;margin-bottom:2px}
 .pd{font-size:10.5px;color:#5d5060;line-height:1.5}
-.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.bcell{display:flex;gap:8px;align-items:center;border:2px solid #e8d9c4;border-radius:9px;padding:7px 9px;background:#fff;cursor:pointer}
-@media (hover:hover){.bcell:hover{border-color:#f48fb1;background:#fff6f9}}
-.bcell.on{background:linear-gradient(180deg,#fff2f7,#ffe2ee);border-color:#f48fb1}
-.bico{font-size:16px;color:#c2306a;width:18px;text-align:center}
-.bn{font-size:13px;font-weight:800;color:#4a3a44}
-.bb{font-size:10px;color:#8a7a68}
+/* ===== おまけの「🎵 BGM」画面 ===========================================
+   左に曲のならび、右にプレイヤー。
+   ★ --bgrow / --bgfrm などの変数は、素材を置いたときだけ game.js が入れます。
+     入っていないときは、ここに書いてある「仮の見た目」が出ます。
+     ですから **素材が1枚も無くても成り立ちます**。
+   ======================================================================= */
+/* ★ 高さは「上のタブを引いた、のこり全部」。#modBody を段組みにして受けます */
+#modal.full.gal.bgtab>#modBody{display:flex;flex-direction:column;overflow:hidden}
+#modal.full.gal.bgtab>#modBody>.gtabs{flex:0 0 auto}
+.bgw{flex:1 1 auto;display:flex;gap:12px;min-height:0}
+/* ★ ひろい画面では2列。data-c は game.js が入れます（1 か 2）。 */
+.bglist{flex:1 1 auto;min-width:0;overflow-y:auto;display:grid;align-content:start;
+  grid-template-columns:repeat(var(--bgl,1),1fr);gap:6px;
+  padding:1px 4px 4px 1px}
+.bglist[data-c="2"]{--bgl:2}
+.bgpl{flex:0 0 auto;width:250px;display:flex;flex-direction:column;align-items:center;
+  gap:7px;padding:10px 12px 12px;border-radius:14px;
+  background:linear-gradient(170deg,rgba(255,255,255,.72),rgba(255,240,248,.5));
+  border:1px solid rgba(255,255,255,.8);box-shadow:0 3px 14px rgba(180,120,160,.12)}
+.bgpl.im{background:var(--bgpanel) no-repeat center/100% 100%;border:0;box-shadow:none}
+
+/* ---- ならびの1行 ---- */
+.brow{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:7px 12px 7px 7px;
+  border-radius:12px;background:rgba(255,255,255,.88);border:1px solid rgba(240,222,234,.9);
+  box-shadow:0 1px 5px rgba(170,130,160,.09);cursor:pointer;
+  transition:transform .14s, box-shadow .14s, background .14s}
+.brow.im{background:var(--bgrow) no-repeat center/100% 100%;border:0;box-shadow:none}
+@media (hover:hover){.brow:hover{transform:translateX(2px);box-shadow:0 3px 11px rgba(170,110,160,.18)}}
+.brow.sel{border-color:#f3a8cd;box-shadow:0 0 0 2px rgba(243,168,205,.55)}
+.brow.on{background:linear-gradient(90deg,#fff2f8,rgba(255,255,255,.9))}
+/* サムネ */
+.bthm{flex:0 0 auto;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#f3ecf6;
+  box-shadow:0 1px 4px rgba(150,110,140,.18)}
+.bthi{width:100%;height:100%;object-fit:cover;display:block}
+.bthi.ph{position:relative;overflow:hidden}
+.bthi.ph svg,.bthi.ph .bgimg{width:100%;height:100%;object-fit:cover;display:block}
+/* ▶ ボタン */
+.bpl{flex:0 0 auto;width:30px;height:30px;border-radius:50%;cursor:pointer;padding:0;
+  font-family:inherit;font-size:11px;line-height:1;color:#fff;border:0;
+  background:linear-gradient(160deg,#ff9ac6,#f26ea8);box-shadow:0 2px 6px rgba(226,110,166,.4)}
+.bpl.im{background:var(--bgplay) no-repeat center/100% 100%;box-shadow:none;font-size:0}
+.brow.on .bpl.im{background-image:var(--bgpause,var(--bgplay))}
+@media (hover:hover){.bpl:hover{filter:brightness(1.06)}}
+/* 曲名 */
+.bnm{flex:0 0 auto;width:132px;min-width:0}
+.bnm b{display:block;font-size:13.5px;font-weight:800;color:#4a3a44;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bnm span{display:block;font-size:9.5px;color:#a190ab;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 飾りの波形。再生中の行だけ揺れます */
+/* ★ 波形は**まんなかぞろえ**にします。左づめだと、右に大きな空きができます */
+.bwv{flex:1 1 auto;min-width:0;height:26px;display:flex;align-items:center;justify-content:center;
+  gap:2.5px;overflow:hidden}
+.bwv>i{flex:1 1 0;min-width:1.5px;max-width:4px;border-radius:2px;background:#e9d6e6}
+.brow.on .bwv>i{background:linear-gradient(180deg,#ffa6cd,#c79bf0);
+  animation:bwvb .9s ease-in-out infinite alternate}
+@keyframes bwvb{from{transform:scaleY(.45)}to{transform:scaleY(1)}}
+.btm{flex:0 0 auto;width:52px;text-align:right;font-size:11px;color:#a190ab;font-weight:700}
+
+/* ---- 右のプレイヤー ---- */
+/* ★ 写真は **あまった高さに合わせて伸び縮み**します（flex:1 1 auto ＋ aspect-ratio）。
+     ここを width:100% の固定にすると、せまい画面で**下の音量つまみが切れます**。 */
+.bgph{position:relative;flex:1 1 auto;min-height:56px;max-width:100%;align-self:center;
+  aspect-ratio:1/1;border-radius:4px;overflow:visible;
+  padding:9px 9px 26px;background:#fffdfb;
+  box-shadow:0 4px 14px rgba(160,120,150,.22);transform:rotate(-1.2deg)}
+.bgph.im{background:var(--bgfrm) no-repeat center/100% 100%;box-shadow:none}
+.bgpi{width:100%;height:100%;object-fit:cover;display:block;border-radius:2px;background:#efe6f4}
+.bgpi.ph{position:relative;overflow:hidden}
+.bgpi.ph svg,.bgpi.ph .bgimg{width:100%;height:100%;object-fit:cover;display:block}
+/* マスキングテープ */
+.bgtp{position:absolute;left:50%;top:-9px;width:58px;height:19px;z-index:2;
+  transform:translateX(-50%) rotate(-3deg);border-radius:2px;
+  background:linear-gradient(180deg,rgba(255,214,232,.9),rgba(255,190,220,.75))}
+.bgtp.im{background:var(--bgtape) no-repeat center/100% 100%}
+/* 手書きメモ */
+.bgmm{flex:0 0 auto;width:100%;font-size:11.5px;line-height:1.6;color:#7a5f70;text-align:center;
+  padding:7px 9px;border-radius:3px;background:#fffdf7;transform:rotate(.6deg);
+  box-shadow:0 2px 7px rgba(170,140,120,.16)}
+.bgmm.im{background:var(--bgmemo) no-repeat center/100% 100%;box-shadow:none}
+.bglb{font-size:12px;letter-spacing:.1em;color:#c9a8c6;font-style:italic;line-height:1}
+.bglb.im{background:var(--bglabel) no-repeat center/auto 100%;color:transparent;
+  width:100%;height:16px;font-size:0}
+/* いま選んでいる曲 */
+.bgnow{text-align:center;line-height:1.35}
+.bgnow b{display:block;font-size:14px;font-weight:900;color:#5b4a58}
+.bgnow span{display:block;font-size:9.5px;color:#a190ab}
+/* ボタン3つ */
+.bgct{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:16px}
+.bgsk{width:26px;height:26px;padding:0;border:0;background:transparent;cursor:pointer;
+  font-family:inherit;font-size:12px;line-height:1;color:#e07bb0}
+.bgsk.im{font-size:0;background:no-repeat center/100% 100%}
+.bgsk.p.im{background-image:var(--bgprev)}
+.bgsk.n.im{background-image:var(--bgnext)}
+.bgbig{width:48px;height:48px;border-radius:50%;padding:0;border:0;cursor:pointer;
+  font-family:inherit;font-size:17px;line-height:1;color:#fff;
+  background:linear-gradient(160deg,#ff9ac6,#ef5f9f);box-shadow:0 4px 12px rgba(226,110,166,.45)}
+.bgbig.im{background:var(--bgplay) no-repeat center/100% 100%;box-shadow:none;font-size:0}
+.bgbig.im.on{background-image:var(--bgpause,var(--bgplay))}
+@media (hover:hover){.bgbig:hover{filter:brightness(1.06)}.bgsk:hover{color:#c2306a}}
+/* 再生位置のバー。
+   ★ --p は「いまどこまで進んだか」を game.js が入れます（0%〜100%）。
+     ファイルを置いていない曲では押せなくなります（disabled）。 */
+.bgsb{flex:0 0 auto;display:flex;align-items:center;gap:7px;width:100%}
+.bgsb span{flex:0 0 auto;font-size:9.5px;line-height:1;color:#a190ab;font-weight:700;
+  min-width:26px;letter-spacing:.02em}
+.bgsb .bgt1{text-align:right}
+.bgsb input[type=range]{flex:1 1 auto;min-width:0;-webkit-appearance:none;appearance:none;
+  height:5px;border-radius:999px;outline:none;cursor:pointer;
+  background:linear-gradient(90deg,#fb9cc4 0%,#f26ea8 var(--p,0%),#ecdcea var(--p,0%),#ecdcea 100%)}
+.bgsb input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;
+  border-radius:50%;background:#fff;border:2px solid #f26ea8;cursor:pointer;
+  box-shadow:0 1px 3px rgba(190,110,160,.4)}
+.bgsb input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;
+  background:#fff;border:2px solid #f26ea8;cursor:pointer}
+/* 動かせない曲（合成のループ曲、または止まっているとき） */
+.bgsb input[type=range]:disabled{cursor:default;background:#ecdcea;opacity:.75}
+.bgsb input[type=range]:disabled::-webkit-slider-thumb{background:#f6ecf4;border-color:#dcc6d8;
+  cursor:default;box-shadow:none}
+.bgsb input[type=range]:disabled::-moz-range-thumb{background:#f6ecf4;border-color:#dcc6d8;cursor:default}
+
+/* ---- スマホ横 ---- */
+/* スマホ横は高さが足りないので、飾りの「Background Music」は出しません。
+   そのぶん、写真を大きくできます。 */
+body.mb .bgpl{width:186px;padding:7px 9px 9px;gap:4px}
+body.mb .bglb{display:none}
+body.mb .bgph{padding:6px 6px 18px}
+body.mb .brow{gap:7px;padding:5px 9px 5px 5px}
+body.mb .bthm{width:38px;height:38px;border-radius:8px}
+body.mb .bpl{width:25px;height:25px;font-size:9.5px}
+body.mb .bnm{width:104px}
+body.mb .bnm b{font-size:11.5px}
+body.mb .bnm span{font-size:8px}
+body.mb .bwv{height:20px}
+body.mb .btm{width:42px;font-size:9.5px}
+body.mb .bgmm{font-size:9.5px;padding:5px 7px}
+body.mb .bgnow b{font-size:12px}
+body.mb .bgnow span{font-size:8px}
+body.mb .bgbig{width:38px;height:38px;font-size:14px}
+/* たてが低いときは、写真とメモを削って、ならびのほうを見せます */
+body.sh .bgpl{width:166px}
+body.sh .bgmm,body.sh .bglb{display:none}
+body.sh2 .bgph{display:none}
 body.mb .ggrid{grid-template-columns:repeat(3,1fr)}
 body.mb .gt{font-size:10px}
 body.mb .pgrid{grid-template-columns:1fr}
@@ -445,24 +587,14 @@ body.mb .clegend{font-size:9.5px;margin-bottom:4px;gap:4px}
 body.mb .lg{width:9px;height:9px}
 body.mb .cev2{font-size:8.5px;line-height:1.45;margin-top:4px;padding-top:3px;
   min-height:calc(var(--cevn,2) * 1.45em + 4px)}
-.cwrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.cm{border:1px solid #e8d9c4;border-radius:8px;padding:4px 6px;background:#fff}
-.cmh{font-size:12.5px;font-weight:800;color:#c2306a;margin-bottom:3px}
-.cw,.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
-.ch{font-size:9px;color:#8a7a68;text-align:center}
-.ch.su{color:#e5486f}.ch.sa{color:#3f7fd0}
-.cd{font-size:9.5px;text-align:center;padding:1.5px 0;border-radius:3px;color:#5a4e42;line-height:1.25}
-.cd.su{color:#e5486f}.cd.sa{color:#3f7fd0}
-.cd.out{color:#d5cec2}
-.cd.vac{background:#e6f4e2}
-.cd.today{outline:2px solid #e5486f;outline-offset:-1px;font-weight:800}
-.cd.eex{background:#cfe0f5;font-weight:800}
-.cd.eev{background:#fcd3e2;font-weight:800}
-.cd.ebd{background:#ffe6a8;font-weight:800}
-.cd.evc{background:#c9ecc0;font-weight:800}
-.cd.hol{background:#ffd9e2;font-weight:800;color:#c2306a}
+/* ★ ここにあった小さいカレンダー（.cwrap .cm .cmh .cw .cg .ch .cd .cev）の
+   きまりは外しました。いまのカレンダーは .cw2 .ch2 .cd2 .cev2 を使っていて、
+   古いほうはどこからも使われていません。
+   とくに ".cw,.cg" は、予定表の絵文字（<div class="cg">）にまで
+   「7列のグリッド」を掛けてしまい、**絵文字だけ左へ寄る**原因になっていました。
+   ".cm" のワクも、いまは確認ダイアログの本文だけが使う名前なので、
+   ワクが付いて入力欄のように見えてしまっていました。 */
 .el.ehol{background:#ffd9e2}
-.cev{font-size:8.6px;color:#6b5b4c;line-height:1.45;margin-top:3px;min-height:14px}
 .el{display:inline-block;min-width:13px;text-align:center;border-radius:3px;margin-right:3px;font-weight:800}
 .el.eex{background:#cfe0f5}.el.eev{background:#fcd3e2}.el.ebd{background:#ffe6a8}.el.evc{background:#c9ecc0}
 .clegend{font-size:11.5px;color:#5a4e42;margin-bottom:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
@@ -517,7 +649,12 @@ body.mb .slotrow .sb .btn.sm{padding:3px 0;font-size:10.5px}
   border-radius:6px;padding:1px 8px;margin:2px 0;display:inline-block;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .memoin{width:100%;font-family:inherit;font-size:14px;padding:8px 10px;border:2px solid #e08aa8;
-  border-radius:9px;margin-bottom:12px;text-align:center;background:#fff;color:#40323c}
+  border-radius:9px;margin-bottom:2px;background:#fff;color:#40323c;
+  line-height:1.5;resize:none;box-sizing:border-box}
+/* 残りの文字数 */
+.memoct{font-size:11px;color:#a08090;text-align:right;margin-bottom:10px}
+body.mb .memoin{font-size:12.5px;padding:5px 8px;line-height:1.4}
+body.sh .memoin{font-size:11.5px;padding:4px 7px}
 .slotrow.auto{background:#fff6e6;border-color:#e8c98a}
 .pager{display:flex;align-items:center;gap:7px;margin-bottom:8px}
 .pager select{font-family:inherit;font-size:13px;padding:4px 8px;border:1px solid #d9c9b0;border-radius:7px;color:#40323c}
@@ -572,8 +709,359 @@ body.mb #modal.full.gal>#modBody{padding:6px 10px 8px}
   #modal.full.gal .ggrid {grid-template-columns:repeat(6,1fr)}
   #modal.full.gal .ttgrid{grid-template-columns:repeat(6,1fr)}
 }
-/* 大きく出したスチルは、全画面ぶん高さを使えます */
-#modal.full.gal .cgview img{max-height:70vh}
+/* ★ 大きく出したスチルは、**スクロールせずに画面いっぱい**に出します。
+     vh（ブラウザの窓の高さ）で決めると、ゲーム画面の高さとは別ものなので、
+     窓からあふれてスクロール状態になります。ここは flex で「のこり全部」にします。 */
+#modal.full.gal.cgbig>#modBody{display:flex;flex-direction:column;overflow:hidden}
+#modal.full.gal.cgbig>#modBody>.gtabs{flex:0 0 auto}
+#modal.full.gal.cgbig .savenote{flex:0 0 auto}
+#modal.full.gal.cgbig .cgview{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:5px}
+#modal.full.gal.cgbig .cgstage{flex:1 1 auto;min-height:0;display:flex;
+  align-items:center;justify-content:center}
+/* ★ 下じきの色は付けません。object-fit:contain は絵のまわりに余白を作るので、
+     色を付けると**上下や左右に黒い帯**が出てしまいます。 */
+#modal.full.gal.cgbig .cgstage img{width:100%;height:100%;max-height:none;
+  object-fit:contain;background:transparent}
+#modal.full.gal.cgbig .cgstage .glock{height:100%!important;min-height:0;
+  display:flex;align-items:center;justify-content:center}
+#modal.full.gal.cgbig .cgcap{flex:0 0 auto;margin-top:0}
+#modal.full.gal.cgbig .cgview .chips{flex:0 0 auto;margin-top:0!important}
+
+/* ---- セーブ／ロード／データ管理（タイルの画面）--------------------------
+   ★ 素材を置いていないところは、ここに書いた「仮の絵」で出ます。
+     assets/ui/ に絵を置くと、そちらが上にかぶさります（--dt〇〇 の変数）。
+   ★ 大きさの基準は、ゲームの中の 1200×675 です。
+     画面に合わせて丸ごと拡大されるので、ここでは px で書いてかまいません。 */
+#modal.full.data>.ttl{display:none}
+#modal.full.data>#modBtns{display:none!important}
+#modal.full.data>#modBody{padding:0;overflow:hidden}
+#modal.full.data{background:linear-gradient(150deg,#f6eaf5,#eef0fb 45%,#fdf2f6)}
+.dt{position:absolute;inset:0;display:flex;font-size:12px;color:#5b4a58;
+  background-size:cover;background-position:center}
+.dt.bg{background-image:var(--dtbg)}
+
+/* ---- 左のメニュー ---- */
+.dtside{flex:0 0 auto;width:196px;display:flex;flex-direction:column;gap:9px;
+  padding:14px 12px 12px;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.34));
+  border-right:1px solid rgba(255,255,255,.7)}
+.dtlogo{text-align:left;line-height:1.1;margin-bottom:2px}
+.dtlogo img{width:100%;max-width:150px;display:block}
+.dtlogo b{display:block;font-size:17px;font-weight:900;letter-spacing:.14em;color:#8a6aa8}
+.dtlogo s{display:block;text-decoration:none;font-size:14px;font-weight:900;letter-spacing:.1em;color:#a98ac4}
+.dttabs{display:flex;flex-direction:column;gap:5px}
+.dttab{display:grid;grid-template-columns:26px 1fr;grid-template-rows:auto auto;
+  align-items:center;gap:0 8px;padding:7px 10px;border-radius:9px;cursor:pointer;
+  background:rgba(255,255,255,.5);border:1px solid rgba(240,210,232,.9);transition:.14s}
+.dttab i{grid-row:1/3;width:22px;height:22px;background:no-repeat center/100% 100%}
+.dttab b{font-size:13px;font-weight:800;color:#6d5a78;line-height:1.15}
+.dttab s{text-decoration:none;font-size:9px;letter-spacing:.14em;color:#ab93b8}
+@media (hover:hover){.dttab:hover{background:rgba(255,255,255,.85);border-color:#f0aacd}}
+.dttab.on{background:linear-gradient(90deg,#ffe4f0,#f7e7fb);border-color:#f3a8cd;
+  box-shadow:0 2px 7px rgba(190,120,170,.18)}
+.dttab.on b{color:#c2306a}
+.dttab.off{opacity:.5}
+/* アイコン（仮）。絵を置いたら差しかわります */
+.dttab i.save{background-image:var(--dtisave,none)}
+.dttab i.load{background-image:var(--dtiload,none)}
+.dttab i.data{background-image:var(--dtidata,none)}
+.dttab i.save::after,.dttab i.load::after,.dttab i.data::after{
+  content:"💾";font-size:15px;line-height:22px;display:block;text-align:center}
+.dttab i.load::after{content:"📖"}
+.dttab i.data::after{content:"⚙️"}
+.dtsub{display:flex;flex-direction:column;gap:5px;margin-top:2px}
+.dtsub .btn,.dtsub .btn.gy{font-size:11px;padding:6px 8px;color:#7a5f70;
+  background:linear-gradient(180deg,#fff,#fdeef6);border:1px solid #f0c7de;
+  box-shadow:0 1px 3px rgba(170,120,160,.14);text-shadow:none}
+@media (hover:hover){.dtsub .btn:hover{background:linear-gradient(180deg,#fff,#ffe1ef);border-color:#f0aacd}}
+.dtcopy{margin-top:auto;font-size:10.5px;line-height:1.75;color:#9b7fa8;letter-spacing:.06em}
+
+/* ---- 右のほう ---- */
+.dtmain{flex:1;min-width:0;display:flex;flex-direction:column;padding:12px 16px 12px}
+.dthead{display:flex;align-items:baseline;gap:12px;margin-bottom:7px}
+.dthead h2{margin:0;font-size:24px;font-weight:900;letter-spacing:.12em;color:#7a4d86}
+.dthead span{font-size:11px;letter-spacing:.1em;color:#a98ac4}
+.dtbar{display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap}
+.dtbar em{font-style:normal;font-size:10.5px;color:#a190ab}
+.dtbar em.warn{color:#c2306a}
+.dtpg{font-family:inherit;font-size:12px;line-height:1;width:26px;height:26px;cursor:pointer;
+  border-radius:50%;border:1px solid #edc3dc;background:rgba(255,255,255,.85);color:#b5678f}
+@media (hover:hover){.dtpg:hover{background:#ffeaf3}}
+.dtbar select{font-family:inherit;font-size:12px;padding:3px 10px;border-radius:999px;
+  border:1px solid #edc3dc;background:rgba(255,255,255,.9);color:#7a5f70}
+.dtgrid{flex:1;min-height:0;overflow-y:auto;display:grid;align-content:center;margin:0 auto;width:100%;
+  grid-template-columns:repeat(var(--dtc,3),1fr);gap:9px;padding:2px 2px 6px}
+
+/* ---- タイル1枚 ---- */
+.dtile{position:relative;aspect-ratio:var(--dtar,2.164);cursor:pointer;overflow:hidden;
+  border-radius:11px;background:linear-gradient(160deg,rgba(255,255,255,.88),rgba(255,247,252,.8));
+  border:1px solid rgba(238,208,230,.9);box-shadow:0 2px 8px rgba(170,120,160,.12);
+  transition:transform .16s, box-shadow .16s}
+/* 枠の絵（ui_data_slot_border_normal_A/B）を置くと、こちらが上にのります */
+.dtile::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:var(--dtframe,none) no-repeat center/100% 100%}
+/* カーソルを当てたとき／選んでいるとき */
+.dtile::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .16s;
+  background:var(--dtfocus,linear-gradient(120deg,rgba(255,220,240,.35),rgba(225,215,255,.35))) no-repeat center/100% 100%}
+@media (hover:hover){.dtile:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(170,110,160,.25)}
+  .dtile:hover::before{opacity:1}}
+.dtile.on{box-shadow:0 0 0 2px #f3a8cd,0 7px 18px rgba(170,110,160,.25)}
+.dtile.on::before{opacity:1;background:var(--dtsel,linear-gradient(120deg,rgba(255,200,228,.45),rgba(230,210,255,.4))) no-repeat center/100% 100%}
+.dtile.empty{background:rgba(255,255,255,.5);box-shadow:none;cursor:default}
+/* ★ からのスロットも、セーブのタブでは「押せる」ことが見てわかるようにします。
+     データのあるタイルと同じように、すこし浮いて、中身がふわっと拡大します。
+     ロード／データ管理のタブでは押せないので、なにも起きません
+     （「押せるのか押せないのか分からない」を、両方向でなくすためです）。 */
+@media (hover:hover){
+  .dtile.empty:hover{transform:none;box-shadow:none}
+  .dtile.empty:hover::before{opacity:0}
+  .dt[data-tab="save"]:not(.nosave) .dtile.empty:not(.broken){cursor:pointer}
+  .dt[data-tab="save"]:not(.nosave) .dtile.empty:not(.broken):hover{transform:translateY(-2px);
+    box-shadow:0 7px 18px rgba(170,110,160,.22);background:rgba(255,255,255,.78)}
+  .dt[data-tab="save"]:not(.nosave) .dtile.empty:not(.broken):hover::before{opacity:1}
+  .dt[data-tab="save"]:not(.nosave) .dtile.empty:not(.broken):hover .dtnone{opacity:0;transform:scale(var(--dtz,1.12))}
+  .dt[data-tab="save"]:not(.nosave) .dtile.empty:not(.broken):hover .dtadd{opacity:1;transform:scale(1)}
+}
+/* 押せないタブでは、はじめから出しません */
+.dtadd{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;font-size:11px;font-weight:800;color:#c2306a;
+  letter-spacing:.06em;opacity:0;transform:scale(.94);pointer-events:none;
+  transition:opacity .16s, transform .16s}
+.dtadd b{font-size:17px;font-weight:900;color:#f0a0c6;line-height:1}
+.dtnone{transition:opacity .16s, transform .16s}
+body.mb .dtadd{font-size:9.5px}
+body.mb .dtadd b{font-size:14px}
+.dtnone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px;font-size:11.5px;color:#b8a6c0;letter-spacing:.06em}
+.dtnone b{font-size:15px;color:#e5c7dd}
+.dtnone span{font-size:9px;letter-spacing:.16em;color:#c8b8d0}
+.dtile.broken .dtnone b{color:#efb3b3}
+.dtile.broken{background:rgba(255,246,246,.7)}
+.dtdel{position:absolute;right:5%;bottom:8%;font-size:10px!important;padding:3px 10px!important;z-index:3}
+
+/* サムネ（大きな絵）。カーソルを当てると、この中で絵が拡大します。
+   ★ 位置と大きさは「タイルの横幅・たて幅を 100% としたときの割合」です。
+     もとの絵（632×292）で測った値なので、枠の絵を作りかえたら合わせてください。 */
+.dtthumb{position:absolute;left:1.6%;top:16.5%;width:55%;aspect-ratio:var(--dttar,2.025);
+  overflow:hidden;border-radius:7px;background:#efe6f4;
+  -webkit-mask:var(--dtmask,none) no-repeat center/100% 100%;mask:var(--dtmask,none) no-repeat center/100% 100%}
+.dtthumb .dtbig,.dtthumb img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center 28%;transition:transform .3s}
+.dtthumb .dtbig.ph{overflow:hidden}
+.dtthumb .dtbig.ph svg,.dtthumb .dtbig.ph .bgimg{width:100%;height:100%;object-fit:cover;display:block}
+@media (hover:hover){.dtile:hover .dtthumb .dtbig,.dtile:hover .dtthumb img{transform:scale(var(--dtz,1.12))}}
+/* 丸い顔（サムネの左下に重なります） */
+.dtface{position:absolute;left:1.8%;top:62%;width:13%;aspect-ratio:1;border-radius:50%;
+  overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(120,80,110,.3);
+  border:2px solid rgba(255,255,255,.95);z-index:2}
+.dtface.bd{border:0;box-shadow:none;background:var(--dtavb,none) no-repeat center/100% 100%}
+.dtface img,.dtface .chara{width:100%;height:100%;object-fit:cover;display:block}
+.dtface .chara.crop{position:absolute;inset:0;overflow:hidden}
+
+/* 文字まわり */
+.dtno{position:absolute;left:3%;top:4%;font-size:10px;font-weight:800;color:#b5678f;letter-spacing:.04em}
+.dtinfo{position:absolute;left:58.5%;top:17%;right:3%;line-height:1.45}
+.dtinfo b{display:block;font-size:10.5px;font-weight:800;color:#5b4a58;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtinfo span{display:block;font-size:10px;color:#8d7b95;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtwhen{position:absolute;left:16.5%;top:76%;font-size:9px;color:#a596ae;letter-spacing:.01em;
+  white-space:nowrap}
+.dtname{position:absolute;left:16.5%;top:87%;right:46%;font-size:12px;font-weight:800;color:#5b4a58;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
+.dtmemo{position:absolute;left:45%;top:70%;right:14.5%;height:15%;display:flex;align-items:center;gap:4px;
+  font-size:9px;color:#8a6aa8;background:var(--dtnote,rgba(255,255,255,.9)) no-repeat center/100% 100%;
+  border-radius:999px;padding:0 8px;white-space:nowrap;overflow:hidden;
+  box-shadow:0 1px 3px rgba(150,110,160,.16)}
+.dtmemo>i{flex:0 0 auto;width:8px;height:10px;background:var(--dtinote,none) no-repeat center/100% 100%}
+.dtmemo>i::after{content:"🖊";font-size:7px;line-height:10px}
+.dtmemo>i.im::after{content:""}
+.dtmemo>span{overflow:hidden;text-overflow:ellipsis}
+.dtmore{position:absolute;right:3.5%;top:66%;width:9%;aspect-ratio:1;border-radius:50%;cursor:pointer;
+  border:1px solid #e8c6dc;background:var(--dtmore,rgba(255,255,255,.94)) no-repeat center/100% 100%;
+  display:flex;align-items:center;justify-content:center;padding:0;z-index:3}
+.dtmore.im{border:0;background-color:transparent}
+.dtmore>i{width:52%;height:24%;background:var(--dtimore,none) no-repeat center/100% 100%}
+.dtmore>i::after{content:"…";display:block;font-size:11px;line-height:.55;color:#a07fb5;text-align:center}
+.dtmore>i.im::after{content:""}
+@media (hover:hover){.dtmore:hover{background-image:var(--dtmoreh,none);border-color:#f0aacd}}
+/* オートセーブのリボン。絵（ui_data_slot_auto_badge_base）を置くと差しかわります */
+.dtauto{position:absolute;left:0;top:0;width:53%;height:20%;display:flex;align-items:center;
+  padding-left:6%;z-index:2;
+  background:var(--dtauto,none) no-repeat left top/100% 100%}
+.dtauto::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,#fb9cc4,#f6b9e6);
+  clip-path:polygon(0 0,100% 0,88% 100%,0 100%);border-radius:10px 0 0 0}
+.dt[style*="--dtauto"] .dtauto::before{display:none}
+.dtauto span{font-size:9.5px;font-weight:800;color:#fff;letter-spacing:.06em;
+  text-shadow:0 1px 2px rgba(180,90,140,.45)}
+.dtile.auto .dtno{display:none}
+
+
+/* ---- 素材を置いたときに、そちらへ差しかわるところ ----
+   （どれも「置いていなければ、上の仮の見た目のまま」です） */
+.dtside.im{background:var(--dtside,none) no-repeat center/100% 100%;border-right:0}
+.dttab.im{background:var(--dttab,none) no-repeat center/100% 100%;border:0;box-shadow:none}
+.dttab.im.on{background:var(--dttabon,none) no-repeat center/100% 100%;box-shadow:none}
+.dthead h2.im{line-height:0}
+.dthead h2.im img{height:30px;width:auto;display:block}
+body.mb .dthead h2.im img{height:21px}
+body.sh .dthead h2.im img{height:17px}
+.dtile.empty.im{background:var(--dtempty,none) no-repeat center/100% 100%;border:0}
+.dtface.mk{-webkit-mask:var(--dtavm,none) no-repeat center/100% 100%;
+  mask:var(--dtavm,none) no-repeat center/100% 100%}
+.dtdet.open.im{background:var(--dtdetp,none) no-repeat center/100% 100%;border-left:0}
+.dtpg.im{border:0;background-color:transparent;font-size:0}
+.dtpg.p.im{background-image:var(--dtpgp,none);background-repeat:no-repeat;background-size:100% 100%}
+.dtpg.n.im{background-image:var(--dtpgn,none);background-repeat:no-repeat;background-size:100% 100%}
+.dtx.im{border:0;background:var(--dtcx,none) no-repeat center/100% 100%;font-size:0}
+@media (hover:hover){.dtx.im:hover{background-image:var(--dtcxh,var(--dtcx,none))}}
+
+/* ---- 右の詳細 ---- */
+/* ★ この帯はもう「…」を押したときだけではなく、**いつも出しっぱなし**です。
+     PCはタイルにカーソルを合わせると、スマホは1回タップすると中身が入れかわります。
+     （よこが 620px よりせまいときだけは .dt.narrow で画面いっぱいに出します） */
+.dtdet,.dtdet.open{flex:0 0 auto;width:258px;overflow:hidden;
+  background:rgba(255,255,255,.93);border-left:1px solid rgba(240,210,232,.9);
+  display:flex;flex-direction:column}
+.dthint{font-size:11px;line-height:1.8;color:#a190ab;text-align:center;padding:22px 6px}
+.dthint .warn{color:#c2306a;font-weight:700}
+/* ★ 右上の「✕（窓を閉じる）」と重ならないよう、右を広く空けています。
+     ここを狭めると、「✦（留める）」が✕の下にもぐりこんで押せなくなります。 */
+.dtdh{display:flex;align-items:center;padding:9px 44px 7px 12px;border-bottom:1px solid #f4e3ee}
+body.mb .dtdh{padding-right:38px}
+.dtdh b{font-size:13px;font-weight:800;color:#c2306a}
+.dtdx{margin-left:auto;font-family:inherit;font-size:13px;line-height:1;width:22px;height:22px;cursor:pointer;
+  border-radius:50%;border:1px solid #edc3dc;background:#fff;color:#b5678f;padding:0}
+/* 「✦」を押すと、そのスロットに帯を留められます（カーソルで変わらなくなる） */
+.dtdx.pin{font-size:11px;color:#c6aed2}
+.dtdx.pin.on{background:#ffeaf3;border-color:#f3a8cd;color:#c2306a}
+@media (hover:hover){.dtdx:hover{background:#ffeaf3}}
+.dtdb{flex:1;min-height:0;overflow-y:auto;padding:9px 12px 12px}
+.dtdname{font-size:15px;font-weight:900;color:#5b4a58;margin-bottom:6px}
+.dtdname span{font-size:10px;font-weight:700;color:#a190ab;margin-left:7px}
+.dtdrow{display:flex;align-items:center;gap:7px;font-size:11px;line-height:1.7;
+  border-bottom:1px dotted #f0e2ea}
+.dtdrow span{flex:0 0 62px;color:#a190ab}
+.dtdrow b{flex:1;min-width:0;font-weight:700;color:#5b4a58;overflow:hidden;text-overflow:ellipsis}
+.dtdsec{margin:8px 0 3px;font-size:10.5px;font-weight:800;letter-spacing:.1em;color:#b5678f}
+.dtp{display:flex;align-items:center;gap:6px;font-size:10.5px;line-height:1.9}
+.dtp>span{flex:0 0 46px;color:#a190ab}
+.dtp i{flex:1;height:7px;border-radius:999px;background:#f4e7f0;overflow:hidden}
+.dtp i b{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#fb9cc4,#c79bf0)}
+.dtp em{flex:0 0 30px;font-style:normal;text-align:right;font-weight:800;color:#7a5f70}
+.dtdmemo{font-size:11px;line-height:1.65;color:#6d5a78;background:#fdf4fa;border:1px solid #f4e3ee;
+  border-radius:8px;padding:6px 9px;white-space:pre-wrap;word-break:break-word}
+/* ★ ボタンは、帯の**いちばん下に固定**します。
+     中身（好感度の人数・メモの長さ）で場所が動かないようにするためです。
+     .dtdb（スクロールするところ）の**外**に置いてあります。 */
+.dtdbtn{flex:0 0 auto;display:flex;gap:6px;padding:8px 12px 12px;
+  border-top:1px solid #f4e3ee;background:rgba(255,255,255,.55)}
+.dtdbtn .btn{flex:1;font-size:11.5px;padding:6px 0}
+/* ボタンが無いとき（データなし・くわしく待ち）も、高さだけ空けておきます */
+.dtdbtn.empty{min-height:30px;border-top:0;background:none}
+body.mb .dtdbtn{padding:6px 8px 9px}
+
+/* 閉じる */
+.dtx{position:absolute;right:9px;top:8px;z-index:5;font-family:inherit;font-size:13px;line-height:1;
+  width:26px;height:26px;cursor:pointer;border-radius:50%;border:1px solid #edc3dc;
+  background:rgba(255,255,255,.9);color:#b5678f;padding:0}
+@media (hover:hover){.dtx:hover{background:#ffeaf3}}
+
+/* ---- スマホ横 ---- */
+body.mb .dtside{width:148px;padding:9px 8px 8px;gap:6px}
+body.mb .dtlogo img{max-width:118px}
+body.mb .dttab{padding:5px 7px;grid-template-columns:20px 1fr;gap:0 6px}
+body.mb .dttab i{width:18px;height:18px}
+body.mb .dttab i::after{font-size:12px;line-height:18px}
+body.mb .dttab b{font-size:11px}
+body.mb .dttab s{font-size:7.5px}
+body.mb .dtsub .btn{font-size:9.5px;padding:4px 6px}
+body.mb .dtcopy{font-size:8.5px;line-height:1.6}
+body.mb .dtmain{padding:8px 10px 8px}
+body.mb .dthead h2{font-size:17px}
+body.mb .dthead span{font-size:9px}
+body.mb .dtbar{gap:5px;margin-bottom:6px}
+body.mb .dtbar em{font-size:9px}
+body.mb .dtpg{width:21px;height:21px;font-size:10px}
+body.mb .dtbar select{font-size:10.5px;padding:2px 7px}
+body.mb .dtgrid{gap:6px}
+body.mb .dtno{font-size:8.5px}
+body.mb .dtinfo b{font-size:10px}
+body.mb .dtinfo span{font-size:9px}
+body.mb .dtname{font-size:10px}
+body.mb .dtwhen{font-size:8px}
+body.mb .dtmemo{font-size:8px;padding:1px 6px}
+body.mb .dtnone{font-size:9.5px}
+/* スマホでも、帯は右に出しっぱなしにします（幅だけを狭く）。
+   ただし、よこが本当にせまいとき（.dt.narrow）は、
+   タップしたときだけ画面いっぱいに出します。 */
+body.mb .dtdet,body.mb .dtdet.open{width:202px}
+body.sh .dtdet,body.sh .dtdet.open{width:176px}
+.dt.narrow .dtdet,.dt.narrow .dtdet.open{position:absolute;inset:0;width:auto;z-index:8;border-left:0;
+  display:none;background:linear-gradient(160deg,#ffffff,#fdf4fa)}
+.dt.narrow .dtdet.show{display:flex}
+body.mb .dthint{font-size:9.5px;padding:14px 5px}
+body.mb .dtdh b{font-size:12px}
+body.mb .dtdb{padding:7px 10px 10px}
+body.mb .dtdname{font-size:13px}
+/* 帯が狭いので、見出し幅と文字をちいさくします
+   （ここを広げると「1年目 4月5日（月）」が2行に折れます） */
+body.mb .dtdrow,body.mb .dtp{font-size:9.5px;line-height:1.55}
+body.mb .dtdrow span{flex:0 0 54px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.mb .dtp>span{flex:0 0 42px;white-space:nowrap}
+body.mb .dtp em{flex:0 0 22px}
+/* 好感度の星は長いので、スマホでは少し小さく。
+   さらに帯が狭いとき（body.sh）は、星をやめて「好き」などの言葉だけにします
+   （名前が「桜井 …」と切れてしまうのを防ぐためです） */
+.dtdhs{font-style:normal}
+/* 好感度の行だけは、名前に幅をゆずります（名前が切れないように） */
+.dtdrow.aff span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtdrow.aff b{flex:0 0 auto}
+body.mb .dtdrow b{font-size:9px;white-space:nowrap}
+body.sh .dtdhs{display:none}
+body.mb .dtdb{padding:6px 8px 9px}
+body.mb .dtdsec{margin:6px 0 2px;font-size:9.5px}
+body.sh .dtdrow span{flex:0 0 40px}
+body.sh .dtdname{font-size:11.5px}
+body.mb .dtdmemo{font-size:10px}
+body.sh .dtside{width:126px}
+body.sh .dthead h2{font-size:14px}
+body.sh .dthead span{display:none}
+body.sh .dtcopy{display:none}
+body.sh .dtbar em{display:none}
+body.sh2 .dtlogo{display:none}
+
+/* ---- バックログ（読み返し）----------------------------------------------
+   おまけと同じ全画面。いちばん下＝いちばん新しい文章です。 */
+#modal.full.log>#modBody{padding:10px 18px 12px}
+body.mb #modal.full.log>#modBody{padding:6px 10px 8px}
+.logwrap{display:flex;flex-direction:column;gap:5px}
+.logrow{display:flex;gap:10px;align-items:baseline;
+  padding:5px 8px;border-radius:8px;background:#fff;border:1px solid #f0e6da}
+.logrow .logn{flex:0 0 auto;width:96px;text-align:right;
+  font-weight:800;font-size:12.5px;color:#b4285e;line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logrow .logt{flex:1 1 auto;min-width:0;font-size:14px;line-height:1.55;color:#2a2630}
+/* 見出し（✦ 行事名 など）は、会話画面と同じ色で出します。
+   .ev / .sys / .dn は、その行そのものに付いていた種類です */
+.logrow .logt.ev{color:#b4285e;font-weight:800}
+.logrow .logt.sys{color:#8a7a68;font-size:12.5px}
+.logrow .logt.dn{color:#8a6070}
+.logrow .logt .up{color:#2f9e5a;font-weight:800}
+/* 自分が選んだもの */
+.logch{align-self:flex-end;max-width:76%;
+  padding:4px 12px;border-radius:999px;font-size:13px;font-weight:800;
+  background:#fff0f6;border:2px solid #f6c3d8;color:#b4285e}
+.logch::before{content:"▶ "}
+/* 日づけの区切り */
+.logday{display:flex;align-items:center;gap:8px;margin:9px 2px 3px;color:#a08090;
+  font-size:11.5px;font-weight:800}
+.logday::before,.logday::after{content:"";flex:1 1 auto;height:1px;background:#f0d8e4}
+.logday:first-child{margin-top:0}
+body.mb .logrow{padding:3px 6px}
+body.mb .logrow .logn{width:72px;font-size:11px}
+body.mb .logrow .logt{font-size:12.5px;line-height:1.5}
+body.mb .logch{font-size:11.5px;padding:3px 10px}
 
 /* 文字ごと拡大する画面（カレンダー以外） */
 #modal.zoom>#modBody{zoom:1.3}
@@ -658,9 +1146,16 @@ body.mb .gstr .v{font-size:11.5px}
    高さと下の余白は fit() が --chh / --chb に px で入れます
    （もとは assets/config.js の VN_UI の charH / charBottom）。
    ここを width で決めてはいけません。画面の低いスマホでは、
-   横はばから決めた高さが画面をこえてしまい、**頭が上に切れます**。 */
-#vnChar{position:absolute;left:50%;bottom:var(--chb,26px);transform:translateX(-50%);z-index:1;
-  height:var(--chh,627px);width:auto;aspect-ratio:400/627;
+   横はばから決めた高さが画面をこえてしまい、**頭が上に切れます**。
+
+   ★ 縦横の比（--charar）は、game.js の charAR() が
+     **いま出している絵そのものからはかって**入れます。
+     ここに 400/627 と決めうちしていたころは、1024×1536 の絵
+     （AIの画像生成で作ると、この形になります）を入れると
+     絵の上下に余白がついた状態で収まり、**下が浮いて見えていました**。
+     絵を置いていないとき（SVGの仮の立ち絵）だけ、既定の 400/627 を使います。 */
+#vnChar{position:absolute;left:50%;bottom:var(--chb,0);transform:translateX(-50%);z-index:1;
+  height:var(--chh,675px);width:auto;aspect-ratio:var(--charar,400/627);
   display:flex;align-items:flex-end;justify-content:center;
   filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));transition:opacity .25s}
 #vnChar svg{width:100%;height:100%;display:block}
@@ -809,6 +1304,11 @@ body.mb #vnChoices.many3 .btn{width:31%;height:34px;padding:0 6px}
 #vnBar .sb{width:70px;height:30px;cursor:pointer;pointer-events:auto;flex:0 0 auto;
   background:no-repeat center/100% 100%;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 #vnBar .sb.on{background-image:var(--h)!important}
+/* 絵がまだ無いボタンの仮すがた（ふだんは出ません）。
+   assets.js に絵を足しわすれたときだけ、文字のふだで出ます。 */
+#vnBar .sb.ph2{display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.88);border-radius:5px;color:#6a6a6a;
+  font-weight:800;font-size:12px;letter-spacing:.5px}
 /* ★ hover の光りは、マウスのある端末だけ。
    （指でさわる端末では、1回目のタップが「乗せただけ」になってしまうため） */
 @media (hover:hover){ #vnBar .sb:hover{background-image:var(--h)!important}}
@@ -941,7 +1441,20 @@ body.mb .tbtn.img{width:min(var(--tbtnw,186px), calc(var(--tbtnh,47px) * var(--t
 
 body.mb .tfoot{font-size:9.5px;padding:2px 11px}
 body.mb .tsnd{font-size:9.5px;padding:2px 10px;top:5px}
-body.mb #setup{padding:6px 10px 14px;gap:5px;justify-content:flex-start;overflow-y:auto}
+body.mb #setup{padding:6px 10px 8px;gap:3px;justify-content:flex-start;overflow-y:auto}
+/* ★ 「はじめから」画面は、行が1本ふえるだけで下のボタンがはみ出します
+   （主人公の行を足したときに、実際にはみ出しました）。
+   スマホ横では、すき間と文字を少しずつ詰めて、1画面に収めています。
+   高さのめやす：844×390 / 812×375 / 724×302 / 900×260 で確かめること。 */
+body.mb .setup{padding:5px 12px;gap:3px}
+body.mb .srow{gap:6px}
+body.mb .note2{font-size:10px;line-height:1.3}
+body.mb .mbhint{padding:3px 10px;font-size:9.5px;line-height:1.4}
+body.mb .stst{margin-top:1px;font-size:10.5px}
+body.mb #setup input[type=text]{font-size:14px;padding:6px 10px;width:104px}
+body.mb #setup select{font-size:13px;padding:3px 6px}
+body.mb #setup .chip{padding:2px 7px}
+body.mb #setup .btn{font-size:15px !important;padding:8px 24px !important}
 body.mb .tlogo2{font-size:17px}
 /* とくにせまい画面では、はじめから画面が1画面に収まるように詰める */
 body.sh #setup{padding:3px 8px 8px;gap:2px}
@@ -953,6 +1466,21 @@ body.sh .stst{font-size:8.5px;margin-top:1px}
 body.sh .zod{font-size:9px;padding:0 6px}
 body.sh .mbhint{display:none}
 body.sh #setup .btn{font-size:12px !important;padding:6px 16px !important}
+body.sh #setup input[type=text]{font-size:13px;padding:4px 9px;width:96px}
+/* いちばん背の低い横画面（260px など）。ここまで詰めれば入ります */
+body.sh2 #setup{padding:2px 8px 4px;gap:1px}
+body.sh2 .tlogo2{font-size:12px}
+body.sh2 .setup{padding:1px 8px;gap:1px}
+body.sh2 .srow{gap:4px}
+body.sh2 .sl{font-size:11px;width:46px}
+body.sh2 .chip{font-size:10.5px;padding:1px 6px;border-width:1.5px}
+body.sh2 .note2{font-size:7.5px;line-height:1.26}
+body.sh2 .stst{margin-top:0;font-size:7.5px}
+body.sh2 .zod{font-size:8px;padding:0 6px}
+body.sh2 .nmhint{display:none}
+body.sh2 #setup input[type=text]{font-size:11px;padding:2px 6px;width:78px}
+body.sh2 #setup select{font-size:11px;padding:1px 4px}
+body.sh2 #setup .btn{font-size:11px !important;padding:4px 14px !important}
 #ending{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:7px;background:linear-gradient(160deg,#ffd9e6,#ffeccd 45%,#d8ecff);color:#4a3a44;text-align:center;padding:12px}
 #ending{display:none;overflow:auto}
@@ -1033,20 +1561,221 @@ body.ttlscr #room,body.ttlscr #icons,body.ttlscr #dateBar,body.ttlscr #status{di
 body.mb .lvl .stars{font-size:13px}
 body.mb .lvl .ttlnm{font-size:.95em}
 
-/* ===== おまけ：称号の一覧 ===== */
-.ttgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.ttc{display:flex;gap:5px;align-items:center;border:2px solid #e8d9c4;border-radius:8px;
-  padding:3px 6px;background:#fff;cursor:pointer;transition:.12s;outline:none}
-.ttc:focus, .ttc.gpf{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}
-@media (hover:hover){.ttc:hover{border-color:#f48fb1;background:#fff6f9;transform:translateY(-1px)}}
-.ttc.lock{background:#f6f2ee;border-color:#e4ddd4}
-.ttc.lock .ttn{color:#a89e94}
-.ttc.now{border-color:#e8b23a;background:#fffbe9;box-shadow:0 0 0 2px rgba(232,178,58,.3)}
-.ttc .ttm{font-size:14px;flex:0 0 auto;line-height:1}
-.ttc .ttn{flex:1 1 auto;min-width:0;font-size:12.5px;font-weight:800;color:#5a4650;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.mb .ttgrid{grid-template-columns:repeat(2,1fr)}
-body.mb .ttc .ttn{font-size:11px}
+/* ===== 部活をえらぶ画面 ================================================
+   左に部のならび、まんなかに写真、右に説明のカード。
+   ★ --cpfrm などの変数は、素材を置いたときだけ game.js が入れます。
+     入っていないときは、ここに書いてある「仮の見た目」が出ます。
+   ======================================================================= */
+#modal.full.club>.ttl{display:none}
+#modal.full.club>#modBtns{display:none!important}
+#modal.full.club>#modBody{padding:0;overflow:hidden}
+#modal.full.club{background:linear-gradient(150deg,#fdf6ee,#f6f0fb 45%,#fdf2f6)}
+.cp{position:absolute;inset:0;display:flex;flex-direction:column;
+  font-size:12px;color:#5b4a58;background-size:cover;background-position:center}
+.cp.bg{background-image:var(--cpbg)}
+/* ---- 上の見出し ---- */
+.cphd{flex:0 0 auto;display:flex;align-items:flex-start;gap:16px;padding:12px 16px 9px;
+  position:relative}
+.cpt{flex:0 0 auto;width:150px}
+.cpt s{display:block;text-decoration:none;font-size:8.5px;letter-spacing:.24em;color:#b79ec6}
+.cpt b{display:block;font-size:22px;font-weight:900;letter-spacing:.14em;color:#6b5570;
+  line-height:1.2}
+.cpn{flex:1 1 auto;min-width:0;padding-top:4px}
+.cpn b{display:block;font-size:14px;font-weight:800;color:#5b4a58;line-height:1.5}
+.cpn span{display:block;font-size:10px;color:#a190ab;line-height:1.55}
+.cpclip{position:absolute;right:54px;top:-4px;width:26px;height:56px;
+  border-radius:0 0 13px 13px;border:3px solid #cfc6d8;border-top:0;opacity:.75}
+.cpclip.im{border:0;opacity:1;background:var(--cpclip) no-repeat center/100% 100%}
+/* ---- 下の3つ ---- */
+.cpbody{flex:1 1 auto;min-height:0;display:flex;gap:12px;padding:0 16px 14px}
+/* 左のならび */
+.cpside{flex:0 0 auto;width:132px;display:flex;flex-direction:column;gap:4px;
+  overflow-y:auto;padding:6px;border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,.5));
+  box-shadow:0 2px 9px rgba(170,130,160,.12)}
+.cpside.im{background:var(--cpside) no-repeat center/100% 100%;box-shadow:none}
+.cprow{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:9px;
+  cursor:pointer;transition:.14s;background:rgba(255,255,255,.72)}
+.cprow b{font-size:12px;font-weight:800;color:#5b4a58;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+@media (hover:hover){.cprow:hover{background:#fff;transform:translateX(2px)}}
+.cprow.on{background:linear-gradient(90deg,#ffd9ea,#ffeaf4);box-shadow:0 2px 7px rgba(226,110,166,.25)}
+.cprow.on b{color:#c2306a}
+.cpic{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  font-size:13px;background:#fff;border:1px solid #efdcea;box-shadow:0 1px 3px rgba(160,120,150,.18)}
+.cpic.im{border:0;background:none;box-shadow:none}
+.cpic img{width:100%;height:100%;object-fit:contain;display:block}
+.cpic.big{width:34px;height:34px;font-size:17px}
+/* まんなかの写真
+   ★ 写真は **たての高さに合わせて** 大きさが決まります（4:3 のまま）。
+     ここを width:100% の固定にすると、横にびろんと伸びて間のびします。 */
+.cpmid{flex:1 1 auto;min-width:0;display:flex;align-items:center;justify-content:center}
+.cpph{flex:0 0 auto;position:relative;max-width:100%;
+  padding:10px 10px 30px;border-radius:4px;background:#fffdfb;
+  box-shadow:0 5px 18px rgba(160,120,150,.25);transform:rotate(-.8deg)}
+.cpph.im{background:var(--cpfrm) no-repeat center/100% 100%;box-shadow:none}
+.cpim{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:2px;
+  background:#efe6f4}
+.cpim.ph{position:relative;overflow:hidden}
+.cpim.ph svg,.cpim.ph .bgimg{width:100%;height:100%;object-fit:cover;display:block}
+.cpwd{position:absolute;left:0;right:0;bottom:6px;text-align:center;
+  font-size:17px;font-style:italic;letter-spacing:.06em;color:#c6a4c4;line-height:1}
+/* 右のカード */
+.cpcd{flex:0 0 auto;width:232px;display:flex;flex-direction:column;gap:7px;
+  padding:12px 14px 14px;border-radius:10px;background:rgba(255,255,255,.9);
+  box-shadow:0 3px 13px rgba(170,130,160,.16)}
+.cpcd.im{background:var(--cpcard) no-repeat center/100% 100%;box-shadow:none}
+.cpch{flex:0 0 auto;display:flex;align-items:center;gap:8px}
+.cpch b{font-size:16px;font-weight:900;color:#5b4a58}
+.cpd{flex:0 0 auto;font-size:10.5px;color:#a190ab;line-height:1.5;
+  padding-bottom:7px;border-bottom:1px solid #f2e4ee}
+.cpsay{flex:1 1 auto;min-height:0;overflow-y:auto;font-size:11.5px;line-height:1.85;color:#6d5a78}
+.cpsay span{display:block}
+.cpmb{flex:0 0 auto}
+.cpmb s{display:block;text-decoration:none;font-size:9px;letter-spacing:.22em;color:#b79ec6;
+  margin-bottom:2px}
+.cpmb b{display:block;font-size:12.5px;font-weight:800;color:#c2306a;line-height:1.4}
+.cpmb i{display:block;font-style:normal;font-size:11px;color:#a190ab;line-height:1.4}
+.cpjoin{flex:0 0 auto;margin-top:2px;font-family:inherit;font-size:15px;font-weight:800;
+  color:#fff;border:0;border-radius:9px;padding:11px 0;cursor:pointer;position:relative;
+  background:linear-gradient(160deg,#ff9ac6,#ee63a0);box-shadow:0 4px 12px rgba(226,110,166,.4)}
+.cpjoin.im{background:var(--cpjoin) no-repeat center/100% 100%;box-shadow:none}
+.cpjoin span{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:17px}
+@media (hover:hover){.cpjoin:hover{filter:brightness(1.06)}}
+/* 閉じる。★ クリップとぶつからないよう、クリップは右へ54px ずらしてあります */
+.cpx{position:absolute;right:12px;top:10px;z-index:6;font-family:inherit;font-size:12px;
+  line-height:1;width:26px;height:26px;cursor:pointer;border-radius:50%;border:1px solid #edc3dc;
+  background:rgba(255,255,255,.9);color:#b5678f;padding:0}
+@media (hover:hover){.cpx:hover{background:#ffeaf3}}
+/* ---- スマホ横 ---- */
+body.mb .cphd{gap:10px;padding:8px 10px 6px}
+body.mb .cpt{width:104px}
+body.mb .cpt b{font-size:16px}
+body.mb .cpt s{font-size:7px}
+body.mb .cpn b{font-size:11px}
+body.mb .cpn span{font-size:8.5px}
+body.mb .cpbody{gap:8px;padding:0 10px 9px}
+body.mb .cpside{width:104px;padding:4px}
+body.mb .cprow{gap:5px;padding:3px 5px}
+body.mb .cprow b{font-size:10px}
+body.mb .cpic{width:20px;height:20px;font-size:10px}
+body.mb .cpic.big{width:26px;height:26px;font-size:13px}
+body.mb .cpph{padding:6px 6px 20px}
+body.mb .cpwd{font-size:12px;bottom:4px}
+body.mb .cpcd{width:176px;padding:8px 10px 10px;gap:5px}
+body.mb .cpch b{font-size:13px}
+body.mb .cpd{font-size:9px}
+body.mb .cpsay{font-size:9.5px;line-height:1.7}
+body.mb .cpmb s{font-size:7.5px}
+body.mb .cpmb b{font-size:10.5px}
+body.mb .cpmb i{font-size:9px}
+body.mb .cpjoin{font-size:12.5px;padding:8px 0}
+body.sh .cpn span{display:none}
+body.sh .cpsay{display:none}
+body.sh2 .cpph{display:none}
+
+/* ===== おまけ：称号の一覧 ==============================================
+   分類ごとに1行。その中で称号が「鎖」のようにつながって出ます。
+   ★ **称号はこれからも増えます。**
+     ・1分類に何個入っても、--ttc（よこの数）で折り返します
+     ・つなぎ線は、行の右はしでは自動で消えます（下の nth-child の決まり）
+     ・分類が増えても、色は .ttci のあとの分類名で足すだけです
+   ======================================================================= */
+#modal.full.gal.tttab>#modBody{display:flex;flex-direction:column;overflow:hidden}
+#modal.full.gal.tttab>#modBody>.gtabs{flex:0 0 auto}
+.ttw{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;position:relative}
+/* ---- 見出し ---- */
+.tthd{flex:0 0 auto;display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+  padding:2px 2px 7px;border-bottom:1px solid rgba(240,216,228,.9)}
+.tthd>b{font-size:14px;font-weight:900;color:#7a4d86;letter-spacing:.06em}
+.tthd>em{font-style:normal;font-size:17px;font-weight:900;color:#c2306a;letter-spacing:.02em}
+.tthd>em s{text-decoration:none;font-size:12px;color:#d7a8c4;margin:0 2px}
+.tthd .tthl{font-size:10.5px;color:#a190ab}
+.tthd .tthn{margin-left:auto;font-size:10.5px;color:#a190ab}
+.tthd .tthn b{color:#c2306a}
+/* ---- 中身（ここがスクロールします）---- */
+.ttbd{flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 4px 6px 2px}
+.ttrow{display:flex;align-items:flex-start;gap:12px;padding:9px 2px;
+  border-bottom:1px dashed rgba(236,220,234,.9)}
+.ttrow:last-child{border-bottom:0}
+/* ---- 左の分類 ---- */
+.ttcat{flex:0 0 auto;width:86px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.ttci{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:19px;
+  background:linear-gradient(160deg,#fff,#fbeff7);border:2px solid #f0cfe4;
+  box-shadow:0 2px 6px rgba(170,120,160,.16)}
+.ttci.im{border:0;background:none;box-shadow:none}
+.ttci img{width:100%;height:100%;object-fit:contain;display:block}
+.ttci.study{border-color:#c3c8f0}.ttci.sports{border-color:#bfe0d2}
+.ttci.art{border-color:#f6ccb0}.ttci.charm{border-color:#f5bcd4}
+.ttci.care{border-color:#cfe2c0}.ttci.trend{border-color:#bcd9f2}
+.ttci.rich{border-color:#e8d79a}.ttci.mix{border-color:#dcc6ee}
+.ttci.love{border-color:#f6b3c6}.ttci.record{border-color:#d9cdbe}
+.ttci.club{border-color:#f3c9a0}.ttci.school{border-color:#c6d8ee}
+.ttct{text-align:center;line-height:1.25}
+.ttct b{display:block;font-size:12.5px;font-weight:900;color:#5b4a58}
+.ttct i{display:block;font-size:8.5px;font-style:italic;color:#b79ec6;letter-spacing:.06em}
+.ttct s{display:block;text-decoration:none;font-size:10px;font-weight:800;color:#a190ab}
+/* ---- 右の鎖 ---- */
+.ttchain{flex:1 1 auto;min-width:0;display:grid;
+  grid-template-columns:repeat(var(--ttc,8),1fr);column-gap:10px;row-gap:10px;
+  --ttc:8}
+.ttchain[data-c="4"]{--ttc:4}.ttchain[data-c="5"]{--ttc:5}
+.ttchain[data-c="6"]{--ttc:6}.ttchain[data-c="8"]{--ttc:8}
+.ttn{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;outline:none;padding:3px 1px 2px;border-radius:9px;transition:.14s}
+/* つなぎ線。**次のまるの中心まで**のばします（まる自身が上にのって隠します） */
+.ttn::before{content:"";position:absolute;left:50%;top:18px;height:2px;z-index:0;
+  width:calc(100% + 10px);background:#eddfeb}
+.ttn.got::before{background:linear-gradient(90deg,#f6c7dd,#e2cdf2)}
+.ttn:last-child::before{display:none}
+/* ★ よこの数ごとに、行のいちばん右では線を消します */
+.ttchain[data-c="4"] .ttn:nth-child(4n)::before,
+.ttchain[data-c="5"] .ttn:nth-child(5n)::before,
+.ttchain[data-c="6"] .ttn:nth-child(6n)::before,
+.ttchain[data-c="8"] .ttn:nth-child(8n)::before{display:none}
+.ttmd{position:relative;z-index:1;width:36px;height:36px;border-radius:50%;
+  display:grid;place-items:center;font-size:15px;color:#fff;
+  background:var(--ttnode,linear-gradient(160deg,#f2f2f5,#dcdce4));
+  box-shadow:0 2px 6px rgba(150,120,150,.22)}
+.ttmd img{width:100%;height:100%;object-fit:contain;display:block}
+.ttmd b{font-weight:900;line-height:1;text-shadow:0 1px 2px rgba(120,80,110,.35)}
+/* 格ごとの色。1=銅 2=銀 3=金 4=とくべつ */
+.ttn.got.r1 .ttmd{background:linear-gradient(160deg,#f0bd92,#cf8f5c)}
+.ttn.got.r2 .ttmd{background:linear-gradient(160deg,#eef1f6,#b7bfcc)}
+.ttn.got.r3 .ttmd{background:linear-gradient(160deg,#ffe08a,#e8a92a)}
+.ttn.got.r4 .ttmd{background:linear-gradient(140deg,#ffc4e0,#c9a6f5 55%,#9fd8f0)}
+.ttn.lock .ttmd{background:linear-gradient(160deg,#eceaee,#d3ced8);box-shadow:none}
+.ttn.lock .ttmd b{color:#a9a1ae;text-shadow:none}
+.ttnm{font-size:9.5px;line-height:1.25;text-align:center;color:#5b4a58;font-weight:700;
+  word-break:break-word}
+.ttn.lock .ttnm{color:#a9a1ae}
+@media (hover:hover){.ttn:hover{background:rgba(255,255,255,.75);transform:translateY(-2px)}}
+.ttn:focus{background:rgba(255,255,255,.75)}
+/* いまの校内評価 */
+.ttn.now{background:linear-gradient(170deg,#ffe6f2,#ffd3e7);
+  box-shadow:0 2px 9px rgba(226,110,166,.3)}
+.ttn.now.im{background:var(--ttnow) no-repeat center/100% 100%;box-shadow:none}
+.ttn.now .ttnm{color:#c2306a;font-weight:800}
+/* 右下の手書きふうの言葉 */
+.ttsg{flex:0 0 auto;text-align:right;font-size:11px;font-style:italic;letter-spacing:.06em;
+  color:#c9a8c6;padding:3px 6px 0}
+/* ---- スマホ横 ---- */
+body.mb .tthd{gap:6px;padding-bottom:5px}
+body.mb .tthd>b{font-size:11.5px}
+body.mb .tthd>em{font-size:14px}
+body.mb .tthd .tthl,body.mb .tthd .tthn{font-size:9px}
+body.mb .ttrow{gap:8px;padding:6px 2px}
+body.mb .ttcat{width:64px}
+body.mb .ttci{width:31px;height:31px;font-size:15px}
+body.mb .ttct b{font-size:10.5px}
+body.mb .ttct i{font-size:7.5px}
+body.mb .ttct s{font-size:9px}
+body.mb .ttmd{width:29px;height:29px;font-size:12px}
+body.mb .ttn::before{top:14px}
+body.mb .ttnm{font-size:8px}
+body.mb .ttsg{font-size:9px}
+body.sh .tthd .tthl{display:none}
+body.sh2 .ttsg{display:none}
 
 /* 下の帯（取りかたの説明） */
 .ttbar{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
@@ -1056,7 +1785,7 @@ body.mb .ttc .ttn{font-size:11px}
 .ttbar .ttbn{font-weight:900;color:#c2306a;white-space:nowrap}
 .ttbar .ttbc{font-size:10.5px;font-weight:800;color:#fff;background:#c08aa4;
   border-radius:6px;padding:1px 6px;white-space:nowrap}
-.ttbar .ttbd{flex:1 1 auto;min-width:0;font-weight:700}
+.ttbar .ttbtx{flex:1 1 auto;min-width:0;font-weight:700}
 .ttbar .ttbs{font-size:11px;font-weight:800;color:#a89e94;white-space:nowrap;
   border:1px solid #ddd2c8;border-radius:6px;padding:0 6px}
 .ttbar .ttbs.got{color:#2f7d4f;border-color:#9ccdae;background:#eefaf2}
@@ -1089,7 +1818,7 @@ body.mb .ttgrid .tth2{font-size:10.5px;padding:4px 2px 1px}
 #dbgBox .dbgbT{background:linear-gradient(180deg,#c8ac72,#a98d52);color:#fff;font-weight:800;
   font-size:14px;padding:5px 12px;display:flex;align-items:center;justify-content:space-between}
 #dbgBox .dbgbX{cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
-#dbgBox .dbgbB{padding:8px 14px 12px;overflow:auto;font-size:12.5px;line-height:1.5;max-height:70vh}
+#dbgBox .dbgbB{padding:8px 14px 12px;overflow:auto;font-size:12.5px;line-height:1.5;max-height:calc(var(--sth,675px) * 0.7)}
 
 /* 動きを減らす設定にしている人には、揺らさず静かに浮かせるだけにする */
 @media (prefers-reduced-motion: reduce){

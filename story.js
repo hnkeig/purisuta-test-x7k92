@@ -34,6 +34,9 @@ const INTRO = {};       /* はじめての出会い */
 const CLUBMEET = {};    /* 部室での初対面 */
 const JOBMEET = {};     /* バイト先に来たとき */
 const PRO = {};         /* 入学式でのひとこと（最初からいる子だけ） */
+const COURSE = {};      /* 卒業後の進路（1人5通り） */
+const AFTERSTORY = {};  /* アフターストーリー（結ばれて卒業したあと） */
+const BDAYGIFT = {};    /* 誕生日プレゼントの受けとりかた（好感度4段階×贈りもの3種類） */
 for (const id in STORY) {
   const s = STORY[id];
   if (s.ev && s.ev.length) AFF_EV[id]   = s.ev;
@@ -41,6 +44,9 @@ for (const id in STORY) {
   if (s.clubmeet)          CLUBMEET[id] = s.clubmeet;
   if (s.job)               JOBMEET[id]  = s.job;
   if (s.pro)               PRO[id]      = s.pro;
+  if (s.course)            COURSE[id]   = s.course;
+  if (s.afterStory)        AFTERSTORY[id] = s.afterStory;
+  if (s.bdayGift)          BDAYGIFT[id] = s.bdayGift;
 }
 
 /* =======================================================================
@@ -71,7 +77,11 @@ const CHARA = Object.keys(STORY)
       club: s.club || "", bday: p.bday ? { ...p.bday } : null,
       prof: s.prof ? { ...s.prof } : null,
       /* その子じしんの能力（ゲージ表示のもと）。story/<名前>.js の p.stat */
-      stat: p.stat ? { ...p.stat } : null
+      stat: p.stat ? { ...p.stat } : null,
+      /* 卒業後の進路で「その子の得意」として見る能力。
+         書かなければ p.stat のいちばん高いものを使います（`courseStatOf()`）。
+         ★ 数字のうえでは別の能力が一番になってしまう子だけ、ここに書きます。 */
+      courseStat: p.courseStat || ""
     };
   });
 
